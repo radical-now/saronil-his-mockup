@@ -1,0 +1,540 @@
+index.html:17: 🧬 -> 🧬 <span>Saronil <strong>HMS</strong></span>
+index.html:20: 🏢 -> 🏢 Bengaluru Campus
+index.html:28: 📊 -> <span class="menu-icon">📊</span>
+index.html:36: 🗂 ️ -> <span class="menu-icon">🗂️</span>
+index.html:42: 👤 -> <span class="menu-icon">👤</span>
+index.html:48: 📅 -> <span class="menu-icon">📅</span>
+index.html:54: 🏥 -> <span class="menu-icon">🏥</span>
+index.html:60: 🛏 ️ -> <span class="menu-icon">🛏️</span>
+index.html:66: 🛌 -> <span class="menu-icon">🛌</span>
+index.html:75: 📋 -> <span class="menu-icon">📋</span>
+index.html:81: 🚨 -> <span class="menu-icon">🚨</span>
+index.html:89: 💳 -> <span class="menu-icon">💳</span>
+index.html:95: 🛡 ️ -> <span class="menu-icon">🛡️</span>
+index.html:103: 🧪 -> <span class="menu-icon">🧪</span>
+index.html:109: 💀 -> <span class="menu-icon">💀</span>
+index.html:115: 💊 -> <span class="menu-icon">💊</span>
+index.html:121: 🩸 -> <span class="menu-icon">🩸</span>
+index.html:129: 🛠 ️ -> <span class="menu-icon">🛠️</span>
+index.html:137: ⚙ ️ -> <span class="menu-icon">⚙️</span>
+index.html:145: 📢 -> <span class="menu-icon">📢</span>
+index.html:151: 🛡 ️ -> <span class="menu-icon">🛡️</span>
+index.html:172: ← -> <button class="btn btn-secondary" id="global-back-btn" onclick="window.history.back()" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; display: none; align-items: center; gap: 0.25rem; border: 1px solid var(--border-color); cursor: pointer;">← Back</button>
+index.html:180: ⚙ ️ -> <option value="Administrator">⚙️ Administrator</option>
+index.html:181: 🩺 -> <option value="Doctor">🩺 Doctor</option>
+index.html:182: 👩 ‍ ⚕ ️ -> <option value="Nurse">👩‍⚕️ Nurse</option>
+index.html:183: 💳 -> <option value="Billing">💳 Billing Admin</option>
+index.html:184: 🛎 ️ -> <option value="Front Desk">🛎️ Front Desk</option>
+index.html:185: 🧪 -> <option value="Lab">🧪 Lab Executive</option>
+index.html:186: 💊 -> <option value="Pharmacist">💊 Pharmacist</option>
+index.html:197: 🔔 -> 🔔<span class="badge-dot"></span>
+index.html:201: ⚙ ️ -> ⚙️
+assets/css/style.css:2116: ✓ -> content: "✓";
+assets/js/state.js:1625: ⚠ ️ -> return { status: 'BLOCK', message: '⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nPatient Date of Birth cannot be in the future.' };
+assets/js/state.js:1632: ⚠ ️ -> return { status: 'BLOCK', message: '⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nCalculated age is invalid (must be between 0 and 120).' };
+assets/js/state.js:1640: ⚠ ️ -> return { status: 'BLOCK', message: '⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nInvalid mobile number. Mobile number must contain 10 to 12 digits.' };
+assets/js/state.js:1646: ⚠ ️ -> return { status: 'BLOCK', message: '⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nInvalid email address format.' };
+assets/js/state.js:1653: ⚠ ️ -> return { status: 'BLOCK', message: `⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nABHA ID ${data.abhaId} is already linked to patient ${dupAbha.name} (${dupAbha.uhid}).` };
+assets/js/state.js:1661: ⚠ ️ -> return { status: 'BLOCK', message: `⚠️ DEMOGRAPHIC VALIDATION FAILURE:\nAadhaar Number ${data.aadhaar} is already linked to patient ${dupAadhaar.name} (${dupAadhaar.uhid}).` };
+assets/js/state.js:1741: 🚨 -> message: `🚨 DRUG-ALLERGY CONFLICT: Patient has documented allergy to ${allergenGroup}. Prescribing ${drugName} is contraindicated.`
+assets/js/state.js:1758: ⚠ ️ -> message: `⚠️ THERAPEUTIC DUPLICATION ALERT: Patient is already prescribed an NSAID/Analgesic. Co-prescribing another NSAID increases risk of gastrointestinal issues.`
+assets/js/state.js:1769: 🤰 -> message: `🤰 PREGNANCY WARNING: Prescribing ${drugName} (Category ${drugObj.pregnancyCategory}) is contraindicated during pregnancy.`
+assets/js/state.js:1776: 🤰 -> message: `🤰 PREGNANCY CAUTION: ${drugName} is Pregnancy Category C. Prescribe only if potential benefits outweigh clinical risks.`
+assets/js/state.js:1787: 🤱 -> message: `🤱 LACTATION WARNING: ${drugName} is contraindicated during breastfeeding.`
+assets/js/state.js:1794: 🤱 -> message: `🤱 LACTATION CAUTION: Excretion of ${drugName} in breastmilk is possible. Monitor infant for adverse effects.`
+assets/js/state.js:1806: 🛑 -> message: `🛑 RENAL CONTRAINDICATION: Metformin is contraindicated in patients with eGFR < 30 mL/min due to high risk of lactic acidosis.`
+assets/js/state.js:1813: ⚠ ️ -> message: `⚠️ RENAL DOSAGE ADJUSTMENT: Patient eGFR is ${patient.egfr} mL/min (Severe Impairment). Reduce Amoxicillin dose to Clavam 375mg QD or Novamox 250mg BID.`
+assets/js/state.js:1819: ⚠ ️ -> message: `⚠️ RENAL WARNING: NSAID use in eGFR < 30 mL/min is contraindicated due to increased risk of acute kidney injury.`
+assets/js/state.js:1827: ⚠ ️ -> message: `⚠️ RENAL DOSAGE ADJUSTMENT: Patient eGFR is ${patient.egfr} mL/min (Moderate Impairment). Metformin maximum daily dose is 1000mg; monitor closely.`
+assets/js/state.js:1839: 🧪 -> message: `🧪 HEPATIC CONTRAINDICATION: Atorvastatin is contraindicated in patients with active liver disease.`
+assets/js/state.js:1846: ⚠ ️ -> message: `⚠️ HEPATIC DOSAGE ADJUSTMENT: Patient has liver impairment. Limit total daily dose of Paracetamol to 2g (max 3 tablets of 650mg/day) to prevent hepatotoxicity.`
+assets/js/state.js:1857: 👶 -> message: `👶 PEDIATRIC WARNING: 650mg dosage form is not recommended for children under 12 years. Prescribe Crocin Pediatric Drops instead.`
+assets/js/state.js:1863: 👴 -> message: `👴 GERIATRIC WARNING: NSAID use in patients over 65 increases risk of GI bleeding, cardiovascular events, and renal impairment.`
+assets/js/state.js:1913: 🛑 -> message: `🛑 HARD STOP: ABO INCOMPATIBILITY DETECTED!\nPatient Blood Group is ${patientBlood}, but requested transfusion blood group is ${donorBlood}. Transfusion blocked immediately to prevent acute hemolytic reaction.`
+assets/js/state.js:1985: 🚨 -> message: `🚨 CRITICAL SAFETY ALERT: SEPSIS RISK (NEWS2 Score: ${newsScore})\nPatient exhibits physiological instability: ${reasons.join(', ')}. Immediately notify medical registrar.`
+assets/js/state.js:2011: ⚠ ️ -> message: `⚠️ JCI PHARMACY DISPENSING WARNING:\nTherapeutic Duplication detected. Prescription contains multiple NSAIDs/Analgesics which may cause adverse renal/GI issues.`
+assets/js/state.js:2030: ⚠ ️ -> message: '⚠️ Bed is currently occupied by an active patient. Complete discharge or transfer before initiating housekeeping.'
+assets/js/state.js:2040: ⚠ ️ -> message: '⚠️ An occupied bed cannot be marked available.'
+assets/js/state.js:2050: ⚠ ️ -> message: '⚠️ Bed cleaning must be completed before reassignment.'
+assets/js/state.js:2060: ⚠ ️ -> message: '⚠️ Bed is currently under cleaning and cannot be assigned.'
+assets/js/state.js:2070: ⚠ ️ -> message: '⚠️ Bed is under maintenance and unavailable for patient assignment.'
+assets/js/state.js:2123: 📱 -> <span>📱 ${p.mobile} | Age: ${p.age} | ${p.gender}</span>
+assets/js/views/bloodbankView.js:39: 🩸 -> <strong style="color: var(--color-danger); font-size: 1.1rem;">🩸 Total Bags: ${totalBags}</strong>
+assets/js/views/bloodbankView.js:258: 🛑 -> <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">🛑 Transfusion Blocked (JCI Hard Stop)</h4>
+assets/js/views/bloodbankView.js:273: 🛑 -> <p style="color: var(--text-secondary); line-height: 1.5; font-size: 0.9rem; margin: 0;">${message.replace('🛑 HARD STOP: ABO INCOMPATIBILITY DETECTED!\n', '')}</p>
+assets/js/views/daybedView.js:56: 🛌 -> <span class="bed-icon">🛌</span>
+assets/js/views/daybedView.js:66: 🛌 -> <h4 style="margin: 0; font-weight: 700; color: var(--primary); font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">🛌 Wards & Bed Grid</h4>
+assets/js/views/daybedView.js:96: 📝 -> 📝 Admit Patient on Bed: ${window.selectedDaycareBed}
+assets/js/views/daybedView.js:207: → -> }).join(' → ')}
+assets/js/views/daybedView.js:220: 📋 -> <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">📋 Step 1: Pre-Procedure Checklist Form</h5>
+assets/js/views/daybedView.js:295: 🔒 -> <span style="font-size:2rem; display:block;">🔒</span>
+assets/js/views/daybedView.js:308: 📝 -> <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">📝 Step 2: Log Doctor Orders & Directives</h5>
+assets/js/views/daybedView.js:384: ⚙ ️ -> <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">⚙️ Step 3: Nurse Task Board & Recovery Checks</h5>
+assets/js/views/daybedView.js:392: ✓ -> ${t.completed ? '✓' : 'Mark'}
+assets/js/views/daybedView.js:450: 🔒 -> <span style="font-size:2rem; display:block;">🔒</span>
+assets/js/views/daybedView.js:458: 🛑 -> <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">🛑 Step 4: Issue Doctor Discharge Directive</h5>
+assets/js/views/daybedView.js:521: 💳 -> <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">💳 Step 5: clearances & billing desk</h5>
+assets/js/views/daybedView.js:526: ✓ -> <small style="font-size:0.65rem;">${currentBedAdmission.clearances?.nursing?.cleared ? 'Cleared ✓' : 'Pending'}</small>
+assets/js/views/daybedView.js:530: ✓ -> <small style="font-size:0.65rem;">${currentBedAdmission.clearances?.pharmacy?.cleared ? 'Cleared ✓' : 'Pending'}</small>
+assets/js/views/daybedView.js:534: ✓ -> <small style="font-size:0.65rem;">${currentBedAdmission.clearances?.billing?.cleared ? 'Cleared ✓' : 'Pending'}</small>
+assets/js/views/daybedView.js:580: 💳 🔒 -> ${allCleared ? '💳 Complete Discharge Bill' : '🔒 Clear Departments'}
+assets/js/views/daybedView.js:591: 👤 -> <h4 style="margin: 0; font-weight: 700;">👤 Inpatient: ${currentBedAdmission.patient.name} (${window.selectedDaycareBed})</h4>
+assets/js/views/daybedView.js:629: 🛌 -> <h3 style="color: var(--primary); font-weight: 700; margin: 0; font-size: 1.15rem;">🛌 Daycare Unit Onboarding & Clinical Flow</h3>
+assets/js/views/daybedView.js:890: 🧪 -> <span>🧪 <strong>${l.name}</strong> (${l.code})</span>
+assets/js/views/daybedView.js:891: ✕ -> <span style="color:#ef4444; cursor:pointer;" onclick="window.removeLabFromOrder('${l.code}')">✕</span>
+assets/js/views/daybedView.js:921: 💊 -> <span>💊 <strong>${m.drugName}</strong> - ${m.dose} | ${m.route} | ${m.frequency}</span>
+assets/js/views/daybedView.js:922: ✕ -> <span style="color:#ef4444; cursor:pointer;" onclick="window.removeMedFromOrder(${idx})">✕</span>
+assets/js/views/daybedView.js:1109: ✓ -> <span style="font-size:3.5rem; display:block; margin-bottom:0.5rem; color:#10b981;">✓</span>
+assets/js/views/ipdAdmissionView.js:98: 🛏 ️ -> <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🛏️ 1. Admission & Bed Details</h4>
+assets/js/views/ipdAdmissionView.js:106: 🔎 -> <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted);">🔎</span>
+assets/js/views/ipdAdmissionView.js:166: 📋 -> <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📋 2. Pre-Admission Checklist</h4>
+assets/js/views/ipdAdmissionView.js:231: ➡ ️ -> <button type="submit" class="btn btn-primary" style="padding: 0.65rem 2.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;">Complete Onboarding & Proceed ➡️</button>
+assets/js/views/ipdAdmissionView.js:240: 🟢 -> <span style="font-size: 2.25rem;">🟢</span>
+assets/js/views/ipdAdmissionView.js:251: 🖨 ️ -> <h5 style="margin: 0; font-weight: 700; color: var(--primary); font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">🖨️ Printer Settings & Logs</h5>
+assets/js/views/ipdAdmissionView.js:260: 🖨 ️ -> <button type="button" class="btn btn-primary" onclick="window.printAllStickersAndPasses()" style="height: 34px; padding: 0 1.5rem; font-weight: 700; font-size: 0.82rem; margin-top: 1.2rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">🖨️ Print All Identity Tags & Caregiver Pass</button>
+assets/js/views/ipdAdmissionView.js:267: 🖨 ️ -> <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🖨️ 3. Previews & Identity Tags</h4>
+assets/js/views/ipdAdmissionView.js:341: ➡ ️ -> <button type="button" class="btn btn-primary" onclick="router.navigate('atd')" style="padding: 0.65rem 2.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;">Done & Go to Bed Board ➡️</button>
+assets/js/views/ipdAdmissionView.js:453: ✅ -> <span>✅ ID Verified on File</span>
+assets/js/views/ipdAdmissionView.js:462: ⚠ ️ -> ⚠️ No Photo ID on file
+assets/js/views/ipdAdmissionView.js:494: ✅ -> <span>✅ Pre-Auth Processed</span>
+assets/js/views/ipdAdmissionView.js:581: 🛏 ️ -> <span class="bed-icon" style="font-size: 0.9rem;">🛏️</span>
+assets/js/views/ipdAdmissionView.js:704: ✅ -> fileStatus.innerHTML = `<span style="color: var(--color-success); font-weight: 600;">✅ ${consentFile.files[0].name}</span>`;
+assets/js/views/ipdAdmissionView.js:887: ✅ -> statusBox.textContent = `✅ Added ₹${val} advance deposit. Total: ₹${displayVal}`;
+assets/js/views/ipdAdmissionView.js:918: 🟢 -> 🟢 Printed ${printLogs.length} items successfully!
+assets/js/views/ipdAdmissionView.js:952: 🟢 -> 🟢 Printed ${stickerType} successfully!
+assets/js/views/alertCenterView.js:25: 🚨 -> <div class="stat-icon-wrapper" style="background-color: var(--color-danger-bg); color: var(--color-danger);">🚨</div>
+assets/js/views/alertCenterView.js:34: ⏳ -> <div class="stat-icon-wrapper" style="background-color: var(--color-warning-bg); color: var(--color-warning);">⏳</div>
+assets/js/views/alertCenterView.js:43: ✅ -> <div class="stat-icon-wrapper" style="background-color: var(--color-success-bg); color: var(--color-success);">✅</div>
+assets/js/views/alertCenterView.js:103: 📢 -> 📢 Select an active clinical alert from the queue to investigate details, override with notes, escalate, or resolve.
+assets/js/views/alertCenterView.js:234: ✅ -> ✅ Resolved & Audited
+assets/js/views/dashboardView.js:183: 🔎 -> <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted);">🔎</span>
+assets/js/views/dashboardView.js:372: 📅 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">📅 OPD Appointment Details:</div>
+assets/js/views/dashboardView.js:387: 🛎 ️ -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛎️ IPD Admission Advice:</div>
+assets/js/views/dashboardView.js:399: 🛏 ️ -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛏️ IPD Bed Allocation Details:</div>
+assets/js/views/dashboardView.js:418: 🚨 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🚨 Emergency Admission Bed Details:</div>
+assets/js/views/dashboardView.js:433: 🌼 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🌼 Daycare Procedure Details:</div>
+assets/js/views/dashboardView.js:486: 🪙 -> icon: '🪙',
+assets/js/views/dashboardView.js:499: 🛏 ️ -> icon: '🛏️',
+assets/js/views/dashboardView.js:512: 👤 -> icon: '👤',
+assets/js/views/dashboardView.js:525: 🏥 -> icon: '🏥',
+assets/js/views/dashboardView.js:538: ⏳ -> icon: '⏳',
+assets/js/views/dashboardView.js:551: ⭐ -> icon: '⭐',
+assets/js/views/dashboardView.js:633: ⚠ ️ -> <strong>⚠️ Critical Patient Alert</strong><br>
+assets/js/views/dashboardView.js:637: 📋 -> <strong>📋 Delayed Discharges</strong><br>
+assets/js/views/dashboardView.js:641: 🛡 ️ -> <strong>🛡️ Pending Claims</strong><br>
+assets/js/views/dashboardView.js:645: 💊 -> <strong>💊 Low Inventory alert</strong><br>
+assets/js/views/dashboardView.js:673: 🛎 ️ -> icon: '🛎️',
+assets/js/views/dashboardView.js:686: ⏳ -> icon: '⏳',
+assets/js/views/dashboardView.js:699: 🛏 ️ -> icon: '🛏️',
+assets/js/views/dashboardView.js:712: 🚪 -> icon: '🚪',
+assets/js/views/dashboardView.js:725: 🚨 -> icon: '🚨',
+assets/js/views/dashboardView.js:738: ⏱ ️ -> icon: '⏱️',
+assets/js/views/dashboardView.js:826: 📅 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">📅 OPD Appointment Details:</div>
+assets/js/views/dashboardView.js:841: 🛎 ️ -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛎️ IPD Admission Advice:</div>
+assets/js/views/dashboardView.js:853: 🛏 ️ -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛏️ IPD Bed Allocation Details:</div>
+assets/js/views/dashboardView.js:872: 🚨 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🚨 Emergency Admission Bed Details:</div>
+assets/js/views/dashboardView.js:887: 🌼 -> <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🌼 Daycare Procedure Details:</div>
+assets/js/views/dashboardView.js:926: • -> • Ramesh Chandra (GW bed advised)<br>
+assets/js/views/dashboardView.js:927: • -> • Seema Singh (Semi-Private advised)
+assets/js/views/dashboardView.js:933: • -> • Amit Patel (ABHA ID verification pending)<br>
+assets/js/views/dashboardView.js:934: • -> • site check consent forms unsigned
+assets/js/views/dashboardView.js:974: 👥 -> icon: '👥',
+assets/js/views/dashboardView.js:987: ⌛ -> icon: '⌛',
+assets/js/views/dashboardView.js:1000: 🚨 -> icon: '🚨',
+assets/js/views/dashboardView.js:1013: 🔬 -> icon: '🔬',
+assets/js/views/dashboardView.js:1026: 🚪 -> icon: '🚪',
+assets/js/views/dashboardView.js:1039: 🗓 ️ -> icon: '🗓️',
+assets/js/views/dashboardView.js:1055: 📅 -> <div class="card-header"><h3 class="card-title">📅 OPD Appointment Queue</h3></div>
+assets/js/views/dashboardView.js:1087: 🛏 ️ -> <div class="card-header"><h3 class="card-title">🛏️ IPD Patients</h3></div>
+assets/js/views/dashboardView.js:1125: 🚨 -> <div class="card-header" style="background: #fee2e2; border-bottom: 1px solid #fca5a5;"><h3 class="card-title" style="color: #991b1b; font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">🚨 Alerts & Reminders</h3></div>
+assets/js/views/dashboardView.js:1128: ⚠ ️ -> <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+assets/js/views/dashboardView.js:1134: 🔬 -> <span style="font-size: 1.1rem; line-height: 1;">🔬</span>
+assets/js/views/dashboardView.js:1140: 📅 -> <span style="font-size: 1.1rem; line-height: 1;">📅</span>
+assets/js/views/dashboardView.js:1174: 🩺 -> <span>🩺 ${patient.status === 'Admitted' ? 'See Patient' : 'Consult Now'}</span>
+assets/js/views/dashboardView.js:1201: 👩 ‍ ⚕ ️ -> icon: '👩‍⚕️',
+assets/js/views/dashboardView.js:1214: 💊 -> icon: '💊',
+assets/js/views/dashboardView.js:1227: 🚨 -> icon: '🚨',
+assets/js/views/dashboardView.js:1240: 🩹 -> icon: '🩹',
+assets/js/views/dashboardView.js:1253: 🛏 ️ -> icon: '🛏️',
+assets/js/views/dashboardView.js:1266: 📋 -> icon: '📋',
+assets/js/views/dashboardView.js:1354: 🪙 -> icon: '🪙',
+assets/js/views/dashboardView.js:1367: ⚠ ️ -> icon: '⚠️',
+assets/js/views/dashboardView.js:1380: 🛡 ️ -> icon: '🛡️',
+assets/js/views/dashboardView.js:1393: ✅ -> icon: '✅',
+assets/js/views/dashboardView.js:1406: ❌ -> icon: '❌',
+assets/js/views/dashboardView.js:1419: 📈 -> icon: '📈',
+assets/js/views/dashboardView.js:1502: 🧪 -> icon: '🧪',
+assets/js/views/dashboardView.js:1515: 🔬 -> icon: '🔬',
+assets/js/views/dashboardView.js:1528: ⚙ ️ -> icon: '⚙️',
+assets/js/views/dashboardView.js:1541: 🚨 -> icon: '🚨',
+assets/js/views/dashboardView.js:1554: 🖋 ️ -> icon: '🖋️',
+assets/js/views/dashboardView.js:1567: ✅ -> icon: '✅',
+assets/js/views/dashboardView.js:1641: 📋 -> icon: '📋',
+assets/js/views/dashboardView.js:1654: 💊 -> icon: '💊',
+assets/js/views/dashboardView.js:1667: ⚠ ️ -> icon: '⚠️',
+assets/js/views/dashboardView.js:1680: ⌛ -> icon: '⌛',
+assets/js/views/dashboardView.js:1693: 💵 -> icon: '💵',
+assets/js/views/dashboardView.js:1706: 📥 -> icon: '📥',
+assets/js/views/dashboardView.js:1775: ▲ ▼ -> const trendIcon = trendDirection === 'up' ? '▲' : (trendDirection === 'down' ? '▼' : '—');
+assets/js/views/dashboardView.js:1792: → -> <span>Click to view ${recordsCount} patient records →</span>
+assets/js/views/dashboardView.js:1860: ⚠ ️ -> `<span style="color:var(--color-danger); font-weight:600;">⚠️ Unsigned Consent Forms</span>`,
+assets/js/views/dashboardView.js:1861: ⏳ -> `<span style="color:var(--color-warning); font-weight:600;">⏳ Insurance Pre-Auth Pending</span>`,
+assets/js/views/dashboardView.js:1862: ⚠ ️ -> `<span style="color:var(--color-danger); font-weight:600;">⚠️ Bed Assignment Missing</span>`
+assets/js/views/dashboardView.js:1945: ✅ ⚠ ️ -> ${isFinClear ? '✅ Clear' : '⚠️ Due: ₹' + outstanding.toLocaleString('en-IN')}
+assets/js/views/dashboardView.js:1950: ✅ ⏳ -> ${isSummaryDone ? '✅ Completed' : '⏳ Pending Approval'}
+assets/js/views/dashboardView.js:1955: ✅ ⏳ -> ${isMedsDisp ? '✅ Dispensed' : '⏳ Awaiting Pharmacy'}
+assets/js/views/dashboardView.js:2019: 🚨 -> <td><span class="badge bg-danger" style="color:#fff; font-weight:bold; padding:0.2rem 0.4rem; border-radius:4px; font-size:0.8rem;">🚨 Score: ${score}</span></td>
+assets/js/views/dashboardView.js:2330: ← -> <button class="btn btn-secondary" onclick="router.navigate('dashboard-${persona}')" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; border: 1px solid var(--border-color); cursor: pointer;">← Back to Dashboard</button>
+assets/js/views/dashboardView.js:2341: 🔍 -> <span style="font-size: 0.9rem; color: var(--text-muted);">🔍 Filter Worksheet:</span>
+assets/js/views/dashboardView.js:2377: ← -> <button class="btn btn-secondary" onclick="router.navigate('dashboard-admin')" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; border: 1px solid var(--border-color); cursor: pointer;">← Back to Dashboard</button>
+assets/js/views/dashboardView.js:2389: 🏢 -> <summary style="font-weight: 700; cursor: pointer; color: var(--text-primary);">🏢 Level 2: Main Inpatient Wing (Occupancy: 87.5% - 14 / 16 Beds)</summary>
+assets/js/views/dashboardView.js:2393: 📶 -> <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">📶 Level 3: Floor 1 (Critical Care - Occupancy: 100%)</summary>
+assets/js/views/dashboardView.js:2395: 🩺 -> <p style="font-weight: 600; color: var(--color-danger); margin-bottom: 0.25rem;">🩺 Level 4: ICU WARD</p>
+assets/js/views/dashboardView.js:2398: 🔴 🟢 -> const statusText = info.status === 'Occupied' ? `🔴 Occupied [Patient UHID: ${info.patientUhid}]` : '🟢 Vacant';
+assets/js/views/dashboardView.js:2411: 📶 -> <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">📶 Level 3: Floor 2 (General Medicine - Occupancy: 83%)</summary>
+assets/js/views/dashboardView.js:2413: 🩺 -> <p style="font-weight: 600; color: var(--primary); margin-bottom: 0.25rem;">🩺 Level 4: GENERAL WARD</p>
+assets/js/views/dashboardView.js:2416: 🔴 🟢 -> const statusText = info.status === 'Occupied' ? `🔴 Occupied [Patient: ${info.patientUhid}]` : '🟢 Vacant';
+assets/js/views/dashboardView.js:2429: 📶 -> <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">📶 Level 3: Floor 3 (Specialty Suites - Occupancy: 50%)</summary>
+assets/js/views/dashboardView.js:2431: 🩺 -> <p style="font-weight: 600; color: var(--color-purple); margin-bottom: 0.25rem;">🩺 Level 4: PRIVATE WARD</p>
+assets/js/views/dashboardView.js:2434: 🔴 🟢 -> const statusText = info.status === 'Occupied' ? `🔴 Occupied [Patient: ${info.patientUhid}]` : '🟢 Vacant';
+assets/js/views/dashboardView.js:2449: 🏢 -> <summary style="font-weight: 700; cursor: pointer; color: var(--text-primary);">🏢 Level 2: Emergency Wing Trauma Block (Occupancy: 50% - 2 / 4 Beds)</summary>
+assets/js/views/dashboardView.js:2451: 🩺 -> <p style="font-weight: 600; color: var(--color-danger); margin-bottom: 0.25rem;">🩺 Level 4: EMERGENCY BEDS</p>
+assets/js/views/dashboardView.js:2454: 🔴 🟢 -> const statusText = info.status === 'Occupied' ? `🔴 Occupied [Patient: ${info.patientUhid}]` : '🟢 Vacant';
+assets/js/views/dashboardView.js:2477: ← -> <button class="btn btn-secondary" onclick="router.navigate('dashboard-admin')" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; border: 1px solid var(--border-color); cursor: pointer;">← Back to Dashboard</button>
+assets/js/views/dashboardView.js:2489: 🫀 -> <summary style="font-weight: 700; cursor: pointer; color: var(--text-primary);">🫀 Level 2: Cardiology Department (42% Revenue Share - ₹${(totalRevenue*0.42).toLocaleString('en-IN', {maximumFractionDigits:0})})</summary>
+assets/js/views/dashboardView.js:2493: 🩺 -> <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">🩺 Level 3: Practitioner - Dr. Amit Verma</summary>
+assets/js/views/dashboardView.js:2496: 💰 -> <p style="font-weight: 600; margin-bottom: 0.25rem;">💰 Level 4: Revenue Streams</p>
+assets/js/views/dashboardView.js:2543: 🩹 -> <summary style="font-weight: 700; cursor: pointer; color: var(--text-primary);">🩹 Level 2: General Medicine Department (25% Revenue Share - ₹${(totalRevenue*0.25).toLocaleString('en-IN', {maximumFractionDigits:0})})</summary>
+assets/js/views/dashboardView.js:2546: 🩺 -> <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">🩺 Level 3: Practitioner - Dr. Rajesh</summary>
+assets/js/views/dashboardView.js:2548: 💰 -> <p style="font-weight: 600; margin-bottom: 0.25rem;">💰 Level 4: Revenue Streams</p>
+assets/js/views/registrationView.js:175: 🏥 -> <span>🏥</span> New Patient Registration
+assets/js/views/registrationView.js:185: ➕ -> <span>➕</span> Start New Patient Registration
+assets/js/views/registrationView.js:189: ⬅ -> <span>⬅</span> Back to Master Patient Registry
+assets/js/views/registrationView.js:207: 🎫 -> <h4 style="margin:0 0 1rem 0; font-weight:700;">🎫 Issue New Check-in Token</h4>
+assets/js/views/registrationView.js:394: 👤 -> <span class="kpi-icon" style="background-color: var(--primary-glow); color: var(--primary);">👤</span>
+assets/js/views/registrationView.js:401: ▲ -> <span class="kpi-trend up">▲ +12% this week</span>
+assets/js/views/registrationView.js:410: 🏥 -> <span class="kpi-icon" style="background-color: var(--color-success-bg); color: var(--color-success);">🏥</span>
+assets/js/views/registrationView.js:417: ▲ -> <span class="kpi-trend up">▲ 4 Checked in now</span>
+assets/js/views/registrationView.js:426: 🛏 ️ -> <span class="kpi-icon" style="background-color: var(--color-purple-bg); color: var(--color-purple);">🛏️</span>
+assets/js/views/registrationView.js:442: 🆔 -> <span class="kpi-icon" style="background-color: var(--color-info-bg); color: var(--color-info);">🆔</span>
+assets/js/views/registrationView.js:449: ▲ -> <span class="kpi-trend up">▲ +5% vs last month</span>
+assets/js/views/registrationView.js:458: 🎫 -> <span class="kpi-icon" style="background-color: var(--color-warning-bg); color: var(--color-warning);">🎫</span>
+assets/js/views/registrationView.js:465: ▼ -> <span class="kpi-trend down">▼ peak volume hour</span>
+assets/js/views/registrationView.js:474: ⏱ ️ -> <span class="kpi-icon" style="background-color: var(--color-info-bg); color: var(--color-info);">⏱️</span>
+assets/js/views/registrationView.js:481: ▲ -> <span class="kpi-trend up">▲ 98% SLA success</span>
+assets/js/views/registrationView.js:520: ⚠ ️ -> alert('⚠️ Input Required: You must specify a Name/UHID or Mobile number to check for duplicate records first.');
+assets/js/views/registrationView.js:539: 📝 -> if (formTab) formTab.textContent = '📝 2. Full Onboarding Form';
+assets/js/views/registrationView.js:540: ⚡ -> if (fastTab) fastTab.textContent = '⚡ 3. Emergency Fast-Track';
+assets/js/views/registrationView.js:546: ⚠ ️ -> <h5 style="margin: 0 0 0.5rem 0; font-weight:700;">⚠️ Potential Duplicate Records Found (${matches.length})</h5>
+assets/js/views/registrationView.js:560: ✓ -> <h5 style="margin: 0 0 0.25rem 0; font-weight:700;">✓ Duplicate Search Complete: No matches detected</h5>
+assets/js/views/registrationView.js:701: ✓ -> pinSuccess.textContent = `✓ Auto-filled: ${pinDb[pin].city}, ${pinDb[pin].state}`;
+assets/js/views/registrationView.js:707: ✗ -> pinSuccess.textContent = `✗ Pincode not in auto-fill db. Enter city/state manually.`;
+assets/js/views/registrationView.js:756: ✓ -> if (statusEl) statusEl.innerHTML = `<span style="color:var(--color-success); font-weight:bold;">✓ ${nextFile} (Scanned & Verified)</span>`;
+assets/js/views/registrationView.js:759: ✓ -> if (statusEl) statusEl.innerHTML = `<span style="color:var(--color-success); font-weight:bold;">✓ ${nextFile} (Scanned & Verified)</span>`;
+assets/js/views/registrationView.js:784: 📱 -> <span style="font-size: 2.5rem;">📱</span>
+assets/js/views/registrationView.js:816: ✓ -> abhaStatusBadge.innerHTML = `<span class="badge bg-success" style="color:white; padding:0.25rem 0.5rem; border-radius:4px; font-weight:700;">✓ ABDM VERIFIED & LINKED</span>`;
+assets/js/views/registrationView.js:833: ⚠ ️ -> alert('⚠️ Registration Consent is mandatory to onboarding a patient.');
+assets/js/views/registrationView.js:837: ⚠ ️ -> alert('⚠️ Privacy Consent is mandatory to onboarding a patient.');
+assets/js/views/registrationView.js:883: ⚠ ️ -> alert('⚠️ Policy Number and Member ID are required for Insurance payer type.');
+assets/js/views/registrationView.js:891: ⚠ ️ -> alert('⚠️ Company Name and Employee ID are required for Corporate payer type.');
+assets/js/views/registrationView.js:906: ⚠ ️ -> alert('⚠️ First name and Last name are required.');
+assets/js/views/registrationView.js:910: ⚠ ️ -> alert('⚠️ Date of Birth or Age is required.');
+assets/js/views/registrationView.js:914: ⚠ ️ -> alert('⚠️ Mobile Number is required.');
+assets/js/views/registrationView.js:918: ⚠ ️ -> alert('⚠️ Full Address (Address Line, City, State, Pincode) is required.');
+assets/js/views/registrationView.js:922: ⚠ ️ -> alert('⚠️ Emergency Contact Name and Mobile are required.');
+assets/js/views/registrationView.js:1064: 🎉 -> 🎉
+assets/js/views/registrationView.js:1087: 📅 -> 📅 Book Outpatient (OPD) Appointment
+assets/js/views/registrationView.js:1092: 🏥 -> 🏥 Admit to Inpatient (IPD) Bed
+assets/js/views/registrationView.js:1097: 🏷 ️ -> 🏷️ Print Admission Wristband & Stickers
+assets/js/views/registrationView.js:1166: ⚠ ️ -> <h4 class="modal-title" style="margin: 0; font-weight:700;">⚠️ Potential Duplicate Chart Detected</h4>
+assets/js/views/registrationView.js:1221: ⚠ ️ -> alert('⚠️ Input Required: Please provide an Operator justification reason before bypassing compliance warning.');
+assets/js/views/registrationView.js:1407: ✓ -> <span>✓</span>
+assets/js/views/registrationView.js:1464: ⚠ ️ -> alert('⚠️ First name and Last name are required.');
+assets/js/views/registrationView.js:1468: ⚠ ️ -> alert('⚠️ Date of Birth or Age is required.');
+assets/js/views/registrationView.js:1472: ⚠ ️ -> alert('⚠️ Mobile Number is required.');
+assets/js/views/registrationView.js:1476: ⚠ ️ -> alert('⚠️ Mobile Number must be exactly 10 digits.');
+assets/js/views/registrationView.js:1480: ⚠ ️ -> alert('⚠️ Preferred Consultant is required.');
+assets/js/views/registrationView.js:1492: ⚠ ️ -> alert('⚠️ Full Address (Address Line, City, State, Pincode) is required.');
+assets/js/views/registrationView.js:1496: ⚠ ️ -> alert('⚠️ Emergency Contact Name and Mobile are required.');
+assets/js/views/registrationView.js:1500: ⚠ ️ -> alert('⚠️ Emergency Mobile Number must be exactly 10 digits.');
+assets/js/views/registrationView.js:1509: ⚠ ️ -> alert('⚠️ Policy Number and Member ID are required for Insurance payer type.');
+assets/js/views/registrationView.js:1516: ⚠ ️ -> alert('⚠️ Company Name and Employee ID are required for Corporate payer type.');
+assets/js/views/registrationView.js:1555: ➡ ️ -> Next: Address & Emergency ➡️
+assets/js/views/registrationView.js:1561: ⬅ ️ -> ⬅️ Back: Patient Info
+assets/js/views/registrationView.js:1564: ➡ ️ -> Next: Payer Sponsor ➡️
+assets/js/views/registrationView.js:1570: ⬅ ️ -> ⬅️ Back: Address
+assets/js/views/registrationView.js:1573: ➡ ️ -> Next: Clinical & Referrals ➡️
+assets/js/views/registrationView.js:1579: ⬅ ️ -> ⬅️ Back: Payer Details
+assets/js/views/registrationView.js:1582: ➡ ️ -> Next: Attachments & Consents ➡️
+assets/js/views/registrationView.js:1588: ⬅ ️ -> ⬅️ Back: Clinical & Referrals
+assets/js/views/registrationView.js:1903: 📝 -> <button class="tab-btn ${window.activeRegTab === 'search' ? 'active' : ''}" id="tab-btn-search" onclick="switchRegTab('search')" style="background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'search' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 700; cursor: pointer; color: ${window.activeRegTab === 'search' ? 'var(--primary)' : 'var(--text-secondary)'};">📝 1. Basic Details</button>
+assets/js/views/registrationView.js:1904: 📝 🔒 -> <button class="tab-btn ${window.activeRegTab === 'form' ? 'active' : ''}" id="tab-btn-form" onclick="switchRegTab('form')" style="background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'form' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'form' ? 'var(--primary)' : 'var(--text-secondary)'};" ${window.searchPerformed ? '' : 'disabled'}>📝 2. Full Onboarding Form ${window.searchPerformed ? '' : '🔒'}</button>
+assets/js/views/registrationView.js:1905: ⚡ 🔒 -> <button class="tab-btn ${window.activeRegTab === 'fast' ? 'active' : ''}" id="tab-btn-fast" onclick="switchRegTab('fast')" style="display: none; background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'fast' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'fast' ? 'var(--primary)' : 'var(--text-secondary)'};" ${window.searchPerformed ? '' : 'disabled'}>⚡ 3. Emergency Fast-Track ${window.searchPerformed ? '' : '🔒'}</button>
+assets/js/views/registrationView.js:1906: 🏷 ️ -> <button class="tab-btn ${window.activeRegTab === 'stickers' ? 'active' : ''}" id="tab-btn-stickers" onclick="switchRegTab('stickers')" style="display: none; background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'stickers' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'stickers' ? 'var(--primary)' : 'var(--text-secondary)'};">🏷️ 4. Sticker & Wristbands</button>
+assets/js/views/registrationView.js:1907: 🎫 -> <button class="tab-btn ${window.activeRegTab === 'queue' ? 'active' : ''}" id="tab-btn-queue" onclick="switchRegTab('queue')" style="display: none; background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'queue' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'queue' ? 'var(--primary)' : 'var(--text-secondary)'};">🎫 5. Token Queue Desk</button>
+assets/js/views/registrationView.js:1908: 📜 -> <button class="tab-btn ${window.activeRegTab === 'audit' ? 'active' : ''}" id="tab-btn-audit" onclick="switchRegTab('audit')" style="display: none; background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'audit' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'audit' ? 'var(--primary)' : 'var(--text-secondary)'};">📜 6. Compliance Logs</button>
+assets/js/views/registrationView.js:1917: 📝 -> <span>📝</span> Basic Details Search & Duplicate Check
+assets/js/views/registrationView.js:1935: 🔍 -> <button type="button" class="btn btn-primary" onclick="performPatientSearch()" style="width:100%; height:40px;">🔍 Run Duplicate Verification Check</button>
+assets/js/views/registrationView.js:1974: 📝 -> 📝
+assets/js/views/registrationView.js:1984: ✍ ️ -> <span>✍️</span> Register New Patient
+assets/js/views/registrationView.js:2119: ⚡ -> <span class="badge bg-warning" style="color:#000; padding:0.25rem 0.5rem; border-radius:4px; font-weight:700;">⚡ ABDM UNLINKED (OTP PENDING)</span>
+assets/js/views/registrationView.js:2297: 👤 -> 👤
+assets/js/views/registrationView.js:2300: 📸 -> <button type="button" class="btn btn-sm btn-secondary" onclick="triggerWebcamSim()" style="margin-bottom:0.35rem;">📸 Capture Webcam</button>
+assets/js/views/registrationView.js:2310: 📄 -> <button type="button" class="btn btn-sm btn-outline" onclick="triggerDocUploadSim('ID Proof')">📄 Scan Aadhaar / Passport</button>
+assets/js/views/registrationView.js:2320: 💳 -> <button type="button" class="btn btn-sm btn-outline" onclick="triggerDocUploadSim('Insurance Card')">💳 Scan Insurance Card</button>
+assets/js/views/registrationView.js:2366: ⚡ -> <h3 class="card-title" style="color: var(--color-danger); margin: 0;">⚡ Emergency Fast-Track Registration</h3>
+assets/js/views/registrationView.js:2507: 🎫 -> <button type="button" class="btn btn-primary" onclick="triggerNewTokenDialog()">🎫 Issue New Queue Token</button>
+assets/js/views/patientsView.js:208: 🔍 -> <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.82rem; color: var(--text-muted);">🔍</span>
+assets/js/views/patientsView.js:267: 🔳 -> <button class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 0.25rem; height: 28px; border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);"><span style="font-size: 0.7rem; color: #9ca3af;">🔳</span> Columns</button>
+assets/js/views/patientsView.js:462: ⚠ ️ -> if (a === 'Critical') { bg = '#fef2f2'; color = '#dc2626'; border = '1px solid #fca5a5'; prefix = '⚠️ '; }
+assets/js/views/patientsView.js:571: • • • -> <button class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.78rem; border-radius: 6px; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary); height: 28px; line-height: 1;" onclick="alert('Menu actions for ${p.uhid}')">•••</button>
+assets/js/views/patientsView.js:1167: ─ ─ ─ ─ -> <!-- ── TOP: HORIZONTAL COLLAPSIBLE PATIENT DETAILS BAR ── -->
+assets/js/views/patientsView.js:1180: ⚠ -> ${patient.isCritical || patient.vitals?.pain > 7 ? '<span class="badge b-re">⚠ High Risk</span>' : ''}
+assets/js/views/patientsView.js:1181: 🚨 -> ${isMlc ? '<span class="badge b-re">🚨 MLC Case</span>' : ''}
+assets/js/views/patientsView.js:1189: ▼ -> <button id="toggle-details-btn-el" class="btn-g btn-xs" style="font-weight:600;border-color:#2563eb;color:#2563eb" onclick="window.togglePatientDetailsExpand()">▼ Show Details</button>
+assets/js/views/patientsView.js:1195: 🩺 -> ${(!isIpd && state.activeUserRole === 'Doctor') ? `<button class="btn-p btn-xs" style="background-color: #10b981;" onclick="router.navigate('emr?uhid=${patient.uhid}')">🩺 Consult Now</button>` : ''}
+assets/js/views/patientsView.js:1196: 📋 -> <button class="btn-p btn-xs" onclick="window.openActionModal('add-note', '${patient.uhid}')">📋 Add Note</button>
+assets/js/views/patientsView.js:1198: 💊 -> <button class="btn-g btn-xs" onclick="window.openActionModal('create-rx', '${patient.uhid}')">💊 Prescribe</button>
+assets/js/views/patientsView.js:1199: 🔬 -> <button class="btn-g btn-xs" onclick="window.openActionModal('order-lab', '${patient.uhid}')">🔬 Order Lab</button>
+assets/js/views/patientsView.js:1200: 💀 -> <button class="btn-g btn-xs" onclick="window.openActionModal('order-rad', '${patient.uhid}')">💀 Order Radiology</button>
+assets/js/views/patientsView.js:1201: 🪡 -> <button class="btn-g btn-xs" onclick="window.openActionModal('order-proc', '${patient.uhid}')">🪡 Request Procedure</button>
+assets/js/views/patientsView.js:1203: 📂 -> <button class="btn-g btn-xs" onclick="window.openActionModal('upload-doc', '${patient.uhid}')">📂 Upload Document</button>
+assets/js/views/patientsView.js:1205: 📅 -> <button class="btn-g btn-xs" onclick="window.openActionModal('book-appt', '${patient.uhid}')">📅 Book Follow-up</button>
+assets/js/views/patientsView.js:1206: 🏥 -> <button class="btn-g btn-xs" onclick="window.openActionModal('admit', '${patient.uhid}')">🏥 Admit Patient</button>
+assets/js/views/patientsView.js:1255: 🚪 -> <div style="font-size:13px; font-weight:600; color:#991b1b; display:flex; align-items:center; gap:5px">🚪 Discharge Clearance Status:</div>
+assets/js/views/patientsView.js:1271: ─ ─ ─ ─ -> <!-- ── BOTTOM: TAB WORKSPACE PANEL ── -->
+assets/js/views/patientsView.js:1334: ▲ -> ? '▲ Hide Details'
+assets/js/views/patientsView.js:1335: ▼ -> : '▼ Show Details';
+assets/js/views/patientsView.js:1421: 👤 -> { date: '2026-06-15 09:15 AM', icon: '👤', title: 'Registration Onboard', desc: 'Registered in EMR. UHID: ' + patient.uhid },
+assets/js/views/patientsView.js:1422: 🩺 -> { date: '2026-06-15 10:00 AM', icon: '🩺', title: 'Outpatient Consultation Visit', desc: 'Consulted with Dr. Abhishek Kumar for Chief Complaint of ' + patient.clinicalData.complaint },
+assets/js/views/patientsView.js:1423: 🧪 -> { date: '2026-06-15 10:15 AM', icon: '🧪', title: 'Diagnostics Lab Order', desc: 'CBC and LFT lab blood work ordered.' },
+assets/js/views/patientsView.js:1424: 🏥 -> { date: '2026-06-16 09:00 AM', icon: '🏥', title: 'Admissions coordinates shift', desc: 'Admitted as Inpatient under Consultant ' + patient.primaryConsultant },
+assets/js/views/patientsView.js:1425: 💀 -> { date: '2026-06-16 11:30 AM', icon: '💀', title: 'Radiology Scan Completed', desc: 'Chest X-Ray PA View completed in PACS radiology center' },
+assets/js/views/patientsView.js:1426: 🌡 ️ -> { date: '2026-06-17 08:30 AM', icon: '🌡️', title: 'Vitals Logged', desc: 'Recorded Vitals: BP: ' + patient.vitals.bp + ' | HR: ' + patient.vitals.hr + ' bpm | SpO2: ' + patient.vitals.spo2 + '%' }
+assets/js/views/patientsView.js:1455: ⬇ -> <button class="btn-g" onclick="alert('Exporting timeline report...')">⬇ Export</button>
+assets/js/views/patientsView.js:1466: ⚠ 🚨 -> if (e.icon === '⚠' || e.icon === '🚨') dotColor = '#dc2626';
+assets/js/views/patientsView.js:1467: 💊 -> else if (e.icon === '💊') dotColor = '#10b981';
+assets/js/views/patientsView.js:1468: 📋 📝 -> else if (e.icon === '📋' || e.icon === '📝') dotColor = '#8b5cf6';
+assets/js/views/patientsView.js:1469: 🔬 🧪 -> else if (e.icon === '🔬' || e.icon === '🧪') dotColor = '#0891b2';
+assets/js/views/patientsView.js:1470: 🩻 💀 -> else if (e.icon === '🩻' || e.icon === '💀') dotColor = '#f59e0b';
+assets/js/views/patientsView.js:1471: 🛏 ️ 🏥 🔄 -> else if (e.icon === '🛏️' || e.icon === '🏥' || e.icon === '🔄') dotColor = '#7c3aed';
+assets/js/views/patientsView.js:1475: 📝 -> <div class="tl-dot" style="background:${dotColor}">${e.icon || '📝'}</div>
+assets/js/views/patientsView.js:1496: ⚠ -> patient.allergies.split(',').map(a => `<span class="allergy-tag">⚠ ${a.trim()}</span>`).join('') :
+assets/js/views/patientsView.js:1518: • • -> ${patient.history.pastConditions ? patient.history.pastConditions.split('\n').map(c => `• ${c}`).join('<br>') : '• None reported'}
+assets/js/views/patientsView.js:1524: • • -> ${patient.history.surgeries ? patient.history.surgeries.split('\n').map(s => `• ${s}`).join('<br>') : '• None reported'}
+assets/js/views/patientsView.js:1530: • • • -> ${patient.history.familyHistory ? patient.history.familyHistory.split('\n').map(f => `• ${f}`).join('<br>') : '• Father: MI at 52 yrs (deceased)<br>• Mother: T2DM, Hypertension'}
+assets/js/views/patientsView.js:1536: • -> • Non-smoker<br>
+assets/js/views/patientsView.js:1537: • -> • Occasional alcohol<br>
+assets/js/views/patientsView.js:1538: • -> • Sedentary lifestyle
+assets/js/views/patientsView.js:1594: ₂ -> <div class="vital-label">SpO₂</div>
+assets/js/views/patientsView.js:1622: ₂ -> <thead><tr><th>Date / Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO₂</th><th>RR</th><th>Recorded By</th></tr></thead>
+assets/js/views/patientsView.js:1762: ↑ -> <td><span class="badge ${patient.vitals.temp > 100 || patient.name.includes('Rajesh') ? 'b-re' : 'b-gr'}">${patient.vitals.temp > 100 || patient.name.includes('Rajesh') ? 'Critical ↑' : 'Normal'}</span></td>
+assets/js/views/patientsView.js:1771: ↑ -> <td><span class="badge ${patient.vitals.temp > 100 || patient.name.includes('Rajesh') ? 'b-am' : 'b-gr'}">${patient.vitals.temp > 100 || patient.name.includes('Rajesh') ? 'High ↑' : 'Normal'}</span></td>
+assets/js/views/patientsView.js:1780: ↑ -> <td><span class="badge b-am">Borderline ↑</span></td>
+assets/js/views/patientsView.js:1789: ↑ -> <td><span class="badge b-am">High ↑</span></td>
+assets/js/views/patientsView.js:1851: 💊 -> <td class="fw6" style="font-weight:600">💊 ${p.drug}</td>
+assets/js/views/patientsView.js:1946: 🔁 -> <button class="btn btn-p btn-xs" onclick="window.initiatePatientTransfer('${patient.uhid}')">🔁 Transfer Bed</button>
+assets/js/views/patientsView.js:1947: 🛏 ️ -> <button class="btn btn-g btn-xs" onclick="window.initiatePatientTransfer('${patient.uhid}')">🛏️ Change Ward</button>
+assets/js/views/patientsView.js:1953: → -> <div style="display:flex;align-items:center;gap:8px"><span class="badge b-re">Emergency Resus 1</span><span style="color:#94a3b8">→</span><span class="badge b-pu">${admission.ward} · Bed ${admission.bed}</span></div>
+assets/js/views/patientsView.js:1960: 🏥 -> ${patient.type !== 'IPD' ? `<div style="margin-top:8px;"><button class="btn-p btn-xs" onclick="window.openActionModal('admit', '${patient.uhid}')">🏥 Admit Patient</button></div>` : ''}
+assets/js/views/patientsView.js:1969: 🚪 -> <span class="card-title" style="color:#dc2626; font-weight:700;">🚪 Patient Discharge Workflow</span>
+assets/js/views/patientsView.js:2074: 💵 -> <button class="btn-p" onclick="window.openActionModal('collect-pay', '${patient.uhid}')">💵 Collect Payment</button>
+assets/js/views/patientsView.js:2150: 📁 -> <td class="fw6" style="font-weight:600">📁 ${d.name}</td>
+assets/js/views/patientsView.js:2546: ₂ -> <label class="form-label">SpO₂ (%)</label>
+assets/js/views/patientsView.js:2670: 🖨 ️ -> <button class="btn btn-primary" onclick="window.executePatientAction('print-docs', '${uhid}')">🖨️ Send Print</button>
+assets/js/views/patientsView.js:2718: 🩺 -> icon: '🩺',
+assets/js/views/patientsView.js:2744: 📝 -> icon: '📝',
+assets/js/views/patientsView.js:2769: 🔍 -> icon: '🔍',
+assets/js/views/patientsView.js:2792: 💊 -> icon: '💊',
+assets/js/views/patientsView.js:2829: 🧪 -> icon: '🧪',
+assets/js/views/patientsView.js:2861: 🪡 -> icon: '🪡',
+assets/js/views/patientsView.js:2927: 📅 -> icon: '📅',
+assets/js/views/patientsView.js:2966: 🏥 -> icon: '🏥',
+assets/js/views/patientsView.js:3010: 🌡 ️ -> icon: '🌡️',
+assets/js/views/patientsView.js:3012: ₂ -> desc: `BP: ${patient.vitals.bp} | HR: ${patient.vitals.hr} bpm | Temp: ${patient.vitals.temp} °F | SpO₂: ${patient.vitals.spo2}% | RR: ${patient.vitals.rr}/min`
+assets/js/views/patientsView.js:3015: ₂ ₂ -> descText = `Recorded vitals: Temp: ${temp} °F | Pulse: ${hr} bpm | BP: ${bp} | RR: ${rr}/min | SpO₂: ${spo2}% | Wt: ${weight} kg | Pain: ${pain}/10 | BS: ${sugar} mg/dL | Urine: ${urine} mL | O₂: ${oxygen}`;
+assets/js/views/patientsView.js:3037: 📄 -> icon: '📄',
+assets/js/views/patientsView.js:3073: 💵 -> icon: '💵',
+assets/js/views/patientsView.js:3096: 💰 -> icon: '💰',
+assets/js/views/patientsView.js:3112: 🖨 ️ -> icon: '🖨️',
+assets/js/views/patientsView.js:3136: ✓ -> ✓
+assets/js/views/patientsView.js:3268: 📝 -> <strong>📝 Note (${n.type}) - ${n.date}</strong>
+assets/js/views/patientsView.js:3281: 💊 -> <strong>💊 Prescription: ${p.drug}</strong>
+assets/js/views/patientsView.js:3294: 🧪 -> <strong>🧪 Diagnostic Order: ${o.name}</strong>
+assets/js/views/patientsView.js:3449: 🚪 -> title.innerText = `🚪 Discharge Inpatient: ${patient.name}`;
+assets/js/views/patientsView.js:3458: ⚠ ️ -> <strong>⚠️ Outstanding Billing Balance: ₹${outstandingBal.toLocaleString('en-IN')}</strong><br>
+assets/js/views/patientsView.js:3465: 🟢 -> <strong>🟢 Financial Cleared: No Outstanding Balance</strong><br>
+assets/js/views/patientsView.js:3487: ⚠ ️ -> ⚠️ Biohazard/Infectious Risk (Requires specialized Infection Control Cleaning)
+assets/js/views/patientsView.js:3830: ⚠ ️ -> <strong>⚠️ Duplicate Alert:</strong> <span id="duplicate-warning-text"></span>
+assets/js/views/patientsView.js:4103: ▼ -> ${isPanel ? `<span style="cursor:pointer; color:var(--primary); margin-right:0.25rem;" onclick="togglePanelExpand('${test.code}')">▼</span>` : ''}
+assets/js/views/patientsView.js:4623: 💀 -> icon: '💀',
+assets/js/views/patientsView.js:4676: 🔄 -> icon: '🔄',
+assets/js/views/patientsView.js:4703: ❌ -> icon: '❌',
+assets/js/views/billingView.js:58: 💳 -> 💳 Select an invoice from the registry to view details and settle payments.
+assets/js/views/billingView.js:208: ✅ -> ✅ Fully Settled (Receipt Printed)
+assets/js/views/adminViews.js:13: 👥 -> <button class="btn ${activeTab === 'employees' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('admin-employees')">👥 Hospital Directory</button>
+assets/js/views/adminViews.js:14: 🔑 -> <button class="btn ${activeTab === 'roles' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('admin-roles')">🔑 Role Access Matrix</button>
+assets/js/views/adminViews.js:15: 📈 -> <button class="btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('admin-reports')">📈 Analytics & Reports</button>
+assets/js/views/adminViews.js:103: ✓ ✓ ✓ ✓ ✓ ✓ ✓ -> { role: 'System Admin', dashboard: '✓', registration: '✓', clinical: '✓', financial: '✓', diagnostics: '✓', support: '✓', admin: '✓' },
+assets/js/views/adminViews.js:104: ✓ ✓ ✓ -> { role: 'Consultant Doctor', dashboard: '✓', registration: 'x', clinical: '✓', financial: 'x', diagnostics: '✓', support: 'x', admin: 'x' },
+assets/js/views/adminViews.js:105: ✓ ✓ -> { role: 'Front Desk / Registry', dashboard: 'x', registration: '✓', clinical: 'x', financial: '✓', diagnostics: 'x', support: 'x', admin: 'x' },
+assets/js/views/adminViews.js:106: ✓ -> { role: 'Billing Operator', dashboard: 'x', registration: 'x', clinical: 'x', financial: '✓', diagnostics: 'x', support: 'x', admin: 'x' },
+assets/js/views/adminViews.js:107: ✓ -> { role: 'Lab Pathologist', dashboard: 'x', registration: 'x', clinical: 'x', financial: 'x', diagnostics: '✓', support: 'x', admin: 'x' },
+assets/js/views/adminViews.js:108: ✓ -> { role: 'Support Staff', dashboard: 'x', registration: 'x', clinical: 'x', financial: 'x', diagnostics: 'x', support: '✓', admin: 'x' }
+assets/js/views/adminViews.js:137: ✓ -> <td style="color: ${r.dashboard === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.dashboard}</td>
+assets/js/views/adminViews.js:138: ✓ -> <td style="color: ${r.registration === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.registration}</td>
+assets/js/views/adminViews.js:139: ✓ -> <td style="color: ${r.clinical === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.clinical}</td>
+assets/js/views/adminViews.js:140: ✓ -> <td style="color: ${r.financial === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.financial}</td>
+assets/js/views/adminViews.js:141: ✓ -> <td style="color: ${r.diagnostics === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.diagnostics}</td>
+assets/js/views/adminViews.js:142: ✓ -> <td style="color: ${r.support === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.support}</td>
+assets/js/views/adminViews.js:143: ✓ -> <td style="color: ${r.admin === '✓' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: bold;">${r.admin}</td>
+assets/js/views/patientTransferView.js:214: 🔍 -> <h4 style="margin: 0; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">🔍 Select Patient to Transfer</h4>
+assets/js/views/patientTransferView.js:222: 🔎 -> <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted);">🔎</span>
+assets/js/views/patientTransferView.js:376: 🔄 -> <h4 style="margin: 0; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">🔄 Transfer Patient: ${patient.name}</h4>
+assets/js/views/patientTransferView.js:396: 📍 -> <div style="font-size: 0.82rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--primary);">📍 Destination Location (Transfer To)</div>
+assets/js/views/patientTransferView.js:478: ➡ ️ -> <button id="transfer-proceed-btn" class="btn btn-primary" style="padding: 0.35rem 1.75rem; font-size: 0.82rem; font-weight: bold;" disabled onclick="window.proceedToTransferReview()">Review Transfer ➡️</button>
+assets/js/views/patientTransferView.js:706: 📋 -> <h4 style="margin: 0; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">📋 Review Patient Transfer Summary</h4>
+assets/js/views/patientTransferView.js:736: ➡ ️ -> <div style="font-size: 1.25rem; color: var(--text-muted); font-weight: bold;">➡️</div>
+assets/js/views/patientTransferView.js:750: ⬅ ️ -> <button class="btn btn-secondary" style="padding: 0.35rem 1.25rem; font-size: 0.82rem;" onclick="window.backToCompactTransferEdit()">⬅️ Back to Edit</button>
+assets/js/views/patientTransferView.js:751: 🔄 -> <button class="btn btn-primary" style="padding: 0.35rem 1.75rem; font-size: 0.82rem; font-weight: bold; background-color: var(--color-success); border-color: var(--color-success);" onclick="window.executeCompactTransferWorkflow()">Confirm Transfer Now 🔄</button>
+assets/js/views/patientTransferView.js:849: 🔄 -> icon: '🔄',
+assets/js/views/patientTransferView.js:915: ✓ -> <h4 style="margin: 0; font-weight: 700; color: var(--color-success); display: flex; align-items: center; gap: 0.5rem;">✓ Transfer Executed Successfully</h4>
+assets/js/views/patientTransferView.js:921: ✓ -> ✓
+assets/js/views/patientTransferView.js:940: ➡ ️ -> <div style="font-size: 1rem; color: var(--text-muted);">➡️</div>
+assets/js/views/patientTransferView.js:951: 🖨 ️ -> <button class="btn btn-secondary" onclick="window.printTransferHandoffReceipt()" style="font-size: 0.82rem; padding: 0.35rem 1.25rem;">🖨️ Print Slip</button>
+assets/js/views/patientTransferView.js:975: 🏢 -> <div>🏢 <strong>Bed Board & ATD</strong>: Click on any occupied bed and choose <strong>Transfer Bed</strong>.</div>
+assets/js/views/patientTransferView.js:976: 👤 -> <div>👤 <strong>Patient Profile (360°)</strong>: Click on <strong>Transfer Bed</strong> under Bed Details.</div>
+assets/js/views/patientTransferView.js:979: ➡ ️ -> Go to Bed Board & ATD ➡️
+assets/js/views/ruleManagerView.js:236: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: No drug-allergy conflict found.';
+assets/js/views/ruleManagerView.js:248: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: Blood groups are ABO compatible.';
+assets/js/views/ruleManagerView.js:256: ⚠ ️ -> resultDiv.innerText = `⚠️ DUPLICATE FOUND: Similarity: ${check.score}% | Match criteria: ${check.reasons.join(', ')}`;
+assets/js/views/ruleManagerView.js:260: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: Unique demographic details.';
+assets/js/views/ruleManagerView.js:273: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: Stable vitals (NEWS2 score < 5).';
+assets/js/views/ruleManagerView.js:285: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: No drug interactions detected.';
+assets/js/views/ruleManagerView.js:311: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: Bed status update allowed.';
+assets/js/views/ruleManagerView.js:316: ✅ -> resultDiv.innerText = '✅ SANDBOX RULE PASSED: No validation exceptions encountered.';
+assets/js/views/emergencyView.js:27: 🚨 -> <div style="font-size: 1.5rem; margin: 0.25rem 0;">🚨</div>
+assets/js/views/emrView.js:118: ⌘ -> // Global ⌘ K / Ctrl K focus hotkey
+assets/js/views/emrView.js:403: 🔍 -> <span style="position: absolute; left: 24px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--text-muted);">🔍</span>
+assets/js/views/emrView.js:404: ⌘ -> <input type="text" id="emr-sidebar-search" placeholder="Search (⌘K)" value="${window.emrSearchQuery || ''}" oninput="window.sidebarSearch(this.value)" style="width: 100%; padding: 0.4rem 2rem 0.4rem 2.2rem; font-size: 0.8rem; height: 34px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-primary);">
+assets/js/views/emrView.js:405: ⌘ -> <span style="position: absolute; right: 24px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; font-weight: 600; color: var(--text-muted); background: var(--border-color); padding: 2px 4px; border-radius: 4px;">⌘K</span>
+assets/js/views/emrView.js:432: • -> <span>${p.uhid} • ${p.age}Y/F</span>
+assets/js/views/emrView.js:447: 🩺 -> <span style="font-size: 3rem; margin-bottom: 1rem;">🩺</span>
+assets/js/views/emrView.js:464: 🚨 -> ${hasActiveSepsisAlert ? `<span class="badge" style="background-color: var(--color-danger); color: #fff; font-size: 0.75rem; border-radius: 4px; padding: 0.15rem 0.4rem; margin-left: 0.5rem; vertical-align: middle;">🚨 CRITICAL SEPSIS RISK</span>` : ''}
+assets/js/views/emrView.js:477: ← -> <button class="btn btn-secondary" onclick="window.showConsultationExitModal('emr?uhid=${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">← Back to Dashboard</button>
+assets/js/views/emrView.js:478: 👁 ️ -> <button class="btn btn-secondary" onclick="window.previewConsultation('${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">👁️ Preview</button>
+assets/js/views/emrView.js:479: 🖨 ️ -> <button class="btn btn-secondary" onclick="window.printConsultation('${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">🖨️ Print</button>
+assets/js/views/emrView.js:481: 💾 -> <button class="btn btn-primary" onclick="window.saveConsultation('${patient.uhid}')" style="background-color: #10b981; border: none; font-weight: 700; padding: 0.4rem 0.8rem; color: #fff;">💾 Save Consultation</button>
+assets/js/views/emrView.js:486: 🩺 🩺 -> ${patient.status === 'Paused' ? '🩺 Resume Consultation' : '🩺 Start Consultation'}
+assets/js/views/emrView.js:488: 📜 -> <button class="btn btn-secondary" onclick="alert('Certificate created successfully.')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">📜 Certificate</button>
+assets/js/views/emrView.js:490: 📅 -> <button class="btn btn-secondary" onclick="alert('Follow up scheduled.')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">📅 Follow up</button>
+assets/js/views/emrView.js:503: 🤰 -> <h4>🤰 Ante-Natal Care (ANC) Card</h4>
+assets/js/views/emrView.js:527: 🩸 -> <h4 style="margin: 0;">🩸 Menstrual History</h4>
+assets/js/views/emrView.js:551: 🗂 ️ -> <h4 style="margin: 0;">🗂️ Obstetric History</h4>
+assets/js/views/emrView.js:561: ⚠ ️ -> ${oh.complications !== 'None' ? `<span style="color: #dc2626; font-size: 0.7rem; font-weight: 600;">⚠️ ${oh.complications}</span>` : ''}
+assets/js/views/emrView.js:570: 💊 -> <h4 style="margin: 0;">💊 Prescription History</h4>
+assets/js/views/emrView.js:593: 📁 -> <h4 style="margin: 0;">📁 Files & Images (Attachments)</h4>
+assets/js/views/emrView.js:602: 📄 -> <span style="font-size: 1.25rem;">📄</span>
+assets/js/views/emrView.js:617: 📊 -> <h4 style="margin: 0;">📊 Medical Reports</h4>
+assets/js/views/emrView.js:638: 📈 -> <h4 style="margin: 0;">📈 Vitals History Table</h4>
+assets/js/views/emrView.js:670: 🔬 -> <h4 style="margin: 0;">🔬 Investigations History</h4>
+assets/js/views/emrView.js:691: 📜 -> <h4 style="margin: 0;">📜 Allergies & Medical History</h4>
+assets/js/views/emrView.js:727: ▼ -> <span style="font-size: 0.8rem; color: var(--text-muted);">▼</span>
+assets/js/views/emrView.js:860: 🩺 -> <span>🩺</span> Clinical Consultation
+assets/js/views/emrView.js:905: 🌡 ️ -> <span class="vital-icon">🌡️</span>
+assets/js/views/emrView.js:912: ❤ ️ -> <span class="vital-icon">❤️</span>
+assets/js/views/emrView.js:919: 🩺 -> <span class="vital-icon">🩺</span>
+assets/js/views/emrView.js:926: 💨 -> <span class="vital-icon">💨</span>
+assets/js/views/emrView.js:933: 🔵 -> <span class="vital-icon">🔵</span>
+assets/js/views/emrView.js:940: ⚖ ️ -> <span class="vital-icon">⚖️</span>
+assets/js/views/emrView.js:947: ⚡ -> <span class="vital-icon">⚡</span>
+assets/js/views/emrView.js:954: 🍭 -> <span class="vital-icon">🍭</span>
+assets/js/views/emrView.js:961: 💧 -> <span class="vital-icon">💧</span>
+assets/js/views/emrView.js:968: 😷 -> <span class="vital-icon">😷</span>
+assets/js/views/emrView.js:1040: ⚠ ️ -> <strong style="color: var(--color-danger); display: block; margin-bottom: 0.25rem;">⚠️ Drug & Food Allergies:</strong>
+assets/js/views/emrView.js:1070: 🔁 -> <h4 class="drawer-title">🔁 Alternatives & CDSS Recommendation</h4>
+assets/js/views/emrView.js:1484: ➜ -> <span>➜</span>
+assets/js/views/emrView.js:1501: ⚠ ️ -> <h4 class="modal-title" style="margin: 0; font-weight: 700; color: var(--text-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem;">⚠️ Medication Unavailable</h4>
+assets/js/views/emrView.js:1666: ▼ -> <span style="font-size: 0.7rem; color: var(--text-muted);">▼</span>
+assets/js/views/emrView.js:1672: 🔍 -> <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-muted);">🔍</span>
+assets/js/views/emrView.js:1712: ▼ -> <span style="font-size: 0.7rem; color: var(--text-muted);">▼</span>
+assets/js/views/emrView.js:1718: 🔍 -> <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-muted);">🔍</span>
+assets/js/views/emrView.js:1737: ▼ -> chevron.innerText = '▼';
+assets/js/views/emrView.js:1740: ▲ -> chevron.innerText = '▲';
+assets/js/views/emrView.js:2318: ⚠ ️ -> <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ JCI Clinical Safety Warning</h4>
+assets/js/views/emrView.js:2327: 🚨 ⚠ ️ -> ${message.replace('🚨 DRUG-ALLERGY CONFLICT:\n', '').replace('⚠️ THERAPEUTIC DUPLICATION ALERT:\n', '')}
+assets/js/views/emrView.js:2371: 🚨 -> <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">🚨 Sepsis Safety Alert (NEWS2 Score: ${score})</h4>
+assets/js/views/emrView.js:2380: 🚨 -> ${message.replace('🚨 CRITICAL SAFETY ALERT: SEPSIS RISK (NEWS2 Score: ' + score + ')\n', '')}
+assets/js/views/emrView.js:2561: 🔴 🟡 🟢 -> const stockDot = drugObj.stock === 0 ? '🔴' : (drugObj.stock <= drugObj.minStock ? '🟡' : '🟢');
+assets/js/views/emrView.js:2607: ⚠ ️ -> <strong>⚠️ Clinical Safety Alert for ${drugObj.brandName}:</strong>
+assets/js/views/emrView.js:2641: 🔴 🟡 🟢 -> const altStockDot = alt.stock === 0 ? '🔴' : (alt.stock <= alt.minStock ? '🟡' : '🟢');
+assets/js/views/emrView.js:2649: ⚠ ️ -> <strong>⚠️ Clinical Alert:</strong> ${altValidation.message.split('\n')[0]}
+assets/js/views/emrView.js:2780: ⚠ ️ -> <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ JCI Inventory Stock Override</h4>
+assets/js/views/emrView.js:2863: 🔴 🟡 🟢 -> const stockDot = item.stock === 0 ? '🔴' : (item.stock <= item.minStock ? '🟡' : '🟢');
+assets/js/views/emrView.js:2867: ⚠ ️ -> expiryWarning = `<span style="color: var(--color-danger); font-weight: 600; margin-left: 0.5rem;">⚠️ Near Expiry</span>`;
+assets/js/views/emrView.js:2914: 🔴 🟢 -> const stockDot = totalStock === 0 ? '🔴' : '🟢';
+assets/js/views/emrView.js:2919: 🧬 -> <span class="autocomplete-brand-name" style="color: var(--primary); font-weight: 700;">🧬 ${key}</span>
+assets/js/views/emrView.js:2923: • -> Active Ingredients: ${items[0].saltComposition} • Click to compare ${totalBrands} brand alternatives
+assets/js/views/emrView.js:3000: ⚠ ️ -> <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ Leave Consultation?</h4>
+assets/js/views/emrView.js:3020: ⏸ ️ -> ⏸️ Pause Consultation (Save Temp State)
+assets/js/views/emrView.js:3023: 🚪 -> 🚪 Exit & Abandon Changes
+assets/js/views/atdView.js:59: ⏱ ️ -> <span>⏱️ <strong>Housekeeping SLA Target:</strong></span>
+assets/js/views/atdView.js:95: 🧹 -> <h3 class="card-title" style="font-size: 0.95rem; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">🧹 Housekeeping Worklist</h3>
+assets/js/views/atdView.js:109: 📜 -> <h3 class="card-title" style="font-size: 0.95rem; margin: 0; font-weight: 700;">📜 Bed Occupancy & Movement Audit Trail</h3>
+assets/js/views/atdView.js:185: ⏱ ️ -> ⏱️ ${diffMins} min${diffMins !== 1 ? 's' : ''} ago
+assets/js/views/atdView.js:195: 🛏 ️ -> <span class="bed-icon">🛏️</span>
+assets/js/views/atdView.js:218: ⚠ ️ -> breachCounterDiv.innerHTML = `⚠️ ${slaBreachCount} Housekeeping SLA Breach${slaBreachCount > 1 ? 'es' : ''} Detected!`;
+assets/js/views/atdView.js:241: ✔ ️ -> <span style="font-size: 1.5rem;">✔️</span>
+assets/js/views/atdView.js:264: 🧼 -> actionButtonHTML = `<button class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.25rem 0.5rem; width: 100%;" onclick="startCleaningTask('${task.taskId}')">🧼 Start Cleaning</button>`;
+assets/js/views/atdView.js:266: ✔ ️ -> actionButtonHTML = `<button class="btn btn-success" style="font-size: 0.72rem; padding: 0.25rem 0.5rem; width: 100%;" onclick="completeCleaningTask('${task.taskId}')">✔️ Complete Cleaning</button>`;
+assets/js/views/atdView.js:279: ⏱ ️ -> ⏱️ Elapsed: ${elapsedMins} min${elapsedMins !== 1 ? 's' : ''} ${isBreached ? '(SLA Breach)' : ''}
+assets/js/views/atdView.js:448: 🧹 -> <p style="color: var(--text-warning); margin-bottom: 1.5rem;">🧹 Bed has been vacated. Housekeeping cleaning assignment is pending.</p>
+assets/js/views/atdView.js:459: 🧼 -> <p style="color: #fbbf24; margin-bottom: 1.5rem;">🧼 Sanitization and disinfection cycle is currently in progress.</p>
+assets/js/views/atdView.js:470: ☣ ️ -> <h5 style="color: #ec4899; margin: 0 0 0.5rem 0; font-weight: bold; display: flex; align-items: center; gap: 0.25rem;">☣️ Biohazard / Isolation Alert</h5>
+assets/js/views/atdView.js:481: 🔧 -> <p style="color: var(--color-danger); margin-bottom: 1.5rem;">🔧 Bed is out of service due to electrical or mechanical maintenance issue.</p>
+assets/js/views/atdView.js:491: ⚠ ️ -> <p style="color: var(--color-danger); margin-bottom: 1.5rem;">⚠️ This bed is blocked temporarily for renovation or deep isolation prep.</p>
+assets/js/views/atdView.js:568: 🛏 ️ -> icon: '🛏️',
+assets/js/views/atdView.js:712: 🔄 -> icon: '🔄',
+assets/js/views/atdView.js:745: 🏥 -> icon: '🏥',
+assets/js/views/prescriptionWorkflow.js:1728: 💊 -> <span class="rx-title-icon">💊</span> Medication Search & Order Entry
+assets/js/views/prescriptionWorkflow.js:1736: 🔍 -> <span class="rx-search-icon">🔍</span>
+assets/js/views/prescriptionWorkflow.js:1842: 👁 ️ -> 👁️ Preview
+assets/js/views/prescriptionWorkflow.js:1845: 🖨 ️ -> 🖨️ Print
+assets/js/views/prescriptionWorkflow.js:1848: 💾 -> 💾 Save Orders
+assets/js/views/prescriptionWorkflow.js:2054: • -> <strong>${item.brandName}</strong> (${item.strength} • ${item.dosageForm})
+assets/js/views/prescriptionWorkflow.js:2171: 🚨 -> <strong>🚨 ALLERGY CONFLICT:</strong> Patient is allergic to <strong>${selectedDrug.brandName}</strong> / <strong>${selectedDrug.genericName}</strong>.
+assets/js/views/prescriptionWorkflow.js:2187: ⚠ ️ -> <strong>⚠️ DUPLICATE MEDICATION:</strong> An active order already exists for generic <strong>${selectedDrug.genericName}</strong>.
+assets/js/views/prescriptionWorkflow.js:2219: • -> <span style="display: block; font-size: 0.72rem; color: #7f1d1d; margin-top: 0.15rem;">${selectedDrug.genericName} (${selectedDrug.strength} • ${selectedDrug.dosageForm})</span>
+assets/js/views/prescriptionWorkflow.js:2233: • -> <strong>${alt.brandName}</strong> (${alt.strength} • ${alt.dosageForm})
+assets/js/views/prescriptionWorkflow.js:2245: ⚠ ️ -> <div style="font-size: 0.72rem; color: #991b1b; font-weight: 700; margin-top: 0.25rem;">⚠️ No alternative medicines are available in stock.</div>
+assets/js/views/prescriptionWorkflow.js:2405: 💊 -> icon: '💊',
+assets/js/views/prescriptionWorkflow.js:2536: 🖨 ️ -> <button class="btn btn-primary" onclick="document.getElementById('rx-btn-print').click(); document.getElementById('rx-preview-modal').style.display='none';">🖨️ Print</button>
+assets/js/views/pharmacyView.js:24: 💊 -> <div class="stat-icon-wrapper" style="background-color: var(--primary-glow); color: var(--primary);">💊</div>
+assets/js/views/pharmacyView.js:33: ⚠ ️ -> <div class="stat-icon-wrapper" style="background-color: var(--color-danger-bg); color: var(--color-danger);">⚠️</div>
+assets/js/views/pharmacyView.js:42: 📋 -> <div class="stat-icon-wrapper" style="background-color: var(--color-purple-bg); color: var(--color-purple);">📋</div>
+assets/js/views/pharmacyView.js:92: 💊 -> 💊 Select a patient from the queue to process their active prescription, check stocks, and generate sales invoices.
+assets/js/views/pharmacyView.js:134: ⚠ ️ -> ? '<span style="color: var(--color-danger); font-weight: 600;">⚠️ LOW STOCK</span>'
+assets/js/views/pharmacyView.js:135: ✅ -> : '<span style="color: var(--color-success); font-weight: 600;">✅ STABLE</span>'}
+assets/js/views/pharmacyView.js:314: ⚠ ️ -> <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ Pharmacy Dispensing Warning</h4>
+assets/js/views/pharmacyView.js:323: ⚠ ️ -> ${message.replace('⚠️ JCI PHARMACY DISPENSING WARNING:\n', '')}
+assets/js/views/insuranceView.js:27: 🛡 ️ -> <div class="stat-icon-wrapper" style="background-color: var(--primary-glow); color: var(--primary);">🛡️</div>
+assets/js/views/insuranceView.js:36: ⏳ -> <div class="stat-icon-wrapper" style="background-color: var(--color-warning-bg); color: var(--color-warning);">⏳</div>
+assets/js/views/insuranceView.js:45: 💵 -> <div class="stat-icon-wrapper" style="background-color: var(--color-success-bg); color: var(--color-success);">💵</div>
+assets/js/views/labView.js:27: 🧪 -> <div class="stat-icon-wrapper" style="background-color: var(--primary-glow); color: var(--primary);">🧪</div>
+assets/js/views/labView.js:36: 🔬 -> <div class="stat-icon-wrapper" style="background-color: var(--color-warning-bg); color: var(--color-warning);">🔬</div>
+assets/js/views/labView.js:45: ✅ -> <div class="stat-icon-wrapper" style="background-color: var(--color-success-bg); color: var(--color-success);">✅</div>
+assets/js/views/labView.js:120: 🔬 -> 🔬 Select a specimen order from the worklist to log sample collections, enter values, or validate reports.
+assets/js/views/labView.js:138: 💜 -> <p style="margin-bottom: 0.5rem;"><strong>Tube / Specimen Category:</strong> 💜 Purple EDTA Tube</p>
+assets/js/views/labView.js:139: ⚠ ️ -> <p style="margin-bottom: 1rem; color: var(--color-warning);">⚠️ Specimen Collected. Ready for test analysis.</p>
+assets/js/views/labView.js:175: 🔬 -> <p style="color: var(--color-purple); font-weight: bold; margin-bottom: 1rem;">🔬 Results logged. Awaiting Pathologist validation.</p>
+assets/js/views/labView.js:190: ✅ -> <span style="font-size: 2.5rem; color: var(--color-success);">✅</span>
+assets/js/views/supportViews.js:13: 🧼 -> <button class="btn ${activeTab === 'cssd' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-cssd')">🧼 CSSD Sterilization</button>
+assets/js/views/supportViews.js:14: 🍏 -> <button class="btn ${activeTab === 'diet' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-diet')">🍏 Diet & Nutrition</button>
+assets/js/views/supportViews.js:15: 🛠 ️ -> <button class="btn ${activeTab === 'equipment' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-equipment')">🛠️ Equipment & PM</button>
+assets/js/views/supportViews.js:16: 🧺 -> <button class="btn ${activeTab === 'laundry' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-laundry')">🧺 Laundry & Linen</button>
+assets/js/views/radView.js:88: ☀ ️ -> <button class="btn btn-secondary" onclick="adjustPACSFilter('brightness', 0.1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">☀️ Brighten</button>
+assets/js/views/radView.js:89: 🌙 -> <button class="btn btn-secondary" onclick="adjustPACSFilter('brightness', -0.1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">🌙 Darken</button>
+assets/js/views/radView.js:90: ➕ -> <button class="btn btn-secondary" onclick="adjustPACSFilter('contrast', 0.1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">➕ Contrast</button>
+assets/js/views/radView.js:91: ➖ -> <button class="btn btn-secondary" onclick="adjustPACSFilter('contrast', -0.1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">➖ Contrast</button>
+assets/js/views/radView.js:92: 🔍 -> <button class="btn btn-secondary" onclick="adjustPACSFilter('zoom', 0.1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">🔍 Zoom In</button>
+assets/js/views/radView.js:93: 🔄 -> <button class="btn btn-secondary" onclick="adjustPACSFilter('invert', 1)" style="font-size: 0.75rem; color: #fff; background: #334155; border: none;">🔄 Invert</button>

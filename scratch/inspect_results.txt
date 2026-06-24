@@ -1,0 +1,70 @@
+index.html:60 (Pattern: 🛏️): <span class="menu-icon">🛏️</span>
+index.html:75 (Pattern: 📋): <span class="menu-icon">📋</span>
+index.html:181 (Pattern: 🩺): <option value="Doctor">🩺 Doctor</option>
+scratch/test_patient_workspace.js:317 (Pattern: 🛏️): { icon: '🛏️', title: 'Bed Reserved' },
+scratch/test_patient_workspace.js:330 (Pattern: 📝): { icon: '📝', title: 'Progress Note Added' }
+assets/js/state.js:65 (Pattern: Patients\s*Registry): // 3. Patients Registry (50+ Detailed Indian Patients)
+assets/js/views/daybedView.js:96 (Pattern: 📝): 📝 Admit Patient on Bed: ${window.selectedDaycareBed}
+assets/js/views/daybedView.js:220 (Pattern: 📋): <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">📋 Step 1: Pre-Procedure Checklist Form</h5>
+assets/js/views/daybedView.js:290 (Pattern: Doctor\s*Orders): // 2. STAGE: PRE-OP CHECKLIST DONE -> RENDER DOCTOR ORDERS FORM
+assets/js/views/daybedView.js:296 (Pattern: Doctor\s*Orders): <p style="margin:0.5rem 0 0 0; font-weight:600;">Doctor orders panel is locked for Nurse/Billing profiles. Log in as a Doctor to record medication or lab orders.</p>
+assets/js/views/daybedView.js:308 (Pattern: Doctor\s*Orders): <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">📝 Step 2: Log Doctor Orders & Directives</h5>
+assets/js/views/daybedView.js:308 (Pattern: 📝): <h5 style="margin:0; font-weight:700; color:var(--primary); font-size:0.9rem;">📝 Step 2: Log Doctor Orders & Directives</h5>
+assets/js/views/daybedView.js:374 (Pattern: Doctor\s*Orders): <button class="btn btn-primary" onclick="window.saveDoctorOrders('${currentBedAdmission.patient.uhid}')">Dispatch Orders</button>
+assets/js/views/daybedView.js:833 (Pattern: Doctor\s*Orders): // DOCTOR ORDERS WORKSPACE PANE (Screen 4)
+assets/js/views/daybedView.js:932 (Pattern: Doctor\s*Orders): window.saveDoctorOrders = function(uhid) {
+assets/js/views/daybedView.js:944 (Pattern: Doctor\s*Orders): admission.historyLogs.push({ timestamp: new Date().toISOString(), action: 'Doctor Orders & Prescriptions Dispatched' });
+assets/js/views/ipdAdmissionView.js:96 (Pattern: Bed\s*Details): <!-- Column 1: Admission & Bed Details -->
+assets/js/views/ipdAdmissionView.js:98 (Pattern: Bed\s*Details): <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🛏️ 1. Admission & Bed Details</h4>
+assets/js/views/ipdAdmissionView.js:98 (Pattern: 🛏️): <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🛏️ 1. Admission & Bed Details</h4>
+assets/js/views/ipdAdmissionView.js:166 (Pattern: 📋): <h4 style="color: var(--primary); font-weight: 700; margin: 0 0 0.5rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">📋 2. Pre-Admission Checklist</h4>
+assets/js/views/ipdAdmissionView.js:581 (Pattern: 🛏️): <span class="bed-icon" style="font-size: 0.9rem;">🛏️</span>
+assets/js/views/dashboardView.js:343 (Pattern: Bed\s*Details): typeBadge = `<span class="badge badge-purple badge-clickable" style="border-radius: 20px; font-size: 0.7rem; padding: 0.2rem 0.5rem; text-transform: uppercase;" onclick="toggleRegRowExpand('${pat.uhid}')" title="Click to view ward & bed details">IPD</span>`;
+assets/js/views/dashboardView.js:399 (Pattern: 🛏️): <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛏️ IPD Bed Allocation Details:</div>
+assets/js/views/dashboardView.js:418 (Pattern: Bed\s*Details): <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🚨 Emergency Admission Bed Details:</div>
+assets/js/views/dashboardView.js:499 (Pattern: 🛏️): icon: '🛏️',
+assets/js/views/dashboardView.js:637 (Pattern: 📋): <strong>📋 Delayed Discharges</strong><br>
+assets/js/views/dashboardView.js:699 (Pattern: 🛏️): icon: '🛏️',
+assets/js/views/dashboardView.js:796 (Pattern: Bed\s*Details): typeBadge = `<span class="badge badge-purple badge-clickable" style="border-radius: 20px; font-size: 0.7rem; padding: 0.2rem 0.5rem; text-transform: uppercase;" onclick="toggleRegRowExpand('${pat.uhid}')" title="Click to view ward & bed details">IPD</span>`;
+assets/js/views/dashboardView.js:853 (Pattern: 🛏️): <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🛏️ IPD Bed Allocation Details:</div>
+assets/js/views/dashboardView.js:872 (Pattern: Bed\s*Details): <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">🚨 Emergency Admission Bed Details:</div>
+assets/js/views/dashboardView.js:974 (Pattern: 👥): icon: '👥',
+assets/js/views/dashboardView.js:1087 (Pattern: 🛏️): <div class="card-header"><h3 class="card-title">🛏️ IPD Patients</h3></div>
+assets/js/views/dashboardView.js:1174 (Pattern: 🩺): <span>🩺 ${patient.status === 'Admitted' ? 'See Patient' : 'Consult Now'}</span>
+assets/js/views/dashboardView.js:1253 (Pattern: 🛏️): icon: '🛏️',
+assets/js/views/dashboardView.js:1266 (Pattern: 📋): icon: '📋',
+assets/js/views/dashboardView.js:1641 (Pattern: 📋): icon: '📋',
+assets/js/views/dashboardView.js:2395 (Pattern: 🩺): <p style="font-weight: 600; color: var(--color-danger); margin-bottom: 0.25rem;">🩺 Level 4: ICU WARD</p>
+assets/js/views/dashboardView.js:2413 (Pattern: 🩺): <p style="font-weight: 600; color: var(--primary); margin-bottom: 0.25rem;">🩺 Level 4: GENERAL WARD</p>
+assets/js/views/dashboardView.js:2431 (Pattern: 🩺): <p style="font-weight: 600; color: var(--color-purple); margin-bottom: 0.25rem;">🩺 Level 4: PRIVATE WARD</p>
+assets/js/views/dashboardView.js:2451 (Pattern: 🩺): <p style="font-weight: 600; color: var(--color-danger); margin-bottom: 0.25rem;">🩺 Level 4: EMERGENCY BEDS</p>
+assets/js/views/dashboardView.js:2493 (Pattern: 🩺): <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">🩺 Level 3: Practitioner - Dr. Amit Verma</summary>
+assets/js/views/dashboardView.js:2546 (Pattern: 🩺): <summary style="font-weight: 600; cursor: pointer; color: var(--text-secondary);">🩺 Level 3: Practitioner - Dr. Rajesh</summary>
+assets/js/views/registrationView.js:426 (Pattern: 🛏️): <span class="kpi-icon" style="background-color: var(--color-purple-bg); color: var(--color-purple);">🛏️</span>
+assets/js/views/registrationView.js:539 (Pattern: 📝): if (formTab) formTab.textContent = '📝 2. Full Onboarding Form';
+assets/js/views/registrationView.js:1903 (Pattern: 📝): <button class="tab-btn ${window.activeRegTab === 'search' ? 'active' : ''}" id="tab-btn-search" onclick="switchRegTab('search')" style="background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'search' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 700; cursor: pointer; color: ${window.activeRegTab === 'search' ? 'var(--primary)' : 'var(--text-secondary)'};">📝 1. Basic Details</button>
+assets/js/views/registrationView.js:1904 (Pattern: 📝): <button class="tab-btn ${window.activeRegTab === 'form' ? 'active' : ''}" id="tab-btn-form" onclick="switchRegTab('form')" style="background: none; border: none; border-bottom: 3px solid ${window.activeRegTab === 'form' ? 'var(--primary)' : 'transparent'}; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; color: ${window.activeRegTab === 'form' ? 'var(--primary)' : 'var(--text-secondary)'};" ${window.searchPerformed ? '' : 'disabled'}>📝 2. Full Onboarding Form ${window.searchPerformed ? '' : '🔒'}</button>
+assets/js/views/registrationView.js:1917 (Pattern: 📝): <span>📝</span> Basic Details Search & Duplicate Check
+assets/js/views/registrationView.js:1974 (Pattern: 📝): 📝
+assets/js/views/patientsView.js:1195 (Pattern: 🩺): ${(!isIpd && state.activeUserRole === 'Doctor') ? `<button class="btn-p btn-xs" style="background-color: #10b981;" onclick="router.navigate('emr?uhid=${patient.uhid}')">🩺 Consult Now</button>` : ''}
+assets/js/views/patientsView.js:1196 (Pattern: 📋): <button class="btn-p btn-xs" onclick="window.openActionModal('add-note', '${patient.uhid}')">📋 Add Note</button>
+assets/js/views/patientsView.js:1422 (Pattern: 🩺): { date: '2026-06-15 10:00 AM', icon: '🩺', title: 'Outpatient Consultation Visit', desc: 'Consulted with Dr. Abhishek Kumar for Chief Complaint of ' + patient.clinicalData.complaint },
+assets/js/views/patientsView.js:1468 (Pattern: 📋): else if (e.icon === '📋' || e.icon === '📝') dotColor = '#8b5cf6';
+assets/js/views/patientsView.js:1468 (Pattern: 📝): else if (e.icon === '📋' || e.icon === '📝') dotColor = '#8b5cf6';
+assets/js/views/patientsView.js:1471 (Pattern: 🛏️): else if (e.icon === '🛏️' || e.icon === '🏥' || e.icon === '🔄') dotColor = '#7c3aed';
+assets/js/views/patientsView.js:1475 (Pattern: 📝): <div class="tl-dot" style="background:${dotColor}">${e.icon || '📝'}</div>
+assets/js/views/patientsView.js:1947 (Pattern: 🛏️): <button class="btn btn-g btn-xs" onclick="window.initiatePatientTransfer('${patient.uhid}')">🛏️ Change Ward</button>
+assets/js/views/patientsView.js:2718 (Pattern: 🩺): icon: '🩺',
+assets/js/views/patientsView.js:2744 (Pattern: 📝): icon: '📝',
+assets/js/views/patientsView.js:3268 (Pattern: 📝): <strong>📝 Note (${n.type}) - ${n.date}</strong>
+assets/js/views/adminViews.js:13 (Pattern: 👥): <button class="btn ${activeTab === 'employees' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('admin-employees')">👥 Hospital Directory</button>
+assets/js/views/patientTransferView.js:706 (Pattern: 📋): <h4 style="margin: 0; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">📋 Review Patient Transfer Summary</h4>
+assets/js/views/patientTransferView.js:976 (Pattern: Bed\s*Details): <div>👤 <strong>Patient Profile (360°)</strong>: Click on <strong>Transfer Bed</strong> under Bed Details.</div>
+assets/js/views/emrView.js:447 (Pattern: 🩺): <span style="font-size: 3rem; margin-bottom: 1rem;">🩺</span>
+assets/js/views/emrView.js:486 (Pattern: 🩺): ${patient.status === 'Paused' ? '🩺 Resume Consultation' : '🩺 Start Consultation'}
+assets/js/views/emrView.js:860 (Pattern: 🩺): <span>🩺</span> Clinical Consultation
+assets/js/views/emrView.js:919 (Pattern: 🩺): <span class="vital-icon">🩺</span>
+assets/js/views/atdView.js:138 (Pattern: Bed\s*Details): <h4 id="modal-bed-title" style="margin:0; font-weight: 700;">Bed Details</h4>
+assets/js/views/atdView.js:195 (Pattern: 🛏️): <span class="bed-icon">🛏️</span>
+assets/js/views/atdView.js:568 (Pattern: 🛏️): icon: '🛏️',
+assets/js/views/pharmacyView.js:42 (Pattern: 📋): <div class="stat-icon-wrapper" style="background-color: var(--color-purple-bg); color: var(--color-purple);">📋</div>

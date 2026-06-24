@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saronil HMS & EMR Prototype</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="assets/css/style.css?v=1.4.0">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          🧬 <span>Saronil <strong>HMS</strong></span>
+        </div>
+        <div class="sidebar-facility">
+          🏢 Bengaluru Campus
+        </div>
+      </div>
+      
+      <div class="sidebar-menu-wrapper">
+        <div class="menu-category">Executive</div>
+        <div class="menu-item active" data-target="dashboard">
+          <div class="menu-item-left">
+            <span class="menu-icon">📊</span>
+            <span>Dashboard</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Operations</div>
+        <div class="menu-item" data-target="patients">
+          <div class="menu-item-left">
+            <span class="menu-icon">🗂️</span>
+            <span>Patients (360°)</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="registration">
+          <div class="menu-item-left">
+            <span class="menu-icon">👤</span>
+            <span>Registration</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="appointments">
+          <div class="menu-item-left">
+            <span class="menu-icon">📅</span>
+            <span>Appointments</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="ipdAdmission">
+          <div class="menu-item-left">
+            <span class="menu-icon">🏥</span>
+            <span>IPD Admission</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="atd">
+          <div class="menu-item-left">
+            <span class="menu-icon">🛏️</span>
+            <span>Bed Board & ATD</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="daybed">
+          <div class="menu-item-left">
+            <span class="menu-icon">🛌</span>
+            <span>Day Care</span>
+          </div>
+        </div>
+
+
+        <div class="menu-category">Clinical</div>
+        <div class="menu-item" data-target="emr">
+          <div class="menu-item-left">
+            <span class="menu-icon">📋</span>
+            <span>OPD Consultation</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="emergency">
+          <div class="menu-item-left">
+            <span class="menu-icon">🚨</span>
+            <span>Emergency / MLC</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Financial</div>
+        <div class="menu-item" data-target="billing">
+          <div class="menu-item-left">
+            <span class="menu-icon">💳</span>
+            <span>Billing & Invoices</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="insurance">
+          <div class="menu-item-left">
+            <span class="menu-icon">🛡️</span>
+            <span>Insurance & TPA</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Diagnostics</div>
+        <div class="menu-item" data-target="lab">
+          <div class="menu-item-left">
+            <span class="menu-icon">🧪</span>
+            <span>Laboratory (LIS)</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="rad">
+          <div class="menu-item-left">
+            <span class="menu-icon">💀</span>
+            <span>Radiology (RIS)</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="pharmacy">
+          <div class="menu-item-left">
+            <span class="menu-icon">💊</span>
+            <span>Pharmacy Sales</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="bloodbank">
+          <div class="menu-item-left">
+            <span class="menu-icon">🩸</span>
+            <span>Blood Bank</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Support</div>
+        <div class="menu-item" data-target="support">
+          <div class="menu-item-left">
+            <span class="menu-icon">🛠️</span>
+            <span>Support Services</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Admin</div>
+        <div class="menu-item" data-target="admin">
+          <div class="menu-item-left">
+            <span class="menu-icon">⚙️</span>
+            <span>Admin & Reports</span>
+          </div>
+        </div>
+
+        <div class="menu-category">Quality & Safety</div>
+        <div class="menu-item" data-target="alertCenter">
+          <div class="menu-item-left">
+            <span class="menu-icon">📢</span>
+            <span>Alert Center</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="ruleManager">
+          <div class="menu-item-left">
+            <span class="menu-icon">🛡️</span>
+            <span>Safety Rules</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar" id="sidebar-user-avatar">AV</div>
+        <div class="user-info" style="flex: 1; min-width: 0;">
+          <span class="user-name" id="sidebar-user-name">Dr. Amit Verma</span>
+          <select id="sidebar-doctor-select" style="display: none; border: none; background: transparent; color: var(--text-primary); font-weight: 600; font-size: 0.85rem; font-family: inherit; cursor: pointer; outline: none; padding: 0; width: 100%; border-radius: 4px;" onchange="window.changeSidebarDoctor(this.value)">
+          </select>
+          <span class="user-role" id="sidebar-user-role">System Admin</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <header class="main-header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="btn btn-secondary" id="global-back-btn" onclick="window.history.back()" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; display: none; align-items: center; gap: 0.25rem; border: 1px solid var(--border-color); cursor: pointer;">← Back</button>
+          <h2 id="active-page-title" style="margin: 0; font-size: 1.25rem;">Hospital Overview Dashboard</h2>
+        </div>
+        
+        <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+          <!-- Active Dashboard Profile Dropdown -->
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <select id="global-persona-selector" class="facility-selector" onchange="window.switchGlobalPersona(this.value)">
+              <option value="Administrator">⚙️ Administrator</option>
+              <option value="Doctor">🩺 Doctor</option>
+              <option value="Nurse">👩‍⚕️ Nurse</option>
+              <option value="Billing">💳 Billing Admin</option>
+              <option value="Front Desk">🛎️ Front Desk</option>
+              <option value="Lab">🧪 Lab Executive</option>
+              <option value="Pharmacist">💊 Pharmacist</option>
+            </select>
+          </div>
+
+          <select class="facility-selector">
+            <option>Saronil Super Specialty Hospital, Bengaluru</option>
+            <option>Saronil General Hospital, Delhi</option>
+            <option>Saronil Clinic, Patna</option>
+          </select>
+
+          <button class="action-icon-btn" title="System Notifications">
+            🔔<span class="badge-dot"></span>
+          </button>
+          
+          <button class="action-icon-btn" title="Quick Help / Settings">
+            ⚙️
+          </button>
+        </div>
+      </header>
+
+      <!-- Viewport -->
+      <div id="main-content" class="view-container">
+        <!-- Rendered dynamically by views -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Initialize Views Namespace -->
+  <script>window.views = window.views || {};</script>
+
+  <!-- Shared State Engine -->
+  <script src="assets/js/state.js?v=1.4.1"></script>
+  <script src="assets/js/specialty_data.js"></script>
+
+  <!-- Views Rendering Scripts -->
+  <script src="assets/js/views/prescriptionWorkflow.js?v=1.4.0"></script>
+  <script src="assets/js/views/dashboardView.js?v=1.4.0"></script>
+  <script src="assets/js/views/patientsView.js?v=1.4.0"></script>
+  <script src="assets/js/views/registrationView.js"></script>
+  <script src="assets/js/views/appointmentsView.js"></script>
+  <script src="assets/js/views/ipdAdmissionView.js?v=1.4.0"></script>
+  <script src="assets/js/views/atdView.js?v=1.4.1"></script>
+  <script src="assets/js/views/patientTransferView.js?v=1.4.0"></script>
+  <script src="assets/js/views/emrView.js"></script>
+  <script src="assets/js/views/emergencyView.js?v=1.4.0"></script>
+  <script src="assets/js/views/billingView.js"></script>
+  <script src="assets/js/views/insuranceView.js"></script>
+  <script src="assets/js/views/labView.js"></script>
+  <script src="assets/js/views/radView.js"></script>
+  <script src="assets/js/views/pharmacyView.js"></script>
+  <script src="assets/js/views/bloodbankView.js"></script>
+  <script src="assets/js/views/supportViews.js"></script>
+  <script src="assets/js/views/adminViews.js"></script>
+  <script src="assets/js/views/alertCenterView.js"></script>
+  <script src="assets/js/views/ruleManagerView.js?v=1.4.0"></script>
+  <script src="assets/js/views/daybedView.js?v=1.4.2"></script>
+
+  <!-- Central SPA Router -->
+  <script src="assets/js/router.js"></script>
+
+  <!-- Global User Role Switcher -->
+  <script>
+    (function() {
+      const roleToPersona = {
+        'Administrator': 'admin',
+        'Doctor': 'doctor',
+        'Nurse': 'nurse',
+        'Billing': 'billing',
+        'Front Desk': 'admission',
+        'Lab': 'lab',
+        'Pharmacist': 'pharmacy'
+      };
+
+      const personaToRole = {
+        'admin': 'Administrator',
+        'doctor': 'Doctor',
+        'nurse': 'Nurse',
+        'billing': 'Billing',
+        'admission': 'Front Desk',
+        'lab': 'Lab',
+        'pharmacy': 'Pharmacist'
+      };
+
+      // Determine initial persona from URL hash or localStorage
+      let initialPersona = localStorage.getItem('saronil_active_persona') || 'admin';
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#dashboard-')) {
+        const parts = hash.substring(1).split('-');
+        if (parts[1] && personaToRole[parts[1]]) {
+          initialPersona = parts[1];
+        }
+      }
+
+      const initialRole = personaToRole[initialPersona] || 'Administrator';
+      if (window.state) {
+        window.state.activeUserRole = initialRole;
+      }
+      localStorage.setItem('saronil_active_persona', initialPersona);
+
+      window.switchGlobalPersona = function(newRole) {
+        if (window.state) {
+          window.state.activeUserRole = newRole;
+        }
+        
+        const persona = roleToPersona[newRole] || 'admin';
+        localStorage.setItem('saronil_active_persona', persona);
+        
+        if (typeof window.updateDynamicSidebarUser === 'function') {
+          window.updateDynamicSidebarUser(persona);
+        }
+        
+        if (window.router && typeof window.router.handleRouting === 'function') {
+          if (window.location.hash.startsWith('#dashboard')) {
+            window.location.hash = 'dashboard-' + persona;
+          } else {
+            window.router.handleRouting();
+          }
+        }
+      };
+
+      // Synchronize dropdown UI and sidebar user on DOM load
+      document.addEventListener('DOMContentLoaded', () => {
+        const selector = document.getElementById('global-persona-selector');
+        if (selector) {
+          selector.value = initialRole;
+        }
+        if (typeof window.updateDynamicSidebarUser === 'function') {
+          window.updateDynamicSidebarUser(initialPersona);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

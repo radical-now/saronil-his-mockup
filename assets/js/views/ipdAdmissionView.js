@@ -568,7 +568,7 @@ window.views.ipdAdmission = function(container, subAnchor, params) {
       const isAvailable = info.status === 'Available' || info.status === 'Vacant';
       const isSelected = bedSelect.value === bedId;
       const selectStyle = isSelected 
-        ? 'border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.25); transform: translateY(-1px); font-weight: bold;'
+        ? 'border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); transform: translateY(-1px); font-weight: bold;'
         : '';
       const onclickAttr = isAvailable 
         ? `onclick="window.selectAdmBedGraphical('${bedId}')"`
@@ -605,7 +605,7 @@ window.views.ipdAdmission = function(container, subAnchor, params) {
     const selectedCard = document.getElementById(`adm-bed-card-${bedId}`);
     if (selectedCard) {
       selectedCard.style.borderColor = 'var(--primary)';
-      selectedCard.style.boxShadow = '0 0 0 3px rgba(0, 82, 255, 0.25)';
+      selectedCard.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.25)';
       selectedCard.style.transform = 'translateY(-1px)';
       selectedCard.style.fontWeight = 'bold';
     }
@@ -655,7 +655,7 @@ window.views.ipdAdmission = function(container, subAnchor, params) {
       const selectedCard = document.getElementById(`adm-bed-card-${selectedBedId}`);
       if (selectedCard) {
         selectedCard.style.borderColor = 'var(--primary)';
-        selectedCard.style.boxShadow = '0 0 0 3px rgba(0, 82, 255, 0.25)';
+        selectedCard.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.25)';
         selectedCard.style.transform = 'translateY(-1px)';
         selectedCard.style.fontWeight = 'bold';
       }

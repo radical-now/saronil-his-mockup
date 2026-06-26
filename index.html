@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Saronil HMS & EMR Prototype</title>
   
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f5ff',
+              100: '#e0ebff',
+              500: '#3b82f6', // Tailwind blue-500
+              600: '#2563eb', // Tailwind blue-600 (Primary)
+              700: '#1d4ed8',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="assets/css/style.css?v=1.4.0">
 </head>
@@ -61,12 +84,7 @@
             <span>Bed Board & ATD</span>
           </div>
         </div>
-        <div class="menu-item" data-target="daybed">
-          <div class="menu-item-left">
-            <span class="menu-icon">🛌</span>
-            <span>Day Care</span>
-          </div>
-        </div>
+
 
 
         <div class="menu-category">Clinical</div>
@@ -82,6 +100,12 @@
             <span>Emergency / MLC</span>
           </div>
         </div>
+        <div class="menu-item" data-target="ot">
+          <div class="menu-item-left">
+            <span class="menu-icon">😷</span>
+            <span>Operation Theatre (OT)</span>
+          </div>
+        </div>
 
         <div class="menu-category">Financial</div>
         <div class="menu-item" data-target="billing">
@@ -94,6 +118,12 @@
           <div class="menu-item-left">
             <span class="menu-icon">🛡️</span>
             <span>Insurance & TPA</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="chargeMaster">
+          <div class="menu-item-left">
+            <span class="menu-icon">💰</span>
+            <span>Charge Master</span>
           </div>
         </div>
 
@@ -123,11 +153,29 @@
           </div>
         </div>
 
-        <div class="menu-category">Support</div>
-        <div class="menu-item" data-target="support">
+        <div class="menu-category">Services</div>
+        <div class="menu-item" data-target="cssd">
+          <div class="menu-item-left">
+            <span class="menu-icon">🧼</span>
+            <span>CSSD Sterilization</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="diet">
+          <div class="menu-item-left">
+            <span class="menu-icon">🍏</span>
+            <span>Diet & Nutrition</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="equipment">
           <div class="menu-item-left">
             <span class="menu-icon">🛠️</span>
-            <span>Support Services</span>
+            <span>Equipment & PM</span>
+          </div>
+        </div>
+        <div class="menu-item" data-target="laundry">
+          <div class="menu-item-left">
+            <span class="menu-icon">🧺</span>
+            <span>Laundry & Linen</span>
           </div>
         </div>
 
@@ -230,6 +278,9 @@
   <script src="assets/js/views/emergencyView.js?v=1.4.0"></script>
   <script src="assets/js/views/billingView.js"></script>
   <script src="assets/js/views/insuranceView.js"></script>
+  <script src="assets/js/views/chargeMasterView.js?v=1.5.1"></script>
+  <script src="assets/js/views/packageBuilderView.js?v=1.5.1"></script>
+  <script src="assets/js/views/otView.js"></script>
   <script src="assets/js/views/labView.js"></script>
   <script src="assets/js/views/radView.js"></script>
   <script src="assets/js/views/pharmacyView.js"></script>

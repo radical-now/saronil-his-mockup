@@ -314,7 +314,7 @@ window.printAnalyticsReport = function() {
         <title>Saronil HMS Management Report</title>
         <style>
           body { font-family: sans-serif; padding: 30px; line-height: 1.5; color: #333; }
-          .header { text-align: center; border-bottom: 3px solid #0052ff; padding-bottom: 12px; margin-bottom: 30px; }
+          .header { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 30px; }
           .footer { text-align: center; border-top: 1px solid #ddd; margin-top: 40px; padding-top: 10px; font-size: 0.8rem; color: #777; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { padding: 10px; border-bottom: 1px solid #ddd; }

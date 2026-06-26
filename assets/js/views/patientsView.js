@@ -56,20 +56,70 @@ function renderMasterPatientRegistry(container) {
         }
       }
       
-      .stat-card-premium {
-        background: var(--bg-surface-elevated);
-        border-radius: 8px;
-        padding: 1.25rem 1rem;
-        box-shadow: var(--shadow-sm);
+      .kpi-card {
+        position: relative;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        transition: transform 0.2s, box-shadow 0.2s;
-        border: 1px solid var(--border-color);
+        gap: 0.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
+        overflow: hidden;
+        min-height: 120px;
       }
-      .stat-card-premium:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
+      .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+      }
+      .kpi-card.status-normal {
+        border-left: 4px solid var(--color-success);
+      }
+      .kpi-card.status-warning {
+        border-left: 4px solid var(--color-warning);
+      }
+      .kpi-card.status-critical {
+        border-left: 4px solid var(--color-danger);
+      }
+      .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+      }
+      .kpi-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .kpi-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+      }
+      .kpi-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+      .kpi-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+      }
+      .kpi-subtext {
+        font-size: 0.72rem;
+        color: var(--text-muted);
       }
       
       .tab-btn-link {
@@ -149,52 +199,87 @@ function renderMasterPatientRegistry(container) {
     <!-- Stats Banner -->
     <div class="stats-grid">
       <!-- 1. Total Patients -->
-      <div class="stat-card-premium" style="border-top: 4px solid #3b82f6;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Total Patients</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${state.patients.length}</span>
-        <span style="font-size: 0.7rem; color: var(--text-muted);">All time registered</span>
+      <div class="kpi-card status-normal" onclick="window.filterPatientsByCard('all')">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Patients</span>
+          <span class="kpi-icon" style="background-color: var(--primary-glow); color: var(--primary);">👥</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${state.patients.length}</span>
+          <span class="kpi-subtext">All time registered</span>
+        </div>
       </div>
 
       <!-- 2. IPD Today -->
-      <div class="stat-card-premium" style="border-top: 4px solid #a855f7;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">IPD Today</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${ipdCount}</span>
-        <span style="font-size: 0.7rem; color: #a855f7; font-weight: 600;">Active inpatients</span>
+      <div class="kpi-card status-normal" onclick="window.filterPatientsByCard('IPD')">
+        <div class="kpi-header">
+          <span class="kpi-title">IPD Today</span>
+          <span class="kpi-icon" style="background-color: #f3e8ff; color: #7c3aed;">🏥</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${ipdCount}</span>
+          <span class="kpi-subtext">Active inpatients</span>
+        </div>
       </div>
 
       <!-- 3. OPD Today -->
-      <div class="stat-card-premium" style="border-top: 4px solid #14b8a6;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">OPD Today</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${opdCount}</span>
-        <span style="font-size: 0.7rem; color: #14b8a6; font-weight: 600;">Outpatient visits</span>
+      <div class="kpi-card status-normal" onclick="window.filterPatientsByCard('OPD')">
+        <div class="kpi-header">
+          <span class="kpi-title">OPD Today</span>
+          <span class="kpi-icon" style="background-color: #dbeafe; color: #2563eb;">🩺</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${opdCount}</span>
+          <span class="kpi-subtext">Outpatient visits</span>
+        </div>
       </div>
 
       <!-- 4. Upcoming OPD -->
-      <div class="stat-card-premium" style="border-top: 4px solid #3b82f6;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Upcoming OPD</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${upcomingCount}</span>
-        <span style="font-size: 0.7rem; color: #3b82f6; font-weight: 600;">Scheduled appts</span>
+      <div class="kpi-card status-normal" onclick="window.filterPatientsByCard('Upcoming')">
+        <div class="kpi-header">
+          <span class="kpi-title">Upcoming OPD</span>
+          <span class="kpi-icon" style="background-color: #eff6ff; color: #1d4ed8;">📅</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${upcomingCount}</span>
+          <span class="kpi-subtext">Scheduled appts</span>
+        </div>
       </div>
 
       <!-- 5. Day Care -->
-      <div class="stat-card-premium" style="border-top: 4px solid #ea580c;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Day Care</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${dcCount}</span>
-        <span style="font-size: 0.7rem; color: #ea580c; font-weight: 600;">Active day cases</span>
+      <div class="kpi-card status-warning" onclick="window.filterPatientsByCard('Daycare')">
+        <div class="kpi-header">
+          <span class="kpi-title">Day Care</span>
+          <span class="kpi-icon" style="background-color: #ffedd5; color: #ea580c;">🕒</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${dcCount}</span>
+          <span class="kpi-subtext">Active day cases</span>
+        </div>
       </div>
 
       <!-- 6. Emergency -->
-      <div class="stat-card-premium" style="border-top: 4px solid #ef4444;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Emergency</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${emgCount}</span>
-        <span style="font-size: 0.7rem; color: #ef4444; font-weight: 600;">Active ER cases</span>
+      <div class="kpi-card status-critical" onclick="window.filterPatientsByCard('Emergency')">
+        <div class="kpi-header">
+          <span class="kpi-title">Emergency</span>
+          <span class="kpi-icon" style="background-color: #fee2e2; color: #dc2626;">🚨</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${emgCount}</span>
+          <span class="kpi-subtext">Active ER cases</span>
+        </div>
       </div>
 
       <!-- 7. Discharged Today -->
-      <div class="stat-card-premium" style="border-top: 4px solid #10b981;">
-        <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Discharged Today</span>
-        <span style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">${dischargedCount}</span>
-        <span style="font-size: 0.7rem; color: #10b981; font-weight: 600;">Discharged patients</span>
+      <div class="kpi-card status-normal" onclick="window.filterPatientsByCard('Discharged')">
+        <div class="kpi-header">
+          <span class="kpi-title">Discharged Today</span>
+          <span class="kpi-icon" style="background-color: #ecfdf5; color: #10b981;">✅</span>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">${dischargedCount}</span>
+          <span class="kpi-subtext">Discharged patients</span>
+        </div>
       </div>
     </div>
 
@@ -269,7 +354,7 @@ function renderMasterPatientRegistry(container) {
         </div>
 
         <!-- Master Data Table -->
-        <div class="custom-table-container">
+        <div class="custom-table-container" style="overflow-y: visible; max-height: none;">
           <table class="custom-table" style="font-size: 0.82rem; width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
@@ -385,7 +470,7 @@ function renderMasterPatientRegistry(container) {
     const countEl = document.getElementById('m-results-count');
     if (countEl) countEl.textContent = `${filtered.length} results`;
 
-    const rowsPerPage = 20;
+    const rowsPerPage = 10;
     const totalItems = filtered.length;
     const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
 
@@ -417,6 +502,13 @@ function renderMasterPatientRegistry(container) {
     // Re-filter and reset page
     if (window.filterMasterRegistry) {
       window.filterMasterRegistry(true);
+    }
+  };
+
+  window.filterPatientsByCard = function(tabVal) {
+    const tabBtn = document.querySelector(`#m-tabs-container button[data-filter="${tabVal}"]`);
+    if (tabBtn) {
+      window.switchRegistryFilterTab(tabBtn, tabVal);
     }
   };
 
@@ -1470,12 +1562,20 @@ function renderOverviewTab(panel, patient) {
             else if (e.icon === '🩻' || e.icon === '💀') dotColor = '#f59e0b';
             else if (e.icon === '🛏️' || e.icon === '🏥' || e.icon === '🔄') dotColor = '#7c3aed';
             
+            let editButtonHtml = '';
+            if (e.title === 'Procedure Requested') {
+              const otCase = state.ot?.scheduledCases?.find(c => c.patientUhid === patient.uhid && c.status === 'Requested');
+              if (otCase) {
+                editButtonHtml = `<div style="margin-top: 4px;"><button class="btn btn-xs" style="font-size: 10px; padding: 2px 6px; border: 1px solid #1B3A5C; color: #1B3A5C; border-radius: 4px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openEditOTRequestModal('${otCase.id}')">✏️ Edit OT Request</button></div>`;
+              }
+            }
+
             return `
               <div class="tl-item">
                 <div class="tl-dot" style="background:${dotColor}">${e.icon || '📝'}</div>
                 <div class="tl-body">
                   <div class="tl-title">${e.title}</div>
-                  <div class="tl-meta">${e.desc}</div>
+                  <div class="tl-meta">${e.desc}${editButtonHtml}</div>
                 </div>
                 <div class="tl-time">${dayStr} ${timeStr}</div>
               </div>
@@ -1722,10 +1822,23 @@ function renderOrdersTab(panel, patient) {
         </thead>
         <tbody>
           ${patientOrders.length === 0 ? `<tr><td colspan="6" style="text-align:center;color:#64748b;">No active orders found for this patient.</td></tr>` : 
-            patientOrders.map(o => `
+            patientOrders.map(o => {
+              const otCase = o.otCaseId ? state.ot?.scheduledCases?.find(c => c.id === o.otCaseId) : state.ot?.scheduledCases?.find(c => c.patientUhid === patient.uhid && c.procedure === o.name && c.status === 'Requested');
+              const canEdit = otCase && otCase.status === 'Requested';
+              return `
               <tr>
                 <td class="fw6">
-                  <strong>${o.name}</strong><br>
+                  <strong>${o.name}</strong>
+                  ${otCase ? `
+                    <div style="font-size: 10px; color: #475569; margin-top: 3px; font-weight: normal; line-height: 1.4;">
+                      🗓️ <strong>OT Slot:</strong> ${otCase.date} ${otCase.time} (${otCase.duration} hrs) in <strong>${otCase.theatre}</strong><br>
+                      👨‍⚕️ <strong>Surgeon:</strong> ${otCase.surgeon} &bull; <strong>Anaesthetist:</strong> ${otCase.anaesthetist}
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; gap: 8px; margin-top: 5px; margin-bottom: 2px;">
+                    ${otCase ? `<button class="btn btn-xs" style="font-size: 10px; padding: 2px 6px; border: 1px solid #1B3A5C; color: #1B3A5C; border-radius: 4px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" onclick="window.viewOTRequestDetails('${otCase.id}')">👁️ View Details</button>` : ''}
+                    ${canEdit ? `<button class="btn btn-xs" style="font-size: 10px; padding: 2px 6px; border: 1px solid #0f766e; color: #0f766e; border-radius: 4px; background: transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openEditOTRequestModal('${otCase.id}')">✏️ Edit Request</button>` : ''}
+                  </div>
                   <small style="color:#94a3b8;">Order ID: ${o.id}</small>
                 </td>
                 <td><span class="badge ${o.type === 'Laboratory' ? 'b-cy' : (o.type === 'Radiology' ? 'b-pu' : 'b-or')}">${o.type}</span></td>
@@ -1734,7 +1847,8 @@ function renderOrdersTab(panel, patient) {
                 <td><span class="badge ${o.priority === 'Urgent' ? 'b-re' : 'b-sl'}">${o.priority}</span></td>
                 <td><span class="badge ${o.status === 'Approved' || o.status === 'Completed' ? 'b-gr' : 'b-am'}">${o.status}</span></td>
               </tr>
-            `).join('')
+              `;
+            }).join('')
           }
         </tbody>
       </table>
@@ -2579,21 +2693,146 @@ window.openActionModal = function(actionKey, uhid, optionalType) {
       break;
 
     case 'order-proc':
+      const doctors = state.doctors || [];
+      const surgeonsList = doctors.filter(d => d.spec === "General Surgery" || d.spec === "Orthopedics" || d.spec === "Gynecology & Obs" || d.spec === "Cardiology") || [];
+      const anaesthetistsList = doctors.filter(d => d.spec === "Emergency Medicine" || d.spec === "Neurology" || d.spec === "Cardiology") || [];
+      const theatresList = state.ot?.theatres || [];
+
       body.innerHTML = `
-        <div class="form-group">
-          <label class="form-label">Requested Procedure Name</label>
-          <select id="proc-name" class="form-select">
-            <option>Diagnostic Coronary Angiography</option>
-            <option>Upper GI Endoscopy</option>
-            <option>Colonoscopy Diagnostic</option>
-            <option>Dialysis Shift</option>
-          </select>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-left">
+          <div class="form-group md:col-span-2">
+            <label class="form-label font-bold text-slate-700">Requested Procedure Name</label>
+            <select id="proc-name" class="form-select w-full border rounded p-2 bg-white" onchange="window.onProcedureSelectChange(this.value)">
+              <option value="Laparoscopic Cholecystectomy (CPT 47562)">Laparoscopic Cholecystectomy (CPT 47562)</option>
+              <option value="Emergency Lower Segment Caesarean Section (LSCS)">Emergency Lower Segment Caesarean Section (LSCS)</option>
+              <option value="Total Knee Arthroplasty (CPT 27447)">Total Knee Arthroplasty (CPT 27447)</option>
+              <option value="Exploratory Laparotomy">Exploratory Laparotomy</option>
+              <option value="Diagnostic Coronary Angiography">Diagnostic Coronary Angiography</option>
+              <option value="Upper GI Endoscopy">Upper GI Endoscopy</option>
+              <option value="Colonoscopy Diagnostic">Colonoscopy Diagnostic</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label font-bold text-slate-700">Priority</label>
+            <select id="proc-priority" class="form-select w-full border rounded p-2 bg-white" onchange="window.onProcedurePriorityChange(this.value)">
+              <option value="Elective">Elective</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Emergency">Emergency</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label font-bold text-slate-700">Indications / Diagnosis</label>
+            <input type="text" id="proc-diag" class="form-control w-full border rounded p-2 bg-white" value="${patient.clinicalData?.complaint || 'Calculus of gallbladder with acute cholecystitis'}">
+          </div>
+
+          <div class="md:col-span-2 border-t pt-3 mt-2">
+            <label class="flex items-center gap-2 cursor-pointer font-bold text-[#1B3A5C] text-sm">
+              <input type="checkbox" id="book-ot-checkbox" class="h-4 w-4 rounded" onchange="window.toggleOTBookingSection(this.checked)">
+              <span>Schedule Operating Theatre (OT) Room booking immediately?</span>
+            </label>
+          </div>
+
+          <div id="ot-booking-section" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border p-4 bg-slate-50 rounded-xl hidden">
+            <h5 class="md:col-span-2 font-bold text-slate-800 border-b pb-1.5 flex items-center gap-1.5">
+              <span>😷 Operating Theatre Allocation Details</span>
+            </h5>
+            
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select OT Theatre Room</label>
+              <select id="ot-proc-room" class="w-full border rounded p-2 bg-white">
+                ${theatresList.map(t => `<option value="${t.code}">${t.name} (${t.speciality})</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Primary Surgeon</label>
+              <select id="ot-proc-surgeon" class="w-full border rounded p-2 bg-white">
+                ${surgeonsList.map(s => `<option value="${s.name}" ${s.name === patient.primaryConsultant ? 'selected' : ''}>${s.name} (${s.spec})</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preferred Anaesthetist</label>
+              <select id="ot-proc-anaesthetist" class="w-full border rounded p-2 bg-white">
+                ${anaesthetistsList.map(a => `<option value="${a.name}">${a.name} (${a.spec})</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preferred Slot Date</label>
+              <input type="date" id="ot-proc-date" class="w-full border rounded p-2 bg-white font-mono" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preferred Slot Time (HH:MM)</label>
+              <input type="text" id="ot-proc-time" class="w-full border rounded p-2 bg-white font-mono" value="11:00">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Estimated Duration (Hrs)</label>
+              <input type="text" id="ot-proc-duration" class="w-full border rounded p-2 bg-white font-mono" value="01:30">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Blood Units Standby Required?</label>
+              <select id="ot-proc-blood" class="w-full border rounded p-2 bg-white">
+                <option value="No">No</option>
+                <option value="Yes">Yes (2 Units PRBC Standby)</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
+
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
           <button class="btn btn-secondary" onclick="window.closeActionModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="window.executePatientAction('order-proc', '${uhid}')">Submit Procedure</button>
+          <button class="btn btn-primary bg-[#1B3A5C] text-white hover:bg-slate-800" onclick="window.executePatientAction('order-proc', '${uhid}')">Confirm & Request</button>
         </div>
       `;
+
+      // Define helper handlers in global window scope
+      window.toggleOTBookingSection = function(checked) {
+        const sec = document.getElementById('ot-booking-section');
+        if (sec) {
+          if (checked) {
+            sec.classList.remove('hidden');
+          } else {
+            sec.classList.add('hidden');
+          }
+        }
+      };
+
+      window.onProcedureSelectChange = function(val) {
+        // Auto select best theatre room based on procedure name keywords
+        const roomSelect = document.getElementById('ot-proc-room');
+        if (!roomSelect) return;
+        
+        if (val.toLowerCase().includes("caesarean")) {
+          roomSelect.value = "OT-OBG";
+        } else if (val.toLowerCase().includes("knee") || val.toLowerCase().includes("arthroplasty")) {
+          roomSelect.value = "OT-ORTHO";
+        } else {
+          roomSelect.value = "OT-01";
+        }
+      };
+
+      window.onProcedurePriorityChange = function(val) {
+        const check = document.getElementById('book-ot-checkbox');
+        const roomSelect = document.getElementById('ot-proc-room');
+        const timeInput = document.getElementById('ot-proc-time');
+        
+        if (val === "Emergency" || val === "Urgent") {
+          if (check) {
+            check.checked = true;
+            window.toggleOTBookingSection(true);
+          }
+          if (val === "Emergency" && roomSelect) {
+            roomSelect.value = "OT-EMGCY";
+            if (timeInput) timeInput.value = "ASAP";
+          }
+        }
+      };
       break;
 
     case 'upload-doc':
@@ -2840,19 +3079,144 @@ window.executePatientAction = function(actionKey, uhid, extraParam) {
 
   else if (actionKey === 'order-proc') {
     const name = document.getElementById('proc-name').value;
+    const priority = document.getElementById('proc-priority').value;
+    const diag = document.getElementById('proc-diag').value;
+    const bookOt = document.getElementById('book-ot-checkbox')?.checked;
+    const orderId = "ORD" + (6000 + state.orders.length + 1);
 
     state.orders.push({
-      id: "ORD" + (6000 + state.orders.length + 1),
+      id: orderId,
       uhid: patient.uhid,
       patientName: patient.name,
       doctorName: patient.primaryConsultant,
       type: "Procedure",
       name: name,
       date: todayStr,
-      priority: "Routine",
+      priority: priority,
       status: "Pending",
-      result: ""
+      result: "",
+      otCaseId: null
     });
+
+    if (bookOt) {
+      const otRoom = document.getElementById('ot-proc-room').value;
+      const surgeon = document.getElementById('ot-proc-surgeon').value;
+      const anaes = document.getElementById('ot-proc-anaesthetist').value;
+      const slotDate = document.getElementById('ot-proc-date')?.value || todayStr;
+      const slotTime = document.getElementById('ot-proc-time').value;
+      const duration = document.getElementById('ot-proc-duration').value;
+      const bloodReq = document.getElementById('ot-proc-blood').value;
+
+      // Handle surgeon credentialing warning
+      const doc = state.doctors?.find(d => d.name === surgeon);
+      let isCredentialed = true;
+      if (doc) {
+        if (name.toLowerCase().includes("cholecystectomy") && doc.spec !== "General Surgery") {
+          isCredentialed = false;
+        } else if ((name.toLowerCase().includes("knee") || name.toLowerCase().includes("arthroplasty")) && doc.spec !== "Orthopedics") {
+          isCredentialed = false;
+        } else if (name.toLowerCase().includes("caesarean") && doc.spec !== "Gynecology & Obs") {
+          isCredentialed = false;
+        }
+      }
+
+      if (!isCredentialed) {
+        const confirmOverride = confirm(`⚠️ CREDENTIALING PRIVILEGE ALERT:\n${surgeon} is not credentialed to perform ${name} (Specialty: ${doc ? doc.spec : 'Unknown'}).\n\nDo you want to request a HOD Clinical Privilege Override?`);
+        if (!confirmOverride) {
+          return;
+        }
+      }
+
+      // Check theatre room speciality matching
+      const selectedTheatre = state.ot?.theatres?.find(t => t.code === otRoom);
+      let specialityMatches = true;
+      if (selectedTheatre) {
+        const tSpec = selectedTheatre.speciality.toLowerCase();
+        const pName = name.toLowerCase();
+        if (tSpec === "orthopaedics" && !(pName.includes("knee") || pName.includes("arthroplasty") || pName.includes("fracture"))) {
+          specialityMatches = false;
+        } else if (tSpec === "obg" && !pName.includes("caesarean") && !pName.includes("lscs") && !pName.includes("hysterectomy")) {
+          specialityMatches = false;
+        } else if (tSpec === "general surgery" && (pName.includes("caesarean") || pName.includes("knee"))) {
+          specialityMatches = false;
+        }
+      }
+
+      if (!specialityMatches && selectedTheatre) {
+        const confirmRoomOverride = confirm(`⚠️ THEATRE SPECIALITY MISMATCH:\nYou are scheduling ${name} in ${selectedTheatre.name} (Speciality: ${selectedTheatre.speciality}).\n\nAre you sure you want to request this cross-theatre booking?`);
+        if (!confirmRoomOverride) {
+          return;
+        }
+      }
+
+      const isEmerg = priority === "Emergency";
+      const otCaseId = isEmerg ? ("OT-CRASH-" + Math.floor(Math.random() * 9000 + 1000)) : ("OT-CASE-" + Math.floor(Math.random() * 9000 + 1000));
+      
+      const orderObj = state.orders.find(o => o.id === orderId);
+      if (orderObj) {
+        orderObj.otCaseId = otCaseId;
+      }
+
+      const otCase = {
+        id: otCaseId,
+        patientUhid: patient.uhid,
+        patientName: patient.name,
+        age: patient.age,
+        gender: patient.gender,
+        ward: patient.bed ? "IPD Ward" : "Emergency ER",
+        bed: patient.bed || "ER-TRAUMA-1",
+        admissionNo: patient.admission?.id || ("ADM" + Math.floor(Math.random() * 90000 + 10000)),
+        diagnosis: diag,
+        procedure: name,
+        surgeon: surgeon,
+        anaesthetist: anaes,
+        scrubNurse: "Sister Jessy",
+        circulatingNurse: "Brother Jose",
+        technician: "Ramesh Lal",
+        theatre: otRoom,
+        date: slotDate,
+        time: slotTime,
+        duration: duration,
+        status: isEmerg ? "Intra-Op" : "Requested",
+        priority: priority,
+        bloodReq: bloodReq,
+        bloodUnits: bloodReq === "Yes" ? "2 Units PRBC" : "N/A",
+        bloodStatus: bloodReq === "Yes" ? "Standby" : "N/A",
+        patientPosition: "Supine",
+        positioningChecked: false,
+        tourniquetLimb: "None",
+        tourniquetPressure: 0,
+        tourniquetInflated: false,
+        tourniquetInflatedTime: "",
+        tourniquetDeflatedTime: "",
+        tourniquetTotalMinutes: 0,
+        instrumentCount: { opening: 36, closing: 36, status: "Pending", needlesOpening: 10, needlesClosing: 10, spongesOpening: 20, spongesClosing: 20 },
+        consentChecklist: { surgical: true, anaesthesia: true, blood: true, implant: false },
+        preOpInvestigations: [
+          { test: "Complete Blood Count (CBC)", value: "Hb: 12.8 g/dL", status: "Normal", reviewed: true },
+          { test: "ECG", value: "Normal Sinus Rhythm", status: "Normal", reviewed: true }
+        ],
+        preOpChecklist: { wardComplete: true, holdingComplete: isEmerg, siteMarked: true, npoSolid: isEmerg ? "Emergency" : "NPO Solid", npoClear: isEmerg ? "Emergency" : "NPO Clear", asaStatus: "ASA II" },
+        whoChecklist: { signIn: isEmerg, timeOut: isEmerg, signOut: false },
+        anaesthesiaRecord: { type: isEmerg ? "General Anaesthesia" : "General/Spinal", inductionTime: isEmerg ? "Immediate" : "", extubationTime: "", agents: [], vitals: [] },
+        implants: [],
+        consumables: [
+          { code: "CON-OT-01", name: "OT Disposables Pack - Standard", qty: 1, rate: 2500 }
+        ],
+        auditHistory: []
+      };
+
+      state.ot = state.ot || { scheduledCases: [], auditTrail: [] };
+      state.ot.scheduledCases.push(otCase);
+      state.ot.auditTrail.push({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 23) + " IST",
+        user: window.state.activeUser || "Dr. Primary",
+        role: "IPD Doctor",
+        action: "OT Booked via IPD Desk",
+        target: otCase.id,
+        remarks: `Booked procedure ${name} for ${patient.name} in room ${otRoom} at ${slotTime}. ${!isCredentialed ? '(HOD Override Signed)' : ''}`
+      });
+    }
 
     patient.timelineEvents = patient.timelineEvents || [];
     patient.timelineEvents.unshift({
@@ -2860,10 +3224,10 @@ window.executePatientAction = function(actionKey, uhid, extraParam) {
       type: 'clinical',
       icon: '🪡',
       title: 'Procedure Requested',
-      desc: `Requested: ${name}`
+      desc: `Requested: ${name} ${bookOt ? '(OT Booked)' : ''}`
     });
 
-    descText = `Submitted Procedure Order: ${name}`;
+    descText = `Submitted Procedure Order & OT Room Schedule: ${name}`;
   }
 
   else if (actionKey === 'book-appt') {
@@ -4911,3 +5275,349 @@ function updateActiveRadOrdersList(patient) {
   `;
 }
 
+window.openEditOTRequestModal = function(caseId) {
+  const c = state.ot?.scheduledCases?.find(cs => cs.id === caseId);
+  if (!c) return alert("OT case request not found.");
+
+  let modal = document.getElementById('ot-edit-booking-modal-overlay');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ot-edit-booking-modal-overlay';
+    modal.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 bg-opacity-50 backdrop-blur-sm p-4";
+    document.body.appendChild(modal);
+  }
+
+  const doctors = state.doctors || [];
+  const surgeonsList = doctors.filter(d => d.spec === "General Surgery" || d.spec === "Orthopedics" || d.spec === "Gynecology & Obs" || d.spec === "Cardiology") || [];
+  const anaesthetistsList = doctors.filter(d => d.spec === "Emergency Medicine" || d.spec === "Neurology" || d.spec === "Cardiology") || [];
+  const theatresList = state.ot?.theatres || [];
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-6 font-sans antialiased text-slate-800 text-xs space-y-4 text-left">
+      <div class="flex items-center justify-between border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-900">✏️ Edit Clinical OT Booking Request</h3>
+        <button class="text-slate-400 font-bold hover:text-slate-600" onclick="window.closeEditOTRequestModal()">✕</button>
+      </div>
+
+      <form id="ot-edit-booking-form" class="space-y-4 text-xs" onsubmit="event.preventDefault(); window.saveEditedOTRequest('${caseId}');">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div class="md:col-span-2">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Indications / Diagnosis</label>
+            <input type="text" id="edit-ot-diag" class="w-full border rounded p-2 bg-white" value="${c.diagnosis || ''}" required>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Select OT Theatre Room</label>
+            <select id="edit-ot-room" class="w-full border rounded p-2 bg-white">
+              ${theatresList.map(t => `<option value="${t.code}" ${t.code === c.theatre ? 'selected' : ''}>${t.name} (${t.speciality})</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Primary Surgeon</label>
+            <select id="edit-ot-surgeon" class="w-full border rounded p-2 bg-white">
+              ${surgeonsList.map(s => `<option value="${s.name}" ${s.name === c.surgeon ? 'selected' : ''}>${s.name} (${s.spec})</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Preferred Anaesthetist</label>
+            <select id="edit-ot-anaesthetist" class="w-full border rounded p-2 bg-white">
+              ${anaesthetistsList.map(a => `<option value="${a.name}" ${a.name === c.anaesthetist ? 'selected' : ''}>${a.name} (${a.spec})</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Preferred Slot Date</label>
+            <input type="date" id="edit-ot-date" class="w-full border rounded p-2 bg-white font-mono" value="${c.date || ''}" required>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Preferred Slot Time (HH:MM)</label>
+            <input type="text" id="edit-ot-time" class="w-full border rounded p-2 bg-white font-mono" value="${c.time || ''}" required>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estimated Duration (Hrs)</label>
+            <input type="text" id="edit-ot-duration" class="w-full border rounded p-2 bg-white font-mono" value="${c.duration || ''}" required>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Priority</label>
+            <select id="edit-ot-priority" class="w-full border rounded p-2 bg-white">
+              <option value="Elective" ${c.priority === 'Elective' ? 'selected' : ''}>Elective</option>
+              <option value="Urgent" ${c.priority === 'Urgent' ? 'selected' : ''}>Urgent</option>
+              <option value="Emergency" ${c.priority === 'Emergency' ? 'selected' : ''}>Emergency</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Blood Units Standby Required?</label>
+            <select id="edit-ot-blood" class="w-full border rounded p-2 bg-white">
+              <option value="No" ${c.bloodReq === 'No' ? 'selected' : ''}>No</option>
+              <option value="Yes" ${c.bloodReq === 'Yes' ? 'selected' : ''}>Yes (2 Units PRBC Standby)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="flex justify-end gap-2 border-t pt-3 mt-4">
+          <button type="button" class="btn btn-secondary px-4 py-2" onclick="window.closeEditOTRequestModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4 py-2 bg-[#1B3A5C] text-white hover:bg-slate-800">Save Request Edits</button>
+        </div>
+      </form>
+    </div>
+  `;
+};
+
+window.closeEditOTRequestModal = function() {
+  const modal = document.getElementById('ot-edit-booking-modal-overlay');
+  if (modal) modal.remove();
+};
+
+window.saveEditedOTRequest = function(caseId) {
+  const c = state.ot?.scheduledCases?.find(cs => cs.id === caseId);
+  if (!c) return alert("OT case request not found.");
+
+  const diag = document.getElementById('edit-ot-diag').value;
+  const otRoom = document.getElementById('edit-ot-room').value;
+  const surgeon = document.getElementById('edit-ot-surgeon').value;
+  const anaes = document.getElementById('edit-ot-anaesthetist').value;
+  const slotDate = document.getElementById('edit-ot-date').value;
+  const slotTime = document.getElementById('edit-ot-time').value;
+  const duration = document.getElementById('edit-ot-duration').value;
+  const priority = document.getElementById('edit-ot-priority').value;
+  const bloodReq = document.getElementById('edit-ot-blood').value;
+
+  // Credential check
+  const doc = state.doctors?.find(d => d.name === surgeon);
+  let isCredentialed = true;
+  if (doc) {
+    if (c.procedure.toLowerCase().includes("cholecystectomy") && doc.spec !== "General Surgery") {
+      isCredentialed = false;
+    } else if ((c.procedure.toLowerCase().includes("knee") || c.procedure.toLowerCase().includes("arthroplasty")) && doc.spec !== "Orthopedics") {
+      isCredentialed = false;
+    } else if (c.procedure.toLowerCase().includes("caesarean") && doc.spec !== "Gynecology & Obs") {
+      isCredentialed = false;
+    }
+  }
+
+  if (!isCredentialed) {
+    const confirmOverride = confirm(`⚠️ CREDENTIALING PRIVILEGE ALERT:\n${surgeon} is not credentialed to perform ${c.procedure} (Specialty: ${doc ? doc.spec : 'Unknown'}).\n\nDo you want to request a HOD Clinical Privilege Override?`);
+    if (!confirmOverride) return;
+  }
+
+  // Specialty check
+  const selectedTheatre = state.ot?.theatres?.find(t => t.code === otRoom);
+  let specialityMatches = true;
+  if (selectedTheatre) {
+    const tSpec = selectedTheatre.speciality.toLowerCase();
+    const pName = c.procedure.toLowerCase();
+    if (tSpec === "orthopaedics" && !(pName.includes("knee") || pName.includes("arthroplasty") || pName.includes("fracture"))) {
+      specialityMatches = false;
+    } else if (tSpec === "obg" && !pName.includes("caesarean") && !pName.includes("lscs") && !pName.includes("hysterectomy")) {
+      specialityMatches = false;
+    } else if (tSpec === "general surgery" && (pName.includes("caesarean") || pName.includes("knee"))) {
+      specialityMatches = false;
+    }
+  }
+
+  if (!specialityMatches && selectedTheatre) {
+    const confirmRoomOverride = confirm(`⚠️ THEATRE SPECIALITY MISMATCH:\nYou are scheduling ${c.procedure} in ${selectedTheatre.name} (Speciality: ${selectedTheatre.speciality}).\n\nAre you sure you want to request this cross-theatre booking?`);
+    if (!confirmRoomOverride) return;
+  }
+
+  // Update OT case
+  c.diagnosis = diag;
+  c.theatre = otRoom;
+  c.surgeon = surgeon;
+  c.anaesthetist = anaes;
+  c.date = slotDate;
+  c.time = slotTime;
+  c.duration = duration;
+  c.priority = priority;
+  c.bloodReq = bloodReq;
+  c.bloodUnits = bloodReq === "Yes" ? "2 Units PRBC" : "N/A";
+  c.bloodStatus = bloodReq === "Yes" ? "Standby" : "N/A";
+
+  // Check if priority changed to Emergency
+  if (priority === "Emergency") {
+    c.status = "Intra-Op";
+  }
+
+  // Find corresponding order and update it
+  const orderObj = state.orders.find(o => o.otCaseId === caseId) || state.orders.find(o => o.uhid === c.patientUhid && o.name === c.procedure && o.type === "Procedure");
+  if (orderObj) {
+    orderObj.priority = priority;
+  }
+
+  // Add audit trail log
+  state.ot.auditTrail = state.ot.auditTrail || [];
+  state.ot.auditTrail.push({
+    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 23) + " IST",
+    user: window.state.activeUser || "Dr. Primary",
+    role: "IPD Doctor",
+    action: "OT Request Edited",
+    target: caseId,
+    remarks: `Edited request for ${c.patientName}. New slot: ${slotDate} at ${slotTime} in ${otRoom}.`
+  });
+
+  // Re-generate timeline event or add a timeline event about the edit
+  const patient = state.patients?.find(p => p.uhid === c.patientUhid);
+  if (patient) {
+    patient.timelineEvents = patient.timelineEvents || [];
+    patient.timelineEvents.unshift({
+      date: new Date().toISOString().replace('T', ' ').substring(0, 16).replace('-', '/').replace('-', '/'),
+      type: 'clinical',
+      icon: '📝',
+      title: 'Procedure OT Booking Edited',
+      desc: `Edited details: ${c.procedure} slot updated to ${slotDate} ${slotTime} in room ${otRoom} with surgeon ${surgeon}.`
+    });
+
+    // Re-render the patient profile
+    const container = document.getElementById('main-content');
+    const activeTabElement = document.querySelector('.ptab.on');
+    let activeTab = 'overview';
+    if (activeTabElement) {
+      const tabText = activeTabElement.innerText.toLowerCase();
+      if (tabText.includes('overview') || tabText.includes('timeline')) {
+        activeTab = 'overview';
+      } else if (tabText.includes('vitals')) {
+        activeTab = 'vitals';
+      } else if (tabText.includes('clinical')) {
+        activeTab = 'clinical';
+      } else if (tabText.includes('order')) {
+        activeTab = 'orders';
+      } else if (tabText.includes('report')) {
+        activeTab = 'reports';
+      } else if (tabText.includes('medication')) {
+        activeTab = 'medications';
+      } else if (tabText.includes('admission')) {
+        activeTab = 'admission';
+      } else if (tabText.includes('referral')) {
+        activeTab = 'referrals';
+      } else if (tabText.includes('billing')) {
+        activeTab = 'billing';
+      } else if (tabText.includes('document')) {
+        activeTab = 'documents';
+      }
+    }
+    renderPatient360Profile(container, patient, activeTab);
+  }
+
+  alert("OT booking request updated successfully!");
+  window.closeEditOTRequestModal();
+};
+
+window.viewOTRequestDetails = function(caseId) {
+  const c = state.ot?.scheduledCases?.find(cs => cs.id === caseId);
+  if (!c) return alert("OT case request not found.");
+
+  let modal = document.getElementById('ot-view-booking-modal-overlay');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ot-view-booking-modal-overlay';
+    modal.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900 bg-opacity-50 backdrop-blur-sm p-4";
+    document.body.appendChild(modal);
+  }
+
+  const caseAudits = state.ot?.auditTrail?.filter(a => a.target === caseId) || [];
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-6 font-sans antialiased text-slate-800 text-xs space-y-4 text-left">
+      <div class="flex items-center justify-between border-b pb-2">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">👁️ Clinical OT Booking Details</h3>
+          <span class="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600 mt-1 inline-block">${c.id}</span>
+        </div>
+        <button class="text-slate-400 font-bold hover:text-slate-600" onclick="window.closeViewOTRequestModal()">✕</button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Status Banner -->
+        <div class="p-3 rounded-lg flex items-center justify-between ${c.status === 'Requested' ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'}">
+          <span class="font-bold uppercase text-[10px]">Status: ${c.status}</span>
+          <span class="font-bold text-[10px] uppercase bg-white px-2 py-0.5 rounded shadow-sm border">${c.priority} Priority</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 border-b pb-3">
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Planned Procedure</span>
+            <span class="text-xs font-bold text-slate-800">${c.procedure}</span>
+          </div>
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Indications / Diagnosis</span>
+            <span class="text-xs text-slate-600">${c.diagnosis || 'N/A'}</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 border-b pb-3">
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">OT Theatre Room</span>
+            <span class="text-xs font-semibold text-slate-800">${c.theatre}</span>
+          </div>
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Date & Time</span>
+            <span class="text-xs font-semibold text-slate-800 font-mono">${c.date} at ${c.time}</span>
+          </div>
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Estimated Duration</span>
+            <span class="text-xs font-semibold text-slate-800 font-mono">${c.duration} hrs</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 border-b pb-3">
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Primary Surgeon</span>
+            <span class="text-xs font-semibold text-slate-800">${c.surgeon}</span>
+          </div>
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Preferred Anaesthetist</span>
+            <span class="text-xs font-semibold text-slate-800">${c.anaesthetist}</span>
+          </div>
+          <div>
+            <span class="block text-[10px] text-slate-400 uppercase font-bold">Blood Standby</span>
+            <span class="text-xs font-semibold text-slate-800">${c.bloodReq === 'Yes' ? 'Yes (2 Units PRBC)' : 'No'}</span>
+          </div>
+        </div>
+
+        <!-- Roster / Assigned Team (Rendered if Scheduled or later) -->
+        ${c.status !== 'Requested' ? `
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <h4 class="font-bold text-slate-700 mb-2">🧑‍⚕️ Assigned Care & Scrub Team</h4>
+            <div class="grid grid-cols-3 gap-2 text-[10px]">
+              <div><strong>Scrub Nurse:</strong> <span class="text-slate-600">${c.scrubNurse || 'Sister Jessy'}</span></div>
+              <div><strong>Circulating Nurse:</strong> <span class="text-slate-600">${c.circulatingNurse || 'Brother Jose'}</span></div>
+              <div><strong>Technician:</strong> <span class="text-slate-600">${c.technician || 'Ramesh Lal'}</span></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Audit Trail section -->
+        <div>
+          <h4 class="font-bold text-slate-700 mb-2">📋 Case Audit Log</h4>
+          <div class="max-h-[100px] overflow-y-auto border rounded divide-y bg-slate-50 font-mono text-[9px] text-slate-600">
+            ${caseAudits.length === 0 ? `
+              <div class="p-2 text-slate-400 italic">No audit records for this case.</div>
+            ` : caseAudits.map(a => `
+              <div class="p-1.5 hover:bg-slate-100">
+                <span class="text-slate-400">[${a.timestamp}]</span> <strong>${a.user} (${a.role})</strong>: ${a.action} - <span class="text-slate-700 font-sans">${a.remarks}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex justify-end border-t pt-3 mt-4">
+        <button type="button" class="btn btn-secondary px-4 py-2" onclick="window.closeViewOTRequestModal()">Close Details</button>
+      </div>
+    </div>
+  `;
+};
+
+window.closeViewOTRequestModal = function() {
+  const modal = document.getElementById('ot-view-booking-modal-overlay');
+  if (modal) modal.remove();
+};

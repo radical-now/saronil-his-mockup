@@ -6,51 +6,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Fonts */
-  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Fonts - Align with Tailwind defaults */
+  --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Colors (Enterprise Healthcare Blue System) */
-  --bg-base: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --border-color: #e2e8f0;
+  /* Tailwind CSS Slate Palette (Light Theme) */
+  --bg-base: #f8fafc;            /* slate-50 */
+  --bg-surface: #ffffff;         /* white */
+  --bg-surface-elevated: #f1f5f9;/* slate-100 */
+  --border-color: #e2e8f0;       /* slate-200 */
   
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #0f172a;       /* slate-900 */
+  --text-secondary: #475569;     /* slate-600 */
+  --text-muted: #94a3b8;         /* slate-400 */
 
-  /* Brand Accents */
-  --primary: #0052ff;
-  --primary-glow: rgba(0, 82, 255, 0.05);
-  --primary-hover: #0041cc;
-  --secondary: #6366f1;
-  --secondary-glow: rgba(99, 102, 241, 0.05);
+  /* Tailwind CSS Blue Palette (Primary Accent) */
+  --primary: #2563eb;            /* blue-600 */
+  --primary-glow: #eff6ff;       /* blue-50 */
+  --primary-hover: #1d4ed8;      /* blue-700 */
+  --secondary: #4f46e5;          /* indigo-600 */
+  --secondary-glow: #e0e7ff;     /* indigo-50 */
 
-  /* Status Colors */
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.08);
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.08);
-  --color-danger: #ef4444;
-  --color-danger-bg: rgba(239, 68, 68, 0.08);
-  --color-info: #0ea5e9;
-  --color-info-bg: rgba(14, 165, 233, 0.08);
-  --color-purple: #818cf8;
-  --color-purple-bg: rgba(129, 140, 248, 0.08);
+  /* Status Colors mapped to Tailwind Light design specs */
+  --color-success: #10b981;       /* emerald-500 */
+  --color-success-bg: #ecfdf5;    /* emerald-50 */
+  --color-warning: #f59e0b;       /* amber-500 */
+  --color-warning-bg: #fef3c7;    /* amber-50 */
+  --color-danger: #ef4444;        /* red-500 */
+  --color-danger-bg: #fef2f2;     /* red-50 */
+  --color-info: #0ea5e9;          /* sky-500 */
+  --color-info-bg: #e0f2fe;       /* sky-50 */
+  --color-purple: #8b5cf6;        /* violet-500 */
+  --color-purple-bg: #f53ff;      /* violet-50 */
 
   /* Layout Constants */
   --sidebar-width: 260px;
   --header-height: 70px;
   
-  /* Borders & Shadows */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  /* Tailwind standard radii */
+  --radius-xs: 0.125rem;          /* 2px (rounded-sm) */
+  --radius-sm: 0.375rem;          /* 6px (rounded-md) */
+  --radius-md: 0.5rem;            /* 8px (rounded-lg) */
+  --radius-lg: 0.75rem;           /* 12px (rounded-xl) */
+  
+  /* Tailwind standard shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -502,30 +504,30 @@ a:hover {
 }
 
 .custom-table th {
-  background-color: var(--bg-surface-elevated);
+  background-color: var(--bg-base); /* slate-50 */
   padding: 0.75rem 1rem;
-  color: var(--text-secondary);
+  color: var(--text-secondary); /* slate-600 */
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color); /* slate-200 */
 }
 
 .custom-table td {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9; /* slate-100 for clean internal gridlines */
+  color: #334155; /* slate-700 */
   font-size: 0.85rem;
   vertical-align: middle;
 }
 
 .custom-table tbody tr:hover td {
-  background-color: #f8fafc;
+  background-color: var(--bg-surface-elevated); /* slate-100 */
 }
 
 .table-row-selected td {
-  background-color: var(--primary-glow) !important;
+  background-color: var(--primary-glow) !important; /* blue-50 */
 }
 
 /* Badge System */
@@ -593,29 +595,33 @@ a:hover {
   font-size: 0.85rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm); /* rounded-md (6px) */
   cursor: pointer;
   transition: var(--transition-smooth);
   outline: none;
   border: 1px solid transparent;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary {
   background-color: var(--primary);
   color: #ffffff;
+  border-color: var(--primary);
 }
 .btn-primary:hover {
   background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .btn-secondary {
-  background-color: var(--bg-surface-elevated);
+  background-color: var(--bg-surface);
   color: var(--text-secondary);
-  border-color: var(--border-color);
+  border-color: #d1d5db; /* gray-300 */
 }
 .btn-secondary:hover {
-  background-color: var(--border-color);
+  background-color: var(--bg-surface-elevated); /* slate-100 */
   color: var(--text-primary);
+  border-color: #cbd5e1; /* slate-300 */
 }
 
 .btn-outline {
@@ -628,13 +634,14 @@ a:hover {
 }
 
 .btn-danger {
-  background-color: var(--color-danger-bg);
+  background-color: #fef2f2; /* red-50 */
   color: var(--color-danger);
-  border-color: rgba(239, 68, 68, 0.2);
+  border-color: #fca5a5; /* red-300 */
 }
 .btn-danger:hover {
   background-color: var(--color-danger);
   color: #ffffff;
+  border-color: var(--color-danger);
 }
 
 .btn-sm {
@@ -651,9 +658,9 @@ a:hover {
 }
 
 .form-label {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.8rem;
-  color: var(--text-primary);
+  color: var(--text-secondary); /* slate-600 */
 }
 
 .form-label span {
@@ -664,16 +671,23 @@ a:hover {
   font-family: var(--font-body);
   font-size: 0.85rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border: 1px solid #cbd5e1; /* slate-300 */
+  border-radius: var(--radius-sm); /* rounded-md */
   outline: none;
+  background-color: var(--bg-surface);
+  color: #1e293b; /* slate-800 */
   transition: var(--transition-smooth);
   width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-control::placeholder, .form-textarea::placeholder {
+  color: #94a3b8; /* slate-400 */
 }
 
 .form-control:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.1);
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); /* Tailwind primary focus ring */
 }
 
 .form-textarea {

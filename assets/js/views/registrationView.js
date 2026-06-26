@@ -169,16 +169,7 @@ window.views.registration = function(container, subAnchor, params) {
 
     <div class="reg-container">
       <!-- Top Header: Title, Subtitle, and Action Button -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); padding: 1.25rem 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-            <span>🏥</span> New Patient Registration
-          </h3>
-          <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">
-            NABH-Compliant & Ayushman Bharat Digital Mission (ABDM) Workstation
-          </p>
-        </div>
-        
+      <div style="display: flex; justify-content: flex-end; align-items: center; padding: 0.5rem 0; flex-wrap: wrap; gap: 1rem;">
         <div>
           ${!window.registrationModeActive ? `
             <button class="btn btn-primary" onclick="startNewRegistrationFlow()" style="font-weight: 700; padding: 0.6rem 1.25rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm);">
@@ -846,8 +837,10 @@ window.views.registration = function(container, subAnchor, params) {
     const dob = document.getElementById('reg-dob').value;
     const ageVal = document.getElementById('reg-age').value.trim();
     const blood = document.getElementById('reg-blood').value;
-    const aadhaar = document.getElementById('reg-aadhaar').value.trim();
-    const passport = document.getElementById('reg-passport').value.trim();
+    const govIdType = document.getElementById('reg-gov-id-type').value;
+    const govIdNumber = document.getElementById('reg-gov-id-number').value.trim();
+    const aadhaar = govIdType === 'Aadhaar Card' ? govIdNumber : '';
+    const passport = govIdType === 'Passport' ? govIdNumber : '';
     const consultantId = document.getElementById('reg-consultant').value;
     const mobile = document.getElementById('reg-mobile').value.trim();
     const religion = document.getElementById('reg-religion').value;
@@ -855,6 +848,7 @@ window.views.registration = function(container, subAnchor, params) {
     const category = document.getElementById('reg-patient-category').value;
     const nationality = document.getElementById('reg-nationality').value.trim();
     const abhaVal = document.getElementById('reg-abha').value.trim();
+    const preferredLanguage = document.getElementById('reg-language').value.trim();
 
     // Contact info
     const email = document.getElementById('reg-email').value.trim();
@@ -907,8 +901,8 @@ window.views.registration = function(container, subAnchor, params) {
       alert('⚠️ First name and Last name are required.');
       return;
     }
-    if (!dob && !ageVal) {
-      alert('⚠️ Date of Birth or Age is required.');
+    if (!ageVal) {
+      alert('⚠️ Age is required.');
       return;
     }
     if (!mobile) {
@@ -962,6 +956,7 @@ window.views.registration = function(container, subAnchor, params) {
       abhaId: window.abhaLinked ? (abhaVal || 'No ABHA Tagged') : 'No ABHA Tagged',
       aadhaar: aadhaar || 'Not Provided',
       passport: passport || 'Not Provided',
+      govId: { type: govIdType, number: govIdNumber },
       name: `${firstName} ${lastName}`,
       age: calculatedAge,
       gender: gender,
@@ -974,6 +969,7 @@ window.views.registration = function(container, subAnchor, params) {
       occupation: occupation || 'Not Provided',
       patientCategory: category,
       nationality: nationality || 'Indian',
+      preferredLanguage: preferredLanguage || 'Hindi',
       emergencyContact: { name: emergName, relation: emergRelation, phone: emergPhone },
       payer: payerName,
       payerType: payerType,
@@ -1465,8 +1461,8 @@ window.views.registration = function(container, subAnchor, params) {
         alert('⚠️ First name and Last name are required.');
         return false;
       }
-      if (!dob && !ageVal) {
-        alert('⚠️ Date of Birth or Age is required.');
+      if (!ageVal) {
+        alert('⚠️ Age is required.');
         return false;
       }
       if (!mobile) {
@@ -1477,10 +1473,7 @@ window.views.registration = function(container, subAnchor, params) {
         alert('⚠️ Mobile Number must be exactly 10 digits.');
         return false;
       }
-      if (!consultant) {
-        alert('⚠️ Preferred Consultant is required.');
-        return false;
-      }
+      // Preferred Consultant is optional, no validation check required
     } else if (tabId === 'inner-address') {
       const address = document.getElementById('reg-address') ? document.getElementById('reg-address').value.trim() : '';
       const city = document.getElementById('reg-city') ? document.getElementById('reg-city').value.trim() : '';
@@ -2008,10 +2001,16 @@ window.views.registration = function(container, subAnchor, params) {
                 <form id="patient-registration-form" onsubmit="submitRegistrationForm(event)">
                 <!-- Tab 1: Patient Info & ID -->
                 <div id="inner-demo" class="inner-tab-content active">
-                  <h5 style="color:var(--primary); font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; margin-top:0; margin-bottom:1rem;">Patient Information</h5>
-                  <div class="grid-3">
+                  
+                  <!-- Row 1: Personal Details -->
+                  <h5 style="color:var(--primary); font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; margin-top:0; margin-bottom:1rem;">1. Personal Details</h5>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
-                      <label class="form-label">Title <span>*</span></label>
+                      <label class="form-label" style="font-weight: 700;">Mobile Number <span>*</span></label>
+                      <input type="tel" id="reg-mobile" class="form-control" placeholder="9876543210" maxlength="10" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">Title <span>*</span></label>
                       <select id="reg-title" class="form-select" required>
                         <option value="Mr.">Mr.</option>
                         <option value="Mrs.">Mrs.</option>
@@ -2021,18 +2020,15 @@ window.views.registration = function(container, subAnchor, params) {
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">First Name <span>*</span></label>
+                      <label class="form-label" style="font-weight: 700;">First Name <span>*</span></label>
                       <input type="text" id="reg-first-name" class="form-control" required placeholder="Vijay">
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Last Name <span>*</span></label>
+                      <label class="form-label" style="font-weight: 700;">Last Name <span>*</span></label>
                       <input type="text" id="reg-last-name" class="form-control" required placeholder="Kumar">
                     </div>
-                  </div>
-
-                  <div class="grid-3" style="margin-top: 1rem;">
                     <div class="form-group">
-                      <label class="form-label">Gender <span>*</span></label>
+                      <label class="form-label" style="font-weight: 700;">Gender <span>*</span></label>
                       <select id="reg-gender" class="form-select" required>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
@@ -2040,55 +2036,15 @@ window.views.registration = function(container, subAnchor, params) {
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Date of Birth <span>*</span></label>
-                      <input type="date" id="reg-dob" class="form-control" onchange="handleRegDOBChange()" required>
+                      <label class="form-label" style="font-weight: 700;">Date of Birth</label>
+                      <input type="date" id="reg-dob" class="form-control" onchange="handleRegDOBChange()">
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Age (Years) <span>*</span></label>
+                      <label class="form-label" style="font-weight: 700;">Age (Years) <span>*</span></label>
                       <input type="number" id="reg-age" class="form-control" placeholder="36" min="0" max="120" oninput="handleRegAgeChange()" required>
                     </div>
-                  </div>
-
-                  <div class="grid-3" style="margin-top: 1rem;">
                     <div class="form-group">
-                      <label class="form-label">Mobile Number <span>*</span></label>
-                      <input type="tel" id="reg-mobile" class="form-control" placeholder="9876543210" maxlength="10" required>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Religion</label>
-                      <select id="reg-religion" class="form-select">
-                        <option value="Hinduism">Hinduism</option>
-                        <option value="Islam">Islam</option>
-                        <option value="Christianity">Christianity</option>
-                        <option value="Sikhism">Sikhism</option>
-                        <option value="Buddhism">Buddhism</option>
-                        <option value="Jainism">Jainism</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Occupation</label>
-                      <input type="text" id="reg-occupation" class="form-control" placeholder="e.g. Software Engineer">
-                    </div>
-                  </div>
-
-                  <div class="grid-3" style="margin-top: 1rem;">
-                    <div class="form-group">
-                      <label class="form-label">VIP / Service Status</label>
-                      <select id="reg-patient-category" class="form-select">
-                        <option value="Regular">Regular</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Ex-Servicemen">Ex-Servicemen</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Preferred Consultant <span>*</span></label>
-                      <select id="reg-consultant" class="form-select" required>
-                        ${state.doctors.map(d => `<option value="${d.id}">${d.name} (${d.spec})</option>`).join('')}
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Blood Group</label>
+                      <label class="form-label" style="font-weight: 700;">Blood Group</label>
                       <select id="reg-blood" class="form-select">
                         <option value="A+">A+</option>
                         <option value="A-">A-</option>
@@ -2102,17 +2058,51 @@ window.views.registration = function(container, subAnchor, params) {
                     </div>
                   </div>
 
-                  <div class="grid-3" style="margin-top: 1rem;">
+                  <!-- Row 2: Other Details -->
+                  <h5 style="color:var(--primary); font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; margin-top:1.5rem; margin-bottom:1rem;">2. Other Details</h5>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
-                      <label class="form-label">Preferred Language</label>
+                      <label class="form-label" style="font-weight: 700;">Religion</label>
+                      <select id="reg-religion" class="form-select">
+                        <option value="Hinduism">Hinduism</option>
+                        <option value="Islam">Islam</option>
+                        <option value="Christianity">Christianity</option>
+                        <option value="Sikhism">Sikhism</option>
+                        <option value="Buddhism">Buddhism</option>
+                        <option value="Jainism">Jainism</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">Occupation</label>
+                      <input type="text" id="reg-occupation" class="form-control" placeholder="e.g. Software Engineer">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">VIP / Service Status</label>
+                      <select id="reg-patient-category" class="form-select">
+                        <option value="Regular">Regular</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Ex-Servicemen">Ex-Servicemen</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">Preferred Language</label>
                       <input type="text" id="reg-language" class="form-control" value="Hindi">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label" style="font-weight: 700;">Preferred Consultant</label>
+                      <select id="reg-consultant" class="form-select">
+                        <option value="">-- Select Consultant (Optional) --</option>
+                        ${state.doctors.map(d => `<option value="${d.id}">${d.name} (${d.spec})</option>`).join('')}
+                      </select>
                     </div>
                   </div>
 
-                  <h5 style="color:var(--primary); font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; margin-top:1.5rem; margin-bottom:1rem;">Identification & ABDM Integration</h5>
-                  <div class="grid-2">
-                    <div class="form-group">
-                      <label class="form-label">ABHA ID / Address Number</label>
+                  <!-- Row 3: Government ID -->
+                  <h5 style="color:var(--primary); font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; margin-top:1.5rem; margin-bottom:1rem;">3. Government ID</h5>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label" style="font-weight: 700;">ABHA ID / Address Number</label>
                       <div style="display:flex; gap:0.5rem;">
                         <input type="text" id="reg-abha" class="form-control" placeholder="91-2000-3455-6789" value="91-2000-3455-6789">
                         <button type="button" class="btn btn-primary" onclick="triggerABHAVerification()">Verify ABHA</button>
@@ -2121,19 +2111,23 @@ window.views.registration = function(container, subAnchor, params) {
                         <span class="badge bg-warning" style="color:#000; padding:0.25rem 0.5rem; border-radius:4px; font-weight:700;">⚡ ABDM UNLINKED (OTP PENDING)</span>
                       </div>
                     </div>
-                    <div class="grid-3">
-                      <div class="form-group">
-                        <label class="form-label">Nationality</label>
-                        <input type="text" id="reg-nationality" class="form-control" value="Indian">
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Aadhaar Card Number (12 Digits)</label>
-                        <input type="text" id="reg-aadhaar" class="form-control" placeholder="123456789012" maxlength="12">
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Passport Number (Optional)</label>
-                        <input type="text" id="reg-passport" class="form-control" placeholder="Z9000001">
-                      </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">Nationality</label>
+                      <input type="text" id="reg-nationality" class="form-control" value="Indian">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" style="font-weight: 700;">Government ID Type</label>
+                      <select id="reg-gov-id-type" class="form-select">
+                        <option value="Aadhaar Card">Aadhaar Card</option>
+                        <option value="Passport">Passport</option>
+                        <option value="PAN Card">PAN Card</option>
+                        <option value="Voter ID">Voter ID</option>
+                        <option value="Driving License">Driving License</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label" style="font-weight: 700;">Government ID Number</label>
+                      <input type="text" id="reg-gov-id-number" class="form-control" placeholder="Enter ID number...">
                     </div>
                   </div>
                 </div>

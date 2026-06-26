@@ -6,6 +6,22 @@ window.views.support = function(container, subAnchor, params) {
   renderSupportWorkspace(container, subAnchor || 'cssd');
 };
 
+window.views.cssd = function(container, subAnchor, params) {
+  renderCSSDTab(container);
+};
+
+window.views.diet = function(container, subAnchor, params) {
+  renderDietTab(container);
+};
+
+window.views.equipment = function(container, subAnchor, params) {
+  renderEquipmentTab(container);
+};
+
+window.views.laundry = function(container, subAnchor, params) {
+  renderLaundryTab(container);
+};
+
 function renderSupportWorkspace(container, activeTab) {
   container.innerHTML = `
     <!-- Tab Navigation Headers -->
@@ -131,7 +147,7 @@ window.submitCSSDBatch = function() {
   });
 
   alert('Sterilization cycle initiated. Autoclave heating...');
-  renderSupportWorkspace(document.getElementById('main-content'), 'cssd');
+  window.views.cssd(document.getElementById('main-content'));
 };
 
 window.releaseCSSDBatch = function(batchId) {
@@ -139,7 +155,7 @@ window.releaseCSSDBatch = function(batchId) {
   if (batch) {
     batch.status = 'Sterile';
     alert(`Autoclave Cycle completed. Load verified sterile and released to OT/Wards.`);
-    renderSupportWorkspace(document.getElementById('main-content'), 'cssd');
+    window.views.cssd(document.getElementById('main-content'));
   }
 };
 
@@ -213,7 +229,7 @@ window.updatePatientDiet = function(uhid, newDiet) {
   if (patient) {
     patient.clinicalData.carePlan = `Follow ${newDiet}. Daily walking for 30 minutes. Monitor blood pressure charts.`;
     alert(`Diet plan for ${patient.name} updated to: ${newDiet}. Diet kitchen notified.`);
-    renderSupportWorkspace(document.getElementById('main-content'), 'diet');
+    window.views.diet(document.getElementById('main-content'));
   }
 };
 
@@ -339,7 +355,7 @@ window.submitMaintenanceTicket = function() {
   });
 
   alert('Complaint ticket logged. Assigned to Bio-Medical Engineer.');
-  renderSupportWorkspace(document.getElementById('main-content'), 'equipment');
+  window.views.equipment(document.getElementById('main-content'));
 };
 
 window.closeRepairTicket = function(ticketId) {
@@ -357,7 +373,7 @@ window.closeRepairTicket = function(ticketId) {
     state.maintenanceComplaints.splice(idx, 1);
 
     alert(`Ticket ${ticketId} resolved. Calibration tag updated to active.`);
-    renderSupportWorkspace(document.getElementById('main-content'), 'equipment');
+    window.views.equipment(document.getElementById('main-content'));
   }
 };
 
@@ -444,7 +460,7 @@ window.submitLaundryBatch = function() {
   });
 
   alert('Laundry bundle dispatched to external wash vendors.');
-  renderSupportWorkspace(document.getElementById('main-content'), 'laundry');
+  window.views.laundry(document.getElementById('main-content'));
 };
 
 window.receiveLaundryBatch = function(batchId) {
@@ -457,6 +473,6 @@ window.receiveLaundryBatch = function(batchId) {
     if (storeSheets) storeSheets.stock += batch.sheets;
 
     alert(`Clean laundry bundle received. ${batch.sheets} sheets credited back to Stores inventory.`);
-    renderSupportWorkspace(document.getElementById('main-content'), 'laundry');
+    window.views.laundry(document.getElementById('main-content'));
   }
 };

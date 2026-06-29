@@ -11,7 +11,7 @@ elif [[ -z "${STATICRYPT_PASSWORD:-}" ]]; then
   exit 1
 fi
 
-staticrypt source.html -p "$STATICRYPT_PASSWORD"
+staticrypt source.html -p "$STATICRYPT_PASSWORD" --template "$ROOT/staticrypt-template.html"
 rm -f index.html
 mv encrypted/source.html index.html
 rmdir encrypted 2>/dev/null || rm -rf encrypted

@@ -3,7 +3,11 @@
    ========================================================================== */
 
 window.views.rad = function(container, subAnchor, params) {
-  renderRadView(container);
+  if (window.views && window.views.radDashboard) {
+    window.views.radDashboard(container);
+  } else {
+    renderRadView(container);
+  }
 };
 
 function renderRadView(container) {

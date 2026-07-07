@@ -25,11 +25,14 @@ window.views.laundry = function(container, subAnchor, params) {
 function renderSupportWorkspace(container, activeTab) {
   container.innerHTML = `
     <!-- Tab Navigation Headers -->
-    <div style="display: flex; gap: 0.5rem; background-color: var(--bg-surface); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.5rem; flex-wrap: wrap;">
-      <button class="btn ${activeTab === 'cssd' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-cssd')">🧼 CSSD Sterilization</button>
-      <button class="btn ${activeTab === 'diet' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-diet')">🍏 Diet & Nutrition</button>
-      <button class="btn ${activeTab === 'equipment' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-equipment')">🛠️ Equipment & PM</button>
-      <button class="btn ${activeTab === 'laundry' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-laundry')">🧺 Laundry & Linen</button>
+    <div style="display: flex; gap: 0.5rem; background-color: var(--bg-surface); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; justify-content: space-between; width: 100%;">
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn ${activeTab === 'cssd' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-cssd')">🧼 CSSD Sterilization</button>
+        <button class="btn ${activeTab === 'diet' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-diet')">🍏 Diet & Nutrition</button>
+        <button class="btn ${activeTab === 'equipment' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-equipment')">🛠️ Equipment & PM</button>
+        <button class="btn ${activeTab === 'laundry' ? 'btn-primary' : 'btn-secondary'}" onclick="router.navigate('support-laundry')">🧺 Laundry & Linen</button>
+      </div>
+      <button class="btn btn-secondary" style="background:#1d4ed8; color:#fff;" onclick="window.showStockRequestOverlay({dept:'Support Service', urgency:'Routine'})">📦 Request Stock</button>
     </div>
 
     <!-- Active Support Module viewport -->
@@ -163,75 +166,12 @@ window.releaseCSSDBatch = function(batchId) {
 // DIET TAB
 // --------------------------------------------------------------------------
 function renderDietTab(container) {
-  // Filter admitted patients
-  const inpatients = state.patients.filter(p => p.status === 'Admitted');
-
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Inpatient Diet Chart Roster</h3>
-          <p class="card-subtitle">Assign and modify meal plans based on diabetic, cardiac, or renal clinical requirements</p>
-        </div>
-      </div>
-      <div class="card-body">
-        <table class="custom-table" style="font-size: 0.85rem;">
-          <thead>
-            <tr>
-              <th>Patient Details</th>
-              <th>Ward / Bed</th>
-              <th>Diagnosis</th>
-              <th>Diet Plan</th>
-              <th>Breakfast Schedule</th>
-              <th>Lunch Schedule</th>
-              <th style="text-align: right;">Modify Plan</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${inpatients.map(pat => {
-              const admission = state.admissions.find(a => a.uhid === pat.uhid && a.status === 'Active');
-              const dietType = pat.clinicalData.carePlan.includes('Diet') 
-                ? pat.clinicalData.carePlan.split('Diet')[0].replace('Follow ', '').trim() + ' Diet'
-                : 'Regular Diet';
-
-              return `
-                <tr>
-                  <td>
-                    <div style="font-weight:600; color:var(--text-primary);">${pat.name}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted);">${pat.uhid}</div>
-                  </td>
-                  <td>${admission ? `${admission.ward.replace('-WARD', '')} / ${admission.bed}` : 'IPD Pending'}</td>
-                  <td>${pat.clinicalData.diagnosis}</td>
-                  <td><strong style="color: var(--primary);">${dietType}</strong></td>
-                  <td>Standard (Oatmeal, Milk)</td>
-                  <td>Standard (Rice, Dal, Veg)</td>
-                  <td style="text-align: right;">
-                    <select class="form-select" style="font-size: 0.75rem; padding: 0.2rem; width: 140px; display: inline-block;" onchange="updatePatientDiet('${pat.uhid}', this.value)">
-                      <option value="Regular Diet" ${dietType.includes('Regular') ? 'selected' : ''}>Regular Diet</option>
-                      <option value="Low Sodium Diet" ${dietType.includes('Low Sodium') ? 'selected' : ''}>Low Sodium</option>
-                      <option value="Diabetic Diet" ${dietType.includes('Diabetic') ? 'selected' : ''}>Diabetic Diet</option>
-                      <option value="Renal Diet" ${dietType.includes('Renal') ? 'selected' : ''}>Renal Diet</option>
-                      <option value="Liquid Diet" ${dietType.includes('Liquid') ? 'selected' : ''}>Clear Liquid</option>
-                    </select>
-                  </td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No admitted inpatients found.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-window.updatePatientDiet = function(uhid, newDiet) {
-  const patient = state.patients.find(p => p.uhid === uhid);
-  if (patient) {
-    patient.clinicalData.carePlan = `Follow ${newDiet}. Daily walking for 30 minutes. Monitor blood pressure charts.`;
-    alert(`Diet plan for ${patient.name} updated to: ${newDiet}. Diet kitchen notified.`);
-    window.views.diet(document.getElementById('main-content'));
+  if (typeof window.views.diet === 'function') {
+    window.views.diet(container);
+  } else {
+    container.innerHTML = 'Diet module loading...';
   }
-};
+}
 
 // --------------------------------------------------------------------------
 // EQUIPMENT TAB

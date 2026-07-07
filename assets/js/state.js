@@ -3,45 +3,56 @@
    ========================================================================== */
 
 const DOCTORS_DATABASE = [
-  { id: "DOC01", name: "Dr. Abhishek Kumar", spec: "Cardiology", room: "101", phone: "+91 98450 11022", status: "Active" },
-  { id: "DOC02", name: "Dr. Sunita Sharma", spec: "Cardiology", room: "102", phone: "+91 98450 11023", status: "Active" },
-  { id: "DOC03", name: "Dr. Amit Patel", spec: "Pediatrics", room: "103", phone: "+91 98450 11024", status: "Active" },
-  { id: "DOC04", name: "Dr. Mamta Kumari", spec: "Pediatrics", room: "104", phone: "+91 98450 11025", status: "Active" },
-  { id: "DOC05", name: "Dr. Rajesh Singh", spec: "General Medicine", room: "105", phone: "+91 98450 11026", status: "Active" },
-  { id: "DOC06", name: "Dr. Devanti Devi", spec: "General Medicine", room: "106", phone: "+91 98450 11027", status: "Active" },
-  { id: "DOC07", name: "Dr. Munna Kumar", spec: "Orthopedics", room: "107", phone: "+91 98450 11028", status: "Active" },
-  { id: "DOC08", name: "Dr. Sarah Jenkins", spec: "Orthopedics", room: "108", phone: "+91 98450 11029", status: "Active" },
-  { id: "DOC09", name: "Dr. Arvind Prasad", spec: "Gynecology & Obs", room: "109", phone: "+91 98450 11030", status: "Active" },
-  { id: "DOC10", name: "Dr. Neha Gupta", spec: "Gynecology & Obs", room: "110", phone: "+91 98450 11031", status: "Active" },
-  { id: "DOC11", name: "Dr. Ajay Kumar", spec: "Neurology", room: "201", phone: "+91 98450 11032", status: "Active" },
-  { id: "DOC12", name: "Dr. Prabal Roy", spec: "Neurology", room: "202", phone: "+91 98450 11033", status: "Active" },
-  { id: "DOC13", name: "Dr. Shrawan Kumar", spec: "Oncology", room: "203", phone: "+91 98450 11034", status: "Active" },
-  { id: "DOC14", name: "Dr. Anamika Sen", spec: "Oncology", room: "204", phone: "+91 98450 11035", status: "Active" },
-  { id: "DOC15", name: "Dr. Mukesh Kumar", spec: "Gastroenterology", room: "205", phone: "+91 98450 11036", status: "Active" },
-  { id: "DOC16", name: "Dr. Amrita Rai", spec: "Gastroenterology", room: "206", phone: "+91 98450 11037", status: "Active" },
-  { id: "DOC17", name: "Dr. Rakesh Singh", spec: "IVF & Fertility", room: "207", phone: "+91 98450 11038", status: "Active" },
-  { id: "DOC18", name: "Dr. Vijay Pipil", spec: "Dermatology", room: "208", phone: "+91 98450 11039", status: "Active" },
-  { id: "DOC19", name: "Dr. Anil Gargi", spec: "Emergency Medicine", room: "ER-01", phone: "+91 98450 11040", status: "Active" },
-  { id: "DOC20", name: "Dr. Sanni Yadav", spec: "Emergency Medicine", room: "ER-02", phone: "+91 98450 11041", status: "Active" },
-  { id: "DOC21", name: "Dr. Ramesh Kumar", spec: "General Medicine", room: "111", phone: "+91 98450 11042", status: "Active" },
-  { id: "DOC22", name: "Dr. Sunita Pandey", spec: "Cardiology", room: "112", phone: "+91 98450 11043", status: "Active" },
-  { id: "DOC23", name: "Dr. Vikram Seth", spec: "Emergency Medicine", room: "ER-03", phone: "+91 98450 11044", status: "Active" },
-  { id: "DOC24", name: "Dr. Ananya Reddy", spec: "Pediatrics", room: "113", phone: "+91 98450 11045", status: "Active" },
-  { id: "DOC25", name: "Dr. Ritu S.", spec: "Psychiatry", room: "114", phone: "+91 98450 11046", status: "Active" },
-  { id: "DOC26", name: "Dr. Sunita P.", spec: "General Surgery", room: "115", phone: "+91 98450 11047", status: "Active" },
-  { id: "DOC27", name: "Dr. Vikram S.", spec: "General Medicine", room: "116", phone: "+91 98450 11048", status: "Active" },
-  { id: "DOC28", name: "Dr. Ananya R.", spec: "Neurology", room: "117", phone: "+91 98450 11049", status: "Active" },
-  { id: "DOC29", name: "Dr. Priyanka Sen", spec: "Gynecology & Obs", room: "209", phone: "+91 98450 11050", status: "Active" },
-  { id: "DOC30", name: "Dr. Shalini Mukhopadhyay", spec: "Gynecology & Obs", room: "210", phone: "+91 98450 11051", status: "Active" },
-  { id: "DOC31", name: "Dr. Preeti Reddy", spec: "Gynecology & Obs", room: "211", phone: "+91 98450 11052", status: "Active" },
-  { id: "DOC32", name: "Dr. Meenakshi Iyer", spec: "Gynecology & Obs", room: "212", phone: "+91 98450 11053", status: "Active" },
-  { id: "DOC33", name: "Dr. Kavita Deshmukh", spec: "Gynecology & Obs", room: "213", phone: "+91 98450 11054", status: "Active" },
-  { id: "DOC34", name: "Dr. Reeta Verma", spec: "Gynecology & Obs", room: "214", phone: "+91 98450 11055", status: "Active" }
+  { id: "DOC01", name: "Dr. Srinivasan", spec: "General Medicine", room: "101", phone: "+91 98450 11021", status: "Active", regNo: "KMC-48902" },
+  { id: "DOC02", name: "Dr. Ramesh Iyer", spec: "Pediatrics", room: "102", phone: "+91 98450 11022", status: "Active", regNo: "KMC-55921" },
+  { id: "DOC03", name: "Dr. Krishnamurthy", spec: "Psychiatry", room: "103", phone: "+91 98450 11023", status: "Active", regNo: "KMC-60211" },
+  { id: "DOC04", name: "Dr. Mehta", spec: "General Surgery", room: "104", phone: "+91 98450 11024", status: "Active", regNo: "MCI-40912" },
+  { id: "DOC05", name: "Dr. Priya Nair", spec: "Gynecology & Obs", room: "105", phone: "+91 98450 11025", status: "Active", regNo: "KMC-77291" },
+  { id: "DOC06", name: "Dr. Fatima Sheikh", spec: "Emergency Medicine", room: "106", phone: "+91 98450 11026", status: "Active", regNo: "MCI-88902" },
+  { id: "DOC07", name: "Dr. Anand", spec: "Cardiology", room: "107", phone: "+91 98450 11027", status: "Active", regNo: "MCI-30219" },
+  { id: "DOC08", name: "Dr. Abhishek Kumar", spec: "Cardiology", room: "108", phone: "+91 98450 11028", status: "Active", regNo: "MCI-33452" },
+  { id: "DOC09", name: "Dr. Sunita Sharma", spec: "Cardiology", room: "109", phone: "+91 98450 11029", status: "Active", regNo: "MCI-44581" },
+  { id: "DOC10", name: "Dr. Amit Patel", spec: "Pediatrics", room: "110", phone: "+91 98450 11030", status: "Active", regNo: "KMC-88123" },
+  { id: "DOC11", name: "Dr. Mamta Kumari", spec: "Pediatrics", room: "111", phone: "+91 98450 11031", status: "Active", regNo: "KMC-89332" },
+  { id: "DOC12", name: "Dr. Rajesh Singh", spec: "General Medicine", room: "112", phone: "+91 98450 11032", status: "Active", regNo: "KMC-90312" },
+  { id: "DOC13", name: "Dr. Devanti Devi", spec: "General Medicine", room: "113", phone: "+91 98450 11033", status: "Active", regNo: "KMC-91404" },
+  { id: "DOC14", name: "Dr. Munna Kumar", spec: "Orthopedics", room: "114", phone: "+91 98450 11034", status: "Active", regNo: "MCI-55429" },
+  { id: "DOC15", name: "Dr. Sarah Jenkins", spec: "Orthopedics", room: "115", phone: "+91 98450 11035", status: "Active", regNo: "MCI-66291" },
+  { id: "DOC16", name: "Dr. Arvind Prasad", spec: "Gynecology & Obs", room: "116", phone: "+91 98450 11036", status: "Active", regNo: "KMC-99882" },
+  { id: "DOC17", name: "Dr. Preeti Reddy", spec: "Gynecology & Obs", room: "117", phone: "+91 98450 11037", status: "Active", regNo: "KMC-99001" },
+  { id: "DOC18", name: "Dr. Ajay Kumar", spec: "Neurology", room: "118", phone: "+91 98450 11038", status: "Active", regNo: "MCI-70334" },
+  { id: "DOC19", name: "Dr. Shrawan Kumar", spec: "Oncology", room: "119", phone: "+91 98450 11039", status: "Active", regNo: "MCI-80299" },
+  { id: "DOC20", name: "Dr. Vijay Pipil", spec: "Dermatology", room: "120", phone: "+91 98450 11040", status: "Active", regNo: "MCI-90452" }
 ];
 
 const state = {
+  alerts: [],
   // 1. Doctors Database (20+ Specialists)
-  doctors: DOCTORS_DATABASE,
+  // Nurses and staff definitions
+  nurses: [
+    { id: "NUR01", name: "Staff Nurse Mary", dept: "General Medicine", shift: "Morning", phone: "+91 98450 22001", status: "Active" },
+    { id: "NUR02", name: "Staff Nurse John", dept: "Cardiology", shift: "Morning", phone: "+91 98450 22002", status: "Active" },
+    { id: "NUR03", name: "Staff Nurse Sarah", dept: "Pediatrics", shift: "Afternoon", phone: "+91 98450 22003", status: "Active" },
+    { id: "NUR04", name: "Staff Nurse Robert", dept: "Emergency Medicine", shift: "Night", phone: "+91 98450 22004", status: "Active" },
+    { id: "NUR05", name: "Staff Nurse Jessica", dept: "Gynecology & Obs", shift: "Morning", phone: "+91 98450 22005", status: "Active" },
+    { id: "NUR06", name: "Staff Nurse David", dept: "General Surgery", shift: "Afternoon", phone: "+91 98450 22006", status: "Active" },
+    { id: "NUR07", name: "Staff Nurse Karen", dept: "Neurology", shift: "Morning", phone: "+91 98450 22007", status: "Active" },
+    { id: "NUR08", name: "Staff Nurse James", dept: "Oncology", shift: "Night", phone: "+91 98450 22008", status: "Active" },
+    { id: "NUR09", name: "Staff Nurse Emily", dept: "Gastroenterology", shift: "Afternoon", phone: "+91 98450 22009", status: "Active" },
+    { id: "NUR10", name: "Staff Nurse Michael", dept: "Daycare", shift: "Morning", phone: "+91 98450 22010", status: "Active" }
+  ],
+  staff: [
+    { id: "STF01", name: "Ph. Satish Kumar", role: "Pharmacist", dept: "Pharmacy", shift: "Morning", phone: "+91 98450 33001" },
+    { id: "STF02", name: "Ph. Anita Rao", role: "Pharmacist", dept: "Pharmacy", shift: "Afternoon", phone: "+91 98450 33002" },
+    { id: "STF03", name: "Tech Amit Verma", role: "Lab Technician", dept: "Laboratory", shift: "Morning", phone: "+91 98450 33003" },
+    { id: "STF04", name: "Tech Preeti Reddy", role: "Lab Technician", dept: "Laboratory", shift: "Afternoon", phone: "+91 98450 33004" },
+    { id: "STF05", name: "Clerk Anand", role: "Billing Clerk", dept: "Billing", shift: "Morning", phone: "+91 98450 33005" },
+    { id: "STF06", name: "Clerk Sunita", role: "Billing Clerk", dept: "Billing", shift: "Afternoon", phone: "+91 98450 33006" },
+    { id: "STF07", name: "Rec. Ravi", role: "Receptionist", dept: "Front Desk", shift: "Morning", phone: "+91 98450 33007" },
+    { id: "STF08", name: "Rec. Priya", role: "Receptionist", dept: "Front Desk", shift: "Afternoon", phone: "+91 98450 33008" },
+    { id: "STF09", name: "Clerk Shalini", role: "Admission Assistant", dept: "Admission Desk", shift: "Morning", phone: "+91 98450 33009" },
+    { id: "STF10", name: "Clerk Ajay", role: "Admission Assistant", dept: "Admission Desk", shift: "Afternoon", phone: "+91 98450 33010" }
+  ],  doctors: DOCTORS_DATABASE,
 
   // 2. Wards & Beds configuration
   wards: {
@@ -70,9 +81,14 @@ const state = {
 
   // 5. Inpatient Admissions Registry
   admissions: [],
+  ipdAdmissionRequests: [],
 
   // 6. Universal Clinical Orders
   orders: [],
+
+  // 6b. Lab & Radiology Order Queues (cross-module sync)
+  labOrders: [],
+  radOrders: [],
 
   // 7. Insurance / TPA Claims Logs
   claims: [],
@@ -635,7 +651,56 @@ const state = {
     ]
   },
 
-  // 11. CSSD sterilization logs
+  // 11. CSSD sterilization logs & full operational state
+  cssdState: {
+    instrumentSets: [
+      { id: "SET-GEN-001", name: "Major Laparotomy Set", barcode: "300101", status: "Available", category: "General Surgery", itemsCount: 42, location: "Storage A-3", lastSterilization: "2026-07-01", isImplant: false },
+      { id: "SET-GEN-002", name: "Major Laparotomy Set (B)", barcode: "300101B", status: "Cleaning", category: "General Surgery", itemsCount: 42, location: "Wash Area Queue", lastSterilization: "2026-06-30", isImplant: false },
+      { id: "SET-ORTHO-002", name: "Large Fragment Locking Plate Set (with Implants)", barcode: "300102", status: "Issued", category: "Orthopedics", itemsCount: 65, location: "OT-02", lastSterilization: "2026-07-02", isImplant: true, implantDetails: { catalogItem: "LCP-4.5-Plate", lotNumber: "LOT-9921A", expiryDate: "2029-12-30" } },
+      { id: "SET-NEURO-003", name: "Craniotomy Set", barcode: "300103", status: "Returned Dirty", category: "Neurosurgery", itemsCount: 54, location: "Dirty Receipt Queue", lastSterilization: "2026-06-28", isImplant: false },
+      { id: "SET-GYNE-004", name: "Cesarean Section Set", barcode: "300104", status: "Awaiting Packing", category: "Gynecology & Obs", itemsCount: 38, location: "Packing Workstation", lastSterilization: "2026-07-02", isImplant: false },
+      { id: "SET-CARD-005", name: "Open Heart Surgery Set", barcode: "300105", status: "Available", category: "Cardiology", itemsCount: 82, location: "Storage C-1", lastSterilization: "2026-07-02", isImplant: false },
+      { id: "SET-OPHTH-005", name: "Micro-Surgical Set", barcode: "300106", status: "Awaiting Inspection", category: "Ophthalmology", itemsCount: 24, location: "Inspection Desk", lastSterilization: "2026-07-01", isImplant: false }
+    ],
+    implantCatalog: [
+      { code: "IMP-SCREW-3.5", name: "Cortex Screw 3.5mm x 14mm", quantity: 150, lotNumber: "LOT-8832X", expiryDate: "2030-05-15", minStock: 20 },
+      { code: "IMP-PLATE-LCP", name: "LCP Plate 4.5mm 8-Hole", quantity: 12, lotNumber: "LOT-9921A", expiryDate: "2029-12-30", minStock: 3 },
+      { code: "IMP-MESH-HERNIA", name: "Proline Hernia Mesh 15x15cm", quantity: 25, lotNumber: "LOT-2231B", expiryDate: "2031-01-20", minStock: 5 },
+      { code: "IMP-STENT-DES", name: "Drug Eluting Coronary Stent 3.0x18mm", quantity: 8, lotNumber: "LOT-7742C", expiryDate: "2028-09-15", minStock: 2 }
+    ],
+    loanerSets: [
+      { id: "LNR-SPINE-001", name: "Vendor Spine Instrument Set (Medtronic)", vendor: "Medtronic India Pvt Ltd", arrivalDate: "2026-07-02", patientName: "Rajesh Kumar", caseDate: "2026-07-03", status: "Awaiting Cleaning", conditionOnReceipt: "Good", returnStatus: "Pending" },
+      { id: "LNR-KNEE-002", name: "Vendor Knee Replacement Trial Set (Zimmer Biomet)", vendor: "Zimmer India", arrivalDate: "2026-07-01", patientName: "Mohammed Iqbal", caseDate: "2026-07-02", status: "Returned to Vendor", conditionOnReceipt: "Good", returnStatus: "Returned (Clean)", disputeRemarks: "" }
+    ],
+    queues: {
+      dirtyReceipt: [
+        { id: "RET-101", setName: "Craniotomy Set", setCode: "SET-NEURO-003", returnDept: "OT-03", returnedBy: "Nurse Mary", receivedBy: "Technician Ashok", returnTime: "2026-07-02 14:30", status: "Awaiting Cleaning", missingItems: [], damagedItems: [], contaminationLevel: "High" }
+      ],
+      cleaning: [
+        { id: "CLN-101", setName: "Major Laparotomy Set (B)", setCode: "SET-GEN-002", method: "Ultrasonic Cleaning", status: "Cleaning", startTime: "2026-07-02 18:30", technician: "Technician Ashok" }
+      ],
+      inspection: [
+        { id: "INSP-101", setName: "Micro-Surgical Set", setCode: "SET-OPHTH-005", status: "Awaiting Assembly", checklistStatus: "Checked", technician: "Technician Ashok", result: "Pass", condemnationRequired: false }
+      ],
+      packing: [
+        { id: "PCK-101", setName: "Cesarean Section Set (B)", setCode: "SET-GYNE-004", status: "Ready for Packing", packagingMaterial: "Double Wrap Non-Woven SMS", packedBy: "Technician Ashok" }
+      ],
+      sterilization: [
+        { id: "STER-101", sterilizer: "ST-STEAM-01", cycleNo: "CYC-9844", loadNo: "LOAD-4820", temperature: "134°C", pressure: "2.1 bar", exposureTime: "4 minutes", status: "Sterilization Completed", technician: "Technician Ashok", startTime: "2026-07-02 18:00", endTime: "2026-07-02 18:45", isImplant: true, biStartedAt: "2026-07-02 18:45", biStatus: "Pending", biResult: null, items: ["SET-ORTHO-002"], emergencyOverride: null }
+      ]
+    },
+    sterilizers: [
+      { code: "ST-STEAM-01", name: "Steam Autoclave 450L (Horizontal)", type: "Steam Autoclave", status: "Active", lastValidation: "2026-06-15", pmDueDate: "2026-09-15" },
+      { code: "ST-ETO-01", name: "ETO Sterilizer 120L", type: "Ethylene Oxide (ETO)", status: "Active", lastValidation: "2026-05-10", pmDueDate: "2026-11-10" }
+    ],
+    waterQualityLogs: [
+      { date: "2026-07-02", time: "08:00 AM", feedWaterTds: "45 ppm", roWaterTds: "3 ppm", ph: "6.8", hardness: "Nil", loggedBy: "Biomedical Engineer Vivek" }
+    ],
+    implantIssues: [
+      { id: "ISS-IMP-01", patientUhid: "SH-2026-04821", patientName: "Rajesh Kumar", surgeon: "Dr. Srinivasan", procedure: "Spine Fixation L4-L5", implantCode: "IMP-PLATE-LCP", implantName: "LCP Plate 4.5mm 8-Hole", lotNumber: "LOT-9921A", expiryDate: "2029-12-30", issuedDate: "2026-07-02" }
+    ],
+    auditLogs: []
+  },
   cssdLogs: [],
 
   // 12. Equipment List
@@ -656,985 +721,562 @@ const state = {
 };
 
 // --------------------------------------------------------------------------
+// GLOBAL DATE HELPERS — always relative to current real-world date
+// --------------------------------------------------------------------------
+window._HIS_TODAY = (function() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+})();
+
+window._HIS_TODAY_PRETTY = (function() {
+  const d = new Date();
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+})();
+
+window._HIS_DATE = function(daysAgo) {
+  const d = new Date();
+  d.setDate(d.getDate() - (daysAgo || 0));
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+};
+
+window._HIS_PRETTY = function(daysAgo, timeStr) {
+  const d = new Date();
+  d.setDate(d.getDate() - (daysAgo || 0));
+  const pretty = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return timeStr ? `${pretty} · ${timeStr}` : pretty;
+};
+
+// --------------------------------------------------------------------------
 // STATE SEED ENGINE (Generates 50+ Patients & Logs)
 // --------------------------------------------------------------------------
 function seedState() {
+  const storedPatients = localStorage.getItem('saronil_patients');
+  const storedDoctors = localStorage.getItem('saronil_doctors');
+  const storedNurses = localStorage.getItem('saronil_nurses');
+  const storedStaff = localStorage.getItem('saronil_staff');
+  
+  if (storedPatients && storedDoctors && storedNurses && storedStaff) {
+    state.patients = JSON.parse(storedPatients);
+    state.doctors = JSON.parse(storedDoctors);
+    state.nurses = JSON.parse(storedNurses);
+    state.staff = JSON.parse(storedStaff);
+    
+    state.appointments = JSON.parse(localStorage.getItem('saronil_appointments')) || [];
+    state.admissions = JSON.parse(localStorage.getItem('saronil_admissions')) || [];
+    state.billing = JSON.parse(localStorage.getItem('saronil_billing')) || [];
+    state.orders = JSON.parse(localStorage.getItem('saronil_orders')) || [];
+    state.labOrders = JSON.parse(localStorage.getItem('saronil_labOrders')) || [];
+    state.radOrders = JSON.parse(localStorage.getItem('saronil_radOrders')) || [];
+    state.bedsStatus = JSON.parse(localStorage.getItem('saronil_bedsStatus')) || {};
+    state.daycareAdmissions = JSON.parse(localStorage.getItem('saronil_daycare_admissions')) || [];
+    
+    console.log(`Synchronized database loaded from localStorage: ${state.patients.length} patients, ${state.doctors.length} doctors, ${state.nurses.length} nurses, ${state.staff.length} staff.`);
+    return;
+  }
+
   // Initialize all beds as available
   for (const [wardKey, wardInfo] of Object.entries(state.wards)) {
     for (const bed of wardInfo.beds) {
       state.bedsStatus[bed] = {
         wardKey: wardKey,
-        status: "Available", // Available, Reserved, Occupied, Vacated - Pending Housekeeping, Housekeeping In Progress, Maintenance Required, Out of Service / Blocked, Isolation Cleaning Required
+        status: "Available",
         patientUhid: null,
         notes: ""
       };
     }
   }
 
-  // 50+ Realistic Indian Names (categorized by gender for accurate demographics)
-  const maleNames = [
-    "Rajesh Chandra", "Amit Sharma", "Sanjay Verma", "Vijay Kumar", "Rohan Gupta",
-    "Abhishek Singh", "Munna Yadav", "Sunil Malhotra", "Anil Saxena", "Ram Avatar",
-    "Ganga Prasad", "Suresh Iyer", "Dilip Menon", "Vikram Rathore", "Karan Johar",
-    "Ashok Singhal", "Surendra Pal", "Bheem Prasad", "Arvind Kejriwal", "Prabal Sen",
-    "Ajay Jadeja", "Mukesh Ambani", "Ranjan Gogoi", "Shrawan Joshi", "Harish Salve",
-    "Narendra Modi", "Rahul Gandhi", "Akhilesh Yadav", "Tejashwi Prasad", "Nitish Kumar",
-    "Sushil Modi", "Manoj Tiwari", "Khesari Lal", "Pawan Singh", "Ravi Kishan"
-  ];
-
-  const femaleNames = [
-    "Sunita Chandra", "Mamta Sharma", "Devanti Devi", "Anita Patel", "Pooja Hegde",
-    "Kavita Krishnamurthy", "Rakhi Sawant", "Seema Singh", "Gelo Devi", "Satma Begum",
-    "Sita Kumari", "Meera Bai", "Priya Ranjan", "Kiran Mazumdar", "Sudha Murthy",
-    "Aishwarya Rai", "Priyanka Chopra", "Deepika Padukone", "Alia Bhatt", "Shraddha Kapoor",
-    "Krina Kapoor", "Komal Pandey", "Sushmita Sen", "Lata Mangeshkar", "Asha Bhosle",
-    "Shreya Ghoshal", "Neeti Mohan", "Kanika Kapoor", "Sunidhi Chauhan", "Neha Kakkar"
-  ];
-
-  const surNames = [
-    "Sharma", "Kumar", "Singh", "Prasad", "Gupta", "Verma", "Yadav", "Patel",
-    "Menon", "Iyer", "Sen", "Joshi", "Das", "Roy", "Banerjee", "Chatterjee",
-    "Reddy", "Nair", "Tripathi", "Dubey", "Mishra", "Pandey", "Choudhary"
-  ];
-
-  const cities = ["Bengaluru", "Patna", "Delhi", "Mumbai", "Pune", "Hyderabad", "Kolkata", "Chennai", "Ahmedabad", "Lucknow"];
-  const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
-  const payers = [
-    { type: "Direct", name: "Cash Tariff", sponsor: "Self" },
-    { type: "Company", name: "STAR HEALTH AND ALLIED INSURANCE CO. LTD", sponsor: "STAR HEALTH" },
-    { type: "Company", name: "NIVA BUPA HEALTH INSURANCE COMPANY LTD", sponsor: "NIVA BUPA" },
-    { type: "Company", name: "ICICI LOMBARD GENERAL INSURANCE CO. LTD", sponsor: "ICICI LOMBARD" },
-    { type: "Company", name: "CGHS PATNA (Govt)", sponsor: "CGHS" }
-  ];
-
-  const chiefComplaints = [
-    { text: "Chest pain radiating to left arm with breathlessness", dept: "Cardiology", vitals: { bp: "150/95", hr: 98, temp: 98.4, spo2: 94 } },
-    { text: "High grade fever with dry cough and fatigue since 4 days", dept: "General Medicine", vitals: { bp: "120/80", hr: 85, temp: 102.2, spo2: 97 } },
-    { text: "Severe abdominal pain in right lower quadrant with nausea", dept: "Gastroenterology", vitals: { bp: "115/75", hr: 90, temp: 99.8, spo2: 99 } },
-    { text: "Repeated vomiting and dehydration in child", dept: "Pediatrics", vitals: { bp: "90/60", hr: 110, temp: 101.1, spo2: 98 } },
-    { text: "Trauma to right ankle with swelling and inability to bear weight", dept: "Orthopedics", vitals: { bp: "130/80", hr: 88, temp: 98.6, spo2: 99 } },
-    { text: "Lower back pain radiating down to right leg (Sciatica)", dept: "Neurology", vitals: { bp: "120/78", hr: 74, temp: 98.2, spo2: 99 } }
-  ];
-
-  // Generate 0 Patients (disabled in favor of precise 300 patients generation)
-  for (let i = 1; i <= 0; i++) {
-    const isMale = Math.random() > 0.45;
-    const name = isMale 
-      ? maleNames[i % maleNames.length] + " " + surNames[(i * 3) % surNames.length]
-      : femaleNames[i % femaleNames.length] + " " + surNames[(i * 7) % surNames.length];
-    
-    const age = 5 + (i * 13) % 80;
-    const gender = isMale ? "Male" : "Female";
-    const uhid = "UHID" + String(20000000 + i);
-    const abha = String(910000000000 + i * 1478).match(/.{1,4}/g).join("-"); // 12-digit mock ABHA format
-    const phone = "+91 9" + String(87442371 + i * 2947);
-    const city = cities[i % cities.length];
-    const address = `Block-${String.fromCharCode(65 + (i % 6))}, House No. ${10 + i}, HSR Layout, ${city}`;
-    const bloodGroup = bloodGroups[i % bloodGroups.length];
-    const payerObj = payers[i % payers.length];
-    
-    // Assign primary doctor based on specialization, route age < 12 to Pediatrics
-    const complaint = chiefComplaints[i % chiefComplaints.length];
-    let doctor;
-    if (age < 12) {
-      const pedsDocs = state.doctors.filter(d => d.spec === 'Pediatrics');
-      doctor = pedsDocs.length > 0 ? pedsDocs[i % pedsDocs.length] : state.doctors.find(d => d.spec === 'Pediatrics') || state.doctors[0];
-    } else {
-      const matchingDocs = state.doctors.filter(d => d.spec === complaint.dept && d.spec !== 'Pediatrics');
-      doctor = matchingDocs.length > 0 ? matchingDocs[i % matchingDocs.length] : state.doctors[0];
-    }
-
-    const patient = {
-      uhid: uhid,
-      abhaId: abha,
-      aadhaar: "34567890" + String(1000 + i),
-      passport: "L" + String(7000000 + i),
-      insuranceId: "POL" + String(800000 + i),
-      name: name,
-      age: age,
-      gender: gender,
-      mobile: phone,
-      address: address,
-      bloodGroup: bloodGroup,
-      allergies: i % 7 === 0 ? "Penicillin, Dust" : (i % 9 === 0 ? "Sulfa drugs, Peanuts" : "No Known Allergies"),
-      pregnancyStatus: (gender === 'Female' && age >= 18 && age <= 40 && i % 3 === 0) ? 'Pregnant' : ((gender === 'Female' && age >= 18 && age <= 40 && i % 5 === 0) ? 'Lactating' : 'Not Pregnant'),
-      egfr: 15 + (i * 17) % 95, // ranges from 15 to 110
-      liverFunction: i % 11 === 0 ? "Impaired" : "Normal",
-      emergencyContact: {
-        name: isMale ? "Mrs. " + name.split(' ')[0] + " " + name.split(' ')[1] : "Mr. Kumar",
-        relation: isMale ? "Spouse" : "Father",
-        phone: "+91 9" + String(78564564 + i * 1928)
-      },
-      payer: payerObj.name,
-      payerType: payerObj.type,
-      sponsor: payerObj.sponsor,
-      primaryConsultant: doctor.name,
-      department: doctor.spec,
-      status: i <= 15 ? "Admitted" : (i <= 25 ? "Checked In" : "Registered"),
-      vitals: {
-        bp: complaint.vitals.bp,
-        hr: complaint.vitals.hr,
-        temp: complaint.vitals.temp,
-        spo2: complaint.vitals.spo2,
-        weight: 12 + (i * 7) % 85,
-        bmi: 18 + (i * 2) % 12
-      },
-      clinicalData: {
-        complaint: complaint.text,
-        hpi: `Patient presents with chief complaint of ${complaint.text.toLowerCase()}. Symptoms developed gradually over the last 3 days. No history of similar complaints. Appetite is normal. Sleep is disturbed due to discomfort.`,
-        examination: "General physical condition is stable. Pulse is regular. No signs of pallor, icterus, or cyanosis. Chest is clear bilaterally. Abdomen is soft on palpation.",
-        diagnosis: complaint.dept === "Cardiology" ? "Essential Hypertension (I10)" : "Acute Febrile Illness (A09.9)",
-        treatmentPlan: "Rest, high fluid intake, and medication as prescribed. Re-evaluate after 48 hours. Monitor vitals twice daily.",
-        carePlan: "Follow low sodium diet. Daily walking for 30 minutes. Monitor blood pressure charts."
-      },
-      prescriptions: [
-        { drug: "Paracetamol 650mg (Dolo)", dose: "1 tab", freq: "Thrice daily (TID)", duration: "3 Days", instruction: "Post food when fever > 100 F" },
-        { drug: "Pantoprazole 40mg (Pan-D)", dose: "1 cap", freq: "Once daily (OD)", duration: "5 Days", instruction: "Empty stomach in morning" }
-      ],
-      history: {
-        pastConditions: i % 10 === 0 ? "Diabetes Mellitus Type-2" : (i % 12 === 0 ? "Hypothyroidism" : "None"),
-        surgeries: i % 15 === 0 ? "Appendectomy (2021)" : "None",
-        familyHistory: i % 8 === 0 ? "Father has Hypertension" : "No history of hereditary diseases"
-      }
-    };
-
-    state.patients.push(patient);
-
-    // If patient status is "Checked In", seed an OPD appointment
-    if (patient.status === "Checked In") {
-      state.appointments.push({
-        id: "APT" + String(1000 + i),
-        uhid: patient.uhid,
-        patientName: patient.name,
-        doctorName: doctor.name,
-        spec: doctor.spec,
-        date: "2026-06-17",
-        time: `09:${String(10 + i * 3).padStart(2, '0')} AM`,
-        status: i % 3 === 0 ? "Confirmed" : "Checked In",
-        type: "Consultation"
-      });
-    }
-
-    // If patient status is "Admitted", assign to a bed
-    if (patient.status === "Admitted") {
-      const wardKeys = Object.keys(state.wards).filter(k => k !== "EMERGENCY");
-      const targetWardKey = wardKeys[i % wardKeys.length];
-      const wardInfo = state.wards[targetWardKey];
-      // Find an available bed in the ward
-      let assignedBed = null;
-      for (const bed of wardInfo.beds) {
-        if (state.bedsStatus[bed].status === "Available") {
-          assignedBed = bed;
-          break;
-        }
-      }
-
-      if (assignedBed) {
-        state.bedsStatus[assignedBed] = {
-          wardKey: targetWardKey,
-          status: "Occupied",
-          patientUhid: patient.uhid,
-          notes: `Admitted under ${doctor.name} for ${patient.clinicalData.diagnosis}`
-        };
-
-        state.admissions.push({
-          id: "ADM" + String(5000 + i),
-          uhid: patient.uhid,
-          patientName: patient.name,
-          date: "2026-06-16",
-          ward: targetWardKey,
-          bed: assignedBed,
-          doctorName: doctor.name,
-          diagnosis: patient.clinicalData.diagnosis,
-          status: "Active"
-        });
-
-        // Seed some billing records for admitted patients
-        state.billing.push({
-          id: "INV" + String(8000 + i),
-          uhid: patient.uhid,
-          patientName: patient.name,
-          date: "2026-06-17",
-          amount: 12500 + (i * 1500),
-          paid: 5000,
-          status: "Outstanding",
-          items: [
-            { desc: "Room Rent / Bed Charges (" + wardInfo.name + ")", qty: 1, rate: wardInfo.price, total: wardInfo.price },
-            { desc: "Clinical Consultation Fee", qty: 2, rate: 800, total: 1600 },
-            { desc: "Nursing Administration Charges", qty: 1, rate: 1500, total: 1500 }
-          ]
-        });
-
-        // Seed some claims if insured
-        if (patient.payerType === "Company") {
-          state.claims.push({
-            id: "CLM" + String(9000 + i),
-            uhid: patient.uhid,
-            patientName: patient.name,
-            insurer: patient.payer,
-            estimatedAmt: 15000 + (i * 2000),
-            approvedAmt: i % 4 === 0 ? 0 : 12000 + (i * 1500),
-            status: i % 4 === 0 ? "Pending" : "Approved",
-            preAuthNo: i % 4 === 0 ? "" : "AUTH" + String(70000 + i)
-          });
-        }
-      } else {
-        // Fallback to OPD status if ward is full
-        patient.status = "Checked In";
-      }
-    }
-  }
-
-
-  // Seed Blood Bank Donors
-  const donorNames = ["Vinay Rawat", "Sandeep Mishra", "Gautam Gambhir", "Ishant Sharma", "Deepak Chahar"];
-  for (let k = 0; k < donorNames.length; k++) {
-    state.bloodDonors.push({
-      id: "DNR" + String(4000 + k),
-      name: donorNames[k],
-      gender: "Male",
-      age: 24 + k * 3,
-      bloodGroup: bloodGroups[k % bloodGroups.length],
-      donationDate: "2026-06-15",
-      fitStatus: "Fit",
-      screening: "Non-Reactive"
-    });
-  }
-
-  // Seed validation rules library
-  state.validationRules = [
-    { id: "RULE01", name: "Drug-Allergy Conflict Check", category: "Clinical", severity: "Critical Safety Alert", trigger: "Prescription", dept: "Clinical EMR", status: "Active", version: "1.2.0" },
-    { id: "RULE02", name: "ABO Blood Compatibility", category: "Blood Bank", severity: "Hard Stop", trigger: "Transfusion Issue", dept: "Blood Bank", status: "Active", version: "2.0.1" },
-    { id: "RULE03", name: "Duplicate Patient Detection", category: "Registration", severity: "Warning", trigger: "Demographic Entry", dept: "Registration", status: "Active", version: "1.0.4" },
-    { id: "RULE04", name: "NEWS2 Sepsis Warning", category: "Vitals", severity: "Critical Safety Alert", trigger: "Vitals Entry", dept: "Nursing", status: "Active", version: "1.1.2" },
-    { id: "RULE05", name: "Drug-Drug Interaction Check", category: "Pharmacy", severity: "Hard Stop", trigger: "Dispensing", dept: "Pharmacy", status: "Active", version: "2.1.0" },
-    { id: "RULE06", name: "Surgical Checklist Timeout Validation", category: "OT/Surgery", severity: "Hard Stop", trigger: "Incision Clear", dept: "Surgery", status: "Active", version: "1.0.0" },
-    { id: "RULE07", name: "Bed Housekeeping Safety Constraint", category: "ATD", severity: "Hard Stop", trigger: "Bed Status Update", dept: "Admissions Desk", status: "Active", version: "1.0.0" }
-  ];
-
-  // Seed active alert center log
-  state.alerts = [
-    { id: "ALT101", severity: "Critical Safety Alert", source: "Clinical EMR", patientName: "Ramesh Chandra", uhid: "UHID20000001", details: "Penicillin allergy conflict detected during prescription.", clinician: "Dr. Abhishek Kumar", time: "2026-06-17 10:15 AM", status: "Active", eStatus: "Escalated" },
-    { id: "ALT102", severity: "Warning", source: "Registration", patientName: "Amit Patel", uhid: "UHID20000004", details: "Duplicate registration warning: matches Aadhaar with existing record.", clinician: "Front Desk Staff", time: "2026-06-17 11:30 AM", status: "Active", eStatus: "Open" },
-    { id: "ALT103", severity: "Information", source: "Diagnostics", patientName: "Sunita Chandra", uhid: "UHID20000002", details: "CBC Laboratory report validated and ready.", clinician: "Pathologist Admin", time: "2026-06-17 12:05 PM", status: "Resolved", eStatus: "Resolved" }
-  ];
-
-  state.tokens = [
-    { tokenNo: "REG-001", uhid: "UHID20000001", patientName: "Ramesh Chandra", department: "Cardiology", doctor: "Dr. Amit Verma", time: "09:15 AM", status: "Completed", queuePos: "-" },
-    { tokenNo: "REG-002", uhid: "UHID20000002", patientName: "Sunita Chandra", department: "Pediatrics", doctor: "Dr. Sunita", time: "09:30 AM", status: "Completed", queuePos: "-" },
-    { tokenNo: "REG-003", uhid: "UHID20000003", patientName: "Priya Sharma", department: "General Medicine", doctor: "Dr. Rajesh", time: "10:00 AM", status: "Completed", queuePos: "-" },
-    { tokenNo: "REG-004", uhid: "UHID20000004", patientName: "Amit Patel", department: "Orthopedics", doctor: "Dr. Vikram", time: "10:15 AM", status: "Waiting", queuePos: "1", estWait: "12 mins" },
-    { tokenNo: "REG-005", uhid: "UHID20000005", patientName: "Sanjay Dutta", department: "General Medicine", doctor: "Dr. Rajesh", time: "10:30 AM", status: "Waiting", queuePos: "2", estWait: "25 mins" }
-  ];
-
-  state.printHistory = [
-    { id: "PRN1001", patientName: "Ramesh Chandra", uhid: "UHID20000001", type: "Wristband", copies: 1, printer: "Thermal Printer A", time: "2026-06-17 09:10 AM" },
-    { id: "PRN1002", patientName: "Ramesh Chandra", uhid: "UHID20000001", type: "Registration Sticker", copies: 2, printer: "Label Printer B", time: "2026-06-17 09:12 AM" },
-    { id: "PRN1003", patientName: "Sunita Chandra", uhid: "UHID20000002", type: "Laboratory Sticker", copies: 3, printer: "Lab Printer C", time: "2026-06-17 09:35 AM" }
-  ];
-
-  state.auditLogs = state.auditLogs || [];
-  
-  // Seed custom patients for Recent Registrations
-  // Seed custom patients for Recent Registrations matching dashboard mockup
-  const customPatients = [
+  // Define exactly 25 static dummy patients with EMR keys
+  const staticPatients = [
+    // ────────────────────────────────────────────────────────────────────────
+    // 10 IPD PATIENTS
+    // ────────────────────────────────────────────────────────────────────────
     {
-      uhid: "MRC-240001",
-      abhaId: "9100-2400-0001",
-      aadhaar: "345678900001",
-      passport: "L7000001",
-      insuranceId: "POL800001",
-      name: "Rajesh Kumar",
-      age: 45,
-      gender: "Male",
-      type: "IPD",
-      mobile: "+91 98765 43210",
-      email: "rajesh@email.com",
-      address: "HSR Layout, Bengaluru",
-      bloodGroup: "B+",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 90,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "STAR HEALTH AND ALLIED INSURANCE CO. LTD",
-      payerType: "Company",
-      sponsor: "STAR HEALTH",
-      primaryConsultant: "Dr. Ramesh Kumar",
-      department: "Cardiology",
-      status: "Admitted",
-      vitals: { bp: "120/80", hr: 72, temp: 98.6, spo2: 98, weight: 60, bmi: 22 },
-      clinicalData: { complaint: "General weakness", hpi: "Presents with mild fatigue.", examination: "NAD", diagnosis: "None", treatmentPlan: "NAD", carePlan: "NAD" },
-      prescriptions: [],
+      uhid: "SH-2026-04821", name: "Rajesh Kumar", age: 45, gender: "Male",
+      type: "IPD", ward: "General Ward", bed: "B-12", los: 3,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Star Health", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: ["Critical"], newsScore: 6, status: "Admitted", lastActivity: "Vitals · 10:15 AM",
+      vitals: { bp: "120/80", hr: 72, temp: 98.4, spo2: 98, weight: 70, bmi: 22.8, pain: 0, rr: 16 },
+      prescriptions: [{ name: "Tab Pantocid 40mg", dose: "1 tab", freq: "Once daily", duration: "10 Days", generic: "Pantoprazole", route: "Oral", active: true }],
+      clinicalData: { complaint: "General chest discomfort", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Monitoring", carePlan: "Routine check" },
       history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "Ward A",
-      bed: "Bed A-204",
-      insurance: { provider: "Star Health", plan: "Pre-auth approved" },
-      alerts: ["Critical", "Pending labs"],
-      lastActivity: "10:15 AM"
+      bloodGroup: "B+", allergies: "Penicillin", mobile: "9876543210", flags: [], admitted: window._HIS_PRETTY(3, '10:15'), ipNumber: "IP-240001", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-240002",
-      abhaId: "9100-2400-0002",
-      aadhaar: "345678900002",
-      passport: "L7000002",
-      insuranceId: "POL800002",
-      name: "Priya Sharma",
-      age: 32,
-      gender: "Female",
-      type: "OPD",
-      mobile: "+91 91234 56789",
-      email: "priya@email.com",
-      address: "Indiranagar, Bengaluru",
-      bloodGroup: "O+",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 92,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "United India Insurance Co",
-      payerType: "Company",
-      sponsor: "United India",
-      primaryConsultant: "Dr. Ritu S.",
-      department: "Psychiatry",
-      status: "Checked In",
-      vitals: { bp: "118/78", hr: 70, temp: 98.4, spo2: 99, weight: 58, bmi: 21 },
-      clinicalData: { complaint: "Anxiety", hpi: "Presents with mild anxiety symptoms.", examination: "NAD", diagnosis: "None", treatmentPlan: "NAD", carePlan: "NAD" },
-      prescriptions: [],
+      uhid: "SH-2026-04803", name: "Priya Menon", age: 38, gender: "Female",
+      type: "IPD", ward: "Private", bed: "P-04", los: 4,
+      primaryConsultant: "Dr. Krishnamurthy", department: "Psychiatry",
+      payer: "Self Pay", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Admitted", lastActivity: "Progress note · 9:30 AM",
+      vitals: { bp: "110/70", hr: 68, temp: 98.6, spo2: 99, weight: 58, bmi: 21.3, pain: 0, rr: 14 },
+      prescriptions: [{ name: "Tab Olimelt 5mg", dose: "1 tab", freq: "Bedtime", duration: "30 Days", generic: "Olanzapine", route: "Oral", active: true }],
+      clinicalData: { complaint: "Anxiety", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Therapy", carePlan: "Routine check" },
       history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "—",
-      bed: "—",
-      insurance: { provider: "United India", plan: "OPD plan" },
-      alerts: ["Follow-up due"],
-      lastActivity: "09:30 AM"
+      bloodGroup: "A+", allergies: "None", mobile: "9823456789", flags: [], admitted: window._HIS_PRETTY(4, '09:30'), ipNumber: "IP-240002", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-240019",
-      abhaId: "9100-2400-0019",
-      aadhaar: "345678900019",
-      passport: "L7000019",
-      insuranceId: "POL800019",
-      name: "Kavitha Nair",
-      age: 44,
-      gender: "Female",
-      type: "Emergency",
-      mobile: "+91 87654 32109",
-      email: "kavitha@email.com",
-      address: "Koramangala, Bengaluru",
-      bloodGroup: "AB+",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 95,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "Cash Tariff",
-      payerType: "Direct",
-      sponsor: "Self",
-      primaryConsultant: "Dr. Vikram S.",
-      department: "General Medicine",
-      status: "Emergency",
-      vitals: { bp: "110/70", hr: 85, temp: 101.2, spo2: 97, weight: 65, bmi: 23 },
-      clinicalData: { complaint: "High grade fever", hpi: "Brought to ER with fever.", examination: "NAD", diagnosis: "Acute Febrile Illness", treatmentPlan: "IV fluids", carePlan: "Cold sponging" },
-      prescriptions: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "Emergency Bay",
-      bed: "Resus-1",
-      insurance: { provider: "Cash", plan: "" },
-      alerts: ["MLC Case", "Pending labs"],
-      lastActivity: "08:47 AM"
+      uhid: "SH-2026-04799", name: "Mohammed Iqbal", age: 62, gender: "Male",
+      type: "IPD", ward: "HDU", bed: "H-02", los: 5,
+      primaryConsultant: "Dr. Mehta", department: "General Surgery",
+      payer: "HDFC ERGO", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: ["Critical"], newsScore: 4, status: "Post-Op", lastActivity: "Vitals · 8:45 AM",
+      vitals: { bp: "130/85", hr: 80, temp: 99.0, spo2: 96, weight: 75, bmi: 24.5, pain: 3, rr: 18 },
+      prescriptions: [{ name: "Inj Tramadol 50mg", dose: "1 amp", freq: "SOS", duration: "3 Days", generic: "Tramadol", route: "IV", active: true }],
+      clinicalData: { complaint: "Post operative recovery", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Analgesics", carePlan: "Routine check" },
+      history: { pastConditions: "None", surgeries: "Appendectomy", familyHistory: "None" },
+      bloodGroup: "O+", allergies: "None", mobile: "9912345678", flags: ["Critical"], admitted: window._HIS_PRETTY(5, '08:45'), ipNumber: "IP-240003", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-240020",
-      abhaId: "9100-2400-0020",
-      aadhaar: "345678900020",
-      passport: "L7000020",
-      insuranceId: "POL800020",
-      name: "Arjun Mehta",
-      age: 58,
-      gender: "Male",
-      type: "IPD",
-      mobile: "+91 70123 45678",
-      email: "arjun@email.com",
-      address: "Whitefield, Bengaluru",
-      bloodGroup: "A+",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 85,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "HDFC ERGO GENERAL INSURANCE CO LTD",
-      payerType: "Company",
-      sponsor: "HDFC ERGO",
-      primaryConsultant: "Dr. Ramesh Kumar",
-      department: "Cardiology",
-      status: "Discharge pending",
-      vitals: { bp: "140/90", hr: 80, temp: 98.6, spo2: 96, weight: 75, bmi: 25 },
-      clinicalData: { complaint: "Chest pain", hpi: "Admitted for cardiac observation.", examination: "NAD", diagnosis: "Query Angina", treatmentPlan: "ECG monitoring", carePlan: "Monitor ECG" },
-      prescriptions: [],
-      history: { pastConditions: "Hypertension", surgeries: "None", familyHistory: "None" },
-      ward: "Ward B",
-      bed: "Bed B-108",
-      insurance: { provider: "HDFC Ergo", plan: "TPA query pending" },
-      alerts: ["Discharge pending", "Bill hold"],
-      lastActivity: "Yesterday"
+      uhid: "SH-2026-04788", name: "Arun Pillai", age: 55, gender: "Male",
+      type: "IPD", ward: "HDU", bed: "H-03", los: 3,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "New India Assurance", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: [], newsScore: 1, status: "Admitted", lastActivity: "Ward rounds · 8:15 AM",
+      vitals: { bp: "128/80", hr: 78, temp: 98.6, spo2: 98, weight: 78, bmi: 25.1, pain: 2, rr: 16 },
+      prescriptions: [{ name: "Tab Cardace 5mg", dose: "1 tab", freq: "Morning", duration: "Continuous", generic: "Ramipril", route: "Oral", active: true }],
+      clinicalData: { complaint: "Hypertension evaluation", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Vitals monitoring", carePlan: "Stepdown check" },
+      history: { pastConditions: "Hypertension", surgeries: "None", familyHistory: "Hypertension" },
+      bloodGroup: "A+", allergies: "None", mobile: "9845011006", flags: [], admitted: window._HIS_PRETTY(3, '08:15'), ipNumber: "IP-240005", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-240017",
-      abhaId: "9100-2400-0017",
-      aadhaar: "345678900017",
-      passport: "L7000017",
-      insuranceId: "POL800017",
-      name: "Meena Iyer",
-      age: 29,
-      gender: "Female",
-      type: "IPD",
-      mobile: "+91 99887 76655",
-      email: "meena@email.com",
-      address: "Jayanagar, Bengaluru",
-      bloodGroup: "O-",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 99,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "Cash Tariff",
-      payerType: "Direct",
-      sponsor: "Self",
-      primaryConsultant: "Dr. Ananya R.",
-      department: "Neurology",
-      status: "Admitted",
-      vitals: { bp: "115/75", hr: 70, temp: 98.6, spo2: 99, weight: 55, bmi: 21 },
-      clinicalData: { complaint: "Headache", hpi: "Presents with severe migraine.", examination: "NAD", diagnosis: "Migraine", treatmentPlan: "Symptomatic treatment", carePlan: "Rest" },
-      prescriptions: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "Ward A",
-      bed: "Bed A-201",
-      insurance: { provider: "Cash", plan: "" },
-      alerts: ["No alerts"],
-      lastActivity: "11:00 AM"
+      uhid: "SH-2026-04810", name: "Fatima Begum", age: 50, gender: "Female",
+      type: "IPD", ward: "General Ward", bed: "B-15", los: 4,
+      primaryConsultant: "Dr. Ramesh Iyer", department: "Pediatrics",
+      payer: "Star Health", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: [], newsScore: 0, status: "Admitted", lastActivity: "Vitals · 9:15 AM",
+      vitals: { bp: "135/85", hr: 72, temp: 98.4, spo2: 98, weight: 65, bmi: 24.3, pain: 0, rr: 16 },
+      prescriptions: [{ name: "Tab Glycomet 500mg", dose: "1 tab", freq: "Twice daily", duration: "Continuous", generic: "Metformin", route: "Oral", active: true }],
+      clinicalData: { complaint: "Hyperglycemia control", hpi: "None", examination: "NAD", diagnosis: "Type 2 Diabetes", treatmentPlan: "Diet and medication tuning", carePlan: "Routine monitoring" },
+      history: { pastConditions: "Diabetes", surgeries: "None", familyHistory: "Diabetes" },
+      bloodGroup: "AB+", allergies: "Sulfa drugs", mobile: "9845011009", flags: [], admitted: window._HIS_PRETTY(4, '09:15'), ipNumber: "IP-240008", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-240018",
-      abhaId: "9100-2400-0018",
-      aadhaar: "345678900018",
-      passport: "L7000018",
-      insuranceId: "POL800018",
-      name: "Suresh Patel",
-      age: 67,
-      gender: "Male",
-      type: "Daycare",
-      mobile: "+91 77665 54433",
-      email: "suresh@email.com",
-      address: "Malleshwaram, Bengaluru",
-      bloodGroup: "O+",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 78,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "NEW INDIA ASSURANCE CO LTD",
-      payerType: "Company",
-      sponsor: "NEW INDIA",
-      primaryConsultant: "Dr. Sunita P.",
-      department: "General Surgery",
-      status: "Day Care",
-      vitals: { bp: "130/80", hr: 75, temp: 98.4, spo2: 98, weight: 70, bmi: 24 },
-      clinicalData: { complaint: "Knee pain", hpi: "Advised daycare arthroscopy.", examination: "NAD", diagnosis: "Osteoarthritis", treatmentPlan: "Arthroscopy", carePlan: "Post-op care" },
-      prescriptions: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "Day Care Unit",
-      bed: "DC-03",
-      insurance: { provider: "New India", plan: "Cashless active" },
-      alerts: ["Pre-op done"],
-      lastActivity: "07:30 AM"
+      uhid: "SH-2026-04790", name: "Vikram Singh", age: 68, gender: "Male",
+      type: "IPD", ward: "ICU", bed: "ICU-05", los: 5,
+      primaryConsultant: "Dr. Mehta", department: "General Surgery",
+      payer: "United India", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: ["Critical"], newsScore: 5, status: "Post-Op", lastActivity: "Cardiac rehab · 7:30 AM",
+      vitals: { bp: "115/70", hr: 84, temp: 98.6, spo2: 96, weight: 72, bmi: 23.7, pain: 3, rr: 18 },
+      prescriptions: [{ name: "Tab Lasix 40mg", dose: "1 tab", freq: "Morning", duration: "10 Days", generic: "Furosemide", route: "Oral", active: true }],
+      clinicalData: { complaint: "Post CABG chest pain", hpi: "None", examination: "Surgical wound healing", diagnosis: "CAD Post-CABG", treatmentPlan: "Anti-anginals and fluid restriction", carePlan: "Stepdown monitoring" },
+      history: { pastConditions: "CAD, HTN", surgeries: "CABG", familyHistory: "Heart disease" },
+      bloodGroup: "O+", allergies: "None", mobile: "9845011010", flags: ["Critical"], admitted: window._HIS_PRETTY(5, '07:30'), ipNumber: "IP-240009", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     },
     {
-      uhid: "MRC-239876",
-      abhaId: "9100-2398-7600",
-      aadhaar: "345678907600",
-      passport: "L7007600",
-      insuranceId: "POL8007600",
-      name: "Meena Pillai",
-      age: 54,
-      gender: "Female",
-      type: "OPD",
-      mobile: "+91 80990 11223",
-      email: "meenap@email.com",
-      address: "Whitefield, Bengaluru",
-      bloodGroup: "B-",
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 88,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "Cash Tariff",
-      payerType: "Direct",
-      sponsor: "Self",
-      primaryConsultant: "Dr. Ritu S.",
-      department: "Psychiatry",
-      status: "Scheduled",
-      vitals: { bp: "122/82", hr: 74, temp: 98.6, spo2: 98, weight: 62, bmi: 22 },
-      clinicalData: { complaint: "Insomnia", hpi: "Presents with chronic sleep issues.", examination: "NAD", diagnosis: "Insomnia", treatmentPlan: "Sleep hygiene counseling", carePlan: "Counseling" },
+      uhid: "SH-2026-04831", name: "Anitha Rao", age: 47, gender: "Female",
+      type: "IPD", ward: "Semi-Private", bed: "SP-02", los: 2,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "Star Health", payerType: "TPA/Insurance", preAuthStatus: "LOA ✓",
+      alerts: [], newsScore: 0, status: "Admitted", lastActivity: "Dressing · 10:00 AM",
+      vitals: { bp: "120/80", hr: 74, temp: 98.4, spo2: 99, weight: 60, bmi: 23.4, pain: 1, rr: 16 },
       prescriptions: [],
+      clinicalData: { complaint: "Pelvic pain and evaluation", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Symptomatic treatment", carePlan: "Routine monitoring" },
       history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: "—",
-      bed: "—",
-      insurance: { provider: "Cash", plan: "" },
-      alerts: ["Appt: 2:00 PM"],
-      lastActivity: "14:00 today"
+      bloodGroup: "A+", allergies: "None", mobile: "9845011011", flags: [], admitted: window._HIS_PRETTY(2, '10:00'), ipNumber: "IP-240010", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04768", name: "Suresh Babu", age: 52, gender: "Male",
+      type: "IPD", ward: "Semi-Private", bed: "SP-05", los: 3,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "CGHS", payerType: "Govt Scheme", preAuthStatus: "Approved",
+      alerts: [], newsScore: 2, status: "Admitted", lastActivity: "Ward rounds · 8:30 AM",
+      vitals: { bp: "138/88", hr: 82, temp: 98.8, spo2: 97, weight: 82, bmi: 26.1, pain: 2, rr: 18 },
+      prescriptions: [{ name: "Tab Amlong 5mg", dose: "1 tab", freq: "Once daily", duration: "Continuous", generic: "Amlodipine", route: "Oral", active: true }],
+      clinicalData: { complaint: "Uncontrolled blood pressure", hpi: "None", examination: "NAD", diagnosis: "Essential Hypertension", treatmentPlan: "Adjust antihypertensives", carePlan: "Vitals log" },
+      history: { pastConditions: "HTN", surgeries: "None", familyHistory: "Hypertension" },
+      bloodGroup: "B+", allergies: "None", mobile: "9845011012", flags: [], admitted: window._HIS_PRETTY(3, '08:30'), ipNumber: "IP-240011", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04798", name: "Arjun Nair", age: 49, gender: "Male",
+      type: "IPD", ward: "ICU", bed: "ICU-07", los: 5,
+      primaryConsultant: "Dr. Anand", department: "Cardiology",
+      payer: "Corporate", payerType: "Corporate", preAuthStatus: "LOA ✓",
+      alerts: [], newsScore: 1, status: "Post-Op", lastActivity: "Ward rounds · 7:50 AM",
+      vitals: { bp: "128/80", hr: 80, temp: 98.4, spo2: 98, weight: 80, bmi: 24.9, pain: 2, rr: 18 },
+      prescriptions: [{ name: "Tab Storvas 20mg", dose: "1 tab", freq: "Night", duration: "Continuous", generic: "Atorvastatin", route: "Oral", active: true }],
+      clinicalData: { complaint: "Post CABG recovery", hpi: "None", examination: "Chest dressing clean", diagnosis: "Post-CABG", treatmentPlan: "Cardiac rehab", carePlan: "Stepdown monitor" },
+      history: { pastConditions: "CAD", surgeries: "CABG", familyHistory: "Heart disease" },
+      bloodGroup: "O+", allergies: "None", mobile: "9988771122", flags: [], admitted: window._HIS_PRETTY(5, '07:50'), ipNumber: "IP-240015", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04850", name: "Rajan Pillai", age: 50, gender: "Male",
+      type: "IPD", ward: "General Ward", bed: "B-13", los: 2,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Self Pay", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Admitted", lastActivity: "Ward rounds · 11:00 AM",
+      vitals: { bp: "122/82", hr: 75, temp: 98.5, spo2: 98, weight: 70, bmi: 22.8, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Fever and weakness", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "IV fluids", carePlan: "Monitor temperature" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "O+", allergies: "None", mobile: "9845011030", flags: [], admitted: window._HIS_PRETTY(2, '11:00'), ipNumber: "IP-240020", opNumber: "—", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // 10 OPD PATIENTS
+    // ────────────────────────────────────────────────────────────────────────
+    {
+      uhid: "SH-2026-04817", name: "Sunita Sharma", age: 29, gender: "Female",
+      type: "OPD", ward: "OPD Room 2", bed: "—", los: 1,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "In Consultation", lastActivity: "Registered · 11:15 AM",
+      vitals: { bp: "115/75", hr: 76, temp: 98.2, spo2: 99, weight: 52, bmi: 20.3, pain: 1, rr: 14 },
+      prescriptions: [],
+      clinicalData: { complaint: "Mild lower back discomfort", hpi: "Backache since 2 days", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "Rest and warm packs", carePlan: "Follow up as needed" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "B+", allergies: "None", mobile: "9845011005", flags: [], admitted: window._HIS_PRETTY(0, '11:15'), ipNumber: "—", opNumber: "OP-240004", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04826", name: "Meera Iyer", age: 8, gender: "Female",
+      type: "OPD", ward: "Paediatrics Room 1", bed: "—", los: 1,
+      primaryConsultant: "Dr. Ramesh Iyer", department: "Pediatrics",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Scheduled", lastActivity: "Registration · 13:30 PM",
+      vitals: { bp: "100/60", hr: 95, temp: 99.1, spo2: 99, weight: 24, bmi: 15.6, pain: 1, rr: 20 },
+      prescriptions: [],
+      clinicalData: { complaint: "Mild cough and running nose", hpi: "Cold since 3 days", examination: "Chest clear", diagnosis: "Acute Rhinopharyngitis", treatmentPlan: "Saline nasal drops, hydration", carePlan: "Follow up if fever develops" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "A+", allergies: "None", mobile: "9845011013", flags: [], admitted: window._HIS_PRETTY(0, '13:30'), ipNumber: "—", opNumber: "OP-240012", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04861", name: "Amit Sharma", age: 34, gender: "Male",
+      type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Scheduled", lastActivity: "Registration · 09:00 AM",
+      vitals: { bp: "120/80", hr: 72, temp: 98.4, spo2: 99, weight: 70, bmi: 22.8, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Routine health checkup", hpi: "None", examination: "NAD", diagnosis: "Routine Check", treatmentPlan: "None", carePlan: "Annual follow-up" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "O+", allergies: "None", mobile: "9845011031", flags: [], admitted: window._HIS_PRETTY(0, '09:00'), ipNumber: "—", opNumber: "OP-240061", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04862", name: "Rohan Verma", age: 28, gender: "Male",
+      type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 09:15 AM",
+      vitals: { bp: "118/75", hr: 70, temp: 98.2, spo2: 99, weight: 68, bmi: 22.0, pain: 0, rr: 14 },
+      prescriptions: [],
+      clinicalData: { complaint: "Mild headache and body pain", hpi: "Headache since 1 day", examination: "NAD", diagnosis: "Tension Headache", treatmentPlan: "Analgesics", carePlan: "Follow up SOS" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "B+", allergies: "None", mobile: "9845011032", flags: [], admitted: window._HIS_PRETTY(0, '09:15'), ipNumber: "—", opNumber: "OP-240062", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04863", name: "Sanjay Joshi", age: 42, gender: "Male",
+      type: "OPD", ward: "OPD Room 3", bed: "—", los: 1,
+      primaryConsultant: "Dr. Mehta", department: "General Surgery",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Scheduled", lastActivity: "Registration · 09:30 AM",
+      vitals: { bp: "125/82", hr: 75, temp: 98.4, spo2: 98, weight: 75, bmi: 24.5, pain: 1, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Post-op follow-up check", hpi: "None", examination: "Surgical wound healing well", diagnosis: "Post-Op Stable", treatmentPlan: "Suture line cleaning", carePlan: "Normal activities" },
+      history: { pastConditions: "Hernia", surgeries: "Hernioplasty", familyHistory: "None" },
+      bloodGroup: "A-", allergies: "None", mobile: "9845011033", flags: [], admitted: window._HIS_PRETTY(0, '09:30'), ipNumber: "—", opNumber: "OP-240063", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04864", name: "Kiran Patel", age: 31, gender: "Female",
+      type: "OPD", ward: "OPD Room 2", bed: "—", los: 1,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 09:45 AM",
+      vitals: { bp: "110/70", hr: 74, temp: 98.6, spo2: 99, weight: 55, bmi: 21.0, pain: 0, rr: 14 },
+      prescriptions: [],
+      clinicalData: { complaint: "Antenatal checkup", hpi: "First trimester", examination: "NAD", diagnosis: "Early Pregnancy", treatmentPlan: "Iron, Folic Acid supplements", carePlan: "Monthly checkup" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "AB+", allergies: "None", mobile: "9845011034", flags: [], admitted: window._HIS_PRETTY(0, '09:45'), ipNumber: "—", opNumber: "OP-240064", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04865", name: "Divya Reddy", age: 36, gender: "Female",
+      type: "OPD", ward: "OPD Room 2", bed: "—", los: 1,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Scheduled", lastActivity: "Registration · 10:00 AM",
+      vitals: { bp: "115/78", hr: 76, temp: 98.4, spo2: 99, weight: 60, bmi: 23.4, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Routine follow-up", hpi: "None", examination: "NAD", diagnosis: "Stable", treatmentPlan: "Continue meds", carePlan: "Follow up 3 months" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "O-", allergies: "None", mobile: "9845011035", flags: [], admitted: window._HIS_PRETTY(0, '10:00'), ipNumber: "—", opNumber: "OP-240065", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04866", name: "Neha Sen", age: 25, gender: "Female",
+      type: "OPD", ward: "OPD Room 4", bed: "—", los: 1,
+      primaryConsultant: "Dr. Ramesh Iyer", department: "Pediatrics",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "In Consultation", lastActivity: "Registered · 10:15 AM",
+      vitals: { bp: "108/68", hr: 78, temp: 98.6, spo2: 99, weight: 50, bmi: 19.5, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Acne and skin evaluation", hpi: "Mild acne breakout", examination: "NAD", diagnosis: "Acne Vulgaris", treatmentPlan: "Topical gels, face wash", carePlan: "Avoid oily food" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "A+", allergies: "None", mobile: "9845011036", flags: [], admitted: window._HIS_PRETTY(0, '10:15'), ipNumber: "—", opNumber: "OP-240066", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04867", name: "Vijay Das", age: 58, gender: "Male",
+      type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Scheduled", lastActivity: "Registration · 10:30 AM",
+      vitals: { bp: "140/90", hr: 80, temp: 98.4, spo2: 98, weight: 82, bmi: 26.1, pain: 0, rr: 18 },
+      prescriptions: [],
+      clinicalData: { complaint: "High BP checking", hpi: "None", examination: "NAD", diagnosis: "Hypertension Stage 1", treatmentPlan: "Amlodipine 5mg daily", carePlan: "Daily BP chart" },
+      history: { pastConditions: "HTN", surgeries: "None", familyHistory: "Hypertension" },
+      bloodGroup: "B-", allergies: "None", mobile: "9845011037", flags: [], admitted: window._HIS_PRETTY(0, '10:30'), ipNumber: "—", opNumber: "OP-240067", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04868", name: "Asha Rao", age: 50, gender: "Female",
+      type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 10:45 AM",
+      vitals: { bp: "130/85", hr: 75, temp: 98.4, spo2: 98, weight: 65, bmi: 24.3, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Joint pain check", hpi: "Knee pain since 1 month", examination: "NAD", diagnosis: "Mild Osteoarthritis", treatmentPlan: "Calcium, Vitamin D, Physio", carePlan: "Avoid climbing stairs" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "Osteoarthritis" },
+      bloodGroup: "AB-", allergies: "None", mobile: "9845011038", flags: [], admitted: window._HIS_PRETTY(0, '10:45'), ipNumber: "—", opNumber: "OP-240068", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // 3 DAYCARE PATIENTS
+    // ────────────────────────────────────────────────────────────────────────
+    {
+      uhid: "SH-2026-04822", name: "Kavitha Nair", age: 34, gender: "Female",
+      type: "Daycare", ward: "Daycare Bay", bed: "D-11", los: 1,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "HDFC ERGO", payerType: "TPA/Insurance", preAuthStatus: "Approved",
+      alerts: [], newsScore: 0, status: "Under Observation", lastActivity: "Dressing · 2:00 PM",
+      vitals: { bp: "120/80", hr: 74, temp: 98.4, spo2: 99, weight: 62, bmi: 23.9, pain: 1, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Diagnostic hysteroscopy post-op", hpi: "None", examination: "NAD", diagnosis: "Post-op stable", treatmentPlan: "Discharge clearance check", carePlan: "Home advice" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "O+", allergies: "None", mobile: "9845011007", flags: [], admitted: window._HIS_PRETTY(0, '14:00'), ipNumber: "—", opNumber: "OP-240006", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04812", name: "Rahul Gupta", age: 26, gender: "Male",
+      type: "Daycare", ward: "Daycare Bay", bed: "D-14", los: 1,
+      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      payer: "Self Pay", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 0, status: "Under Observation", lastActivity: "Dressing · 11:30 AM",
+      vitals: { bp: "118/76", hr: 72, temp: 98.4, spo2: 99, weight: 65, bmi: 21.8, pain: 1, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Laceration dressing post-suture", hpi: "None", examination: "NAD", diagnosis: "Sutured wound stable", treatmentPlan: "Suture line cleaning", carePlan: "Discharge in afternoon" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "O+", allergies: "None", mobile: "9845011014", flags: [], admitted: window._HIS_PRETTY(0, '11:30'), ipNumber: "—", opNumber: "OP-240013", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04801", name: "Lakshmi Devi", age: 60, gender: "Female",
+      type: "Daycare", ward: "Daycare Bay", bed: "D-09", los: 1,
+      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      payer: "HDFC ERGO", payerType: "TPA/Insurance", preAuthStatus: "Approved",
+      alerts: [], newsScore: 0, status: "Discharged", lastActivity: "Discharged · 2:30 PM",
+      vitals: { bp: "130/80", hr: 74, temp: 98.4, spo2: 99, weight: 60, bmi: 23.4, pain: 0, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Daycare hysteroscopy recovery", hpi: "None", examination: "Sutures stable", diagnosis: "Post-procedure", treatmentPlan: "Rest", carePlan: "Discharge check" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "B+", allergies: "None", mobile: "9876512345", flags: [], admitted: window._HIS_PRETTY(0, '14:30'), ipNumber: "—", opNumber: "OP-240014", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: true, billing: true, summaryReady: true }
+    },
+
+    // ────────────────────────────────────────────────────────────────────────
+    // 2 EMERGENCY PATIENTS
+    // ────────────────────────────────────────────────────────────────────────
+    {
+      uhid: "SH-2026-04755", name: "Deepak Verma", age: 41, gender: "Male",
+      type: "Emergency", ward: "Emergency Bay", bed: "Resus-1", los: 1,
+      primaryConsultant: "Dr. Fatima Sheikh", department: "Emergency Medicine",
+      payer: "Self Pay", payerType: "Cash", preAuthStatus: "—",
+      alerts: ["Critical"], newsScore: 7, status: "In Triage", lastActivity: "Resuscitation · 10:45 AM",
+      vitals: { bp: "95/60", hr: 112, temp: 100.2, spo2: 91, weight: 68, bmi: 22.2, pain: 4, rr: 24 },
+      prescriptions: [],
+      clinicalData: { complaint: "High fever and respiratory distress", hpi: "Worsening symptoms since yesterday", examination: "Bilateral crepitations", diagnosis: "Severe Pneumonia", treatmentPlan: "Oxygen support, IV Antibiotics", carePlan: "Transfer to ICU" },
+      history: { pastConditions: "Asthma", surgeries: "None", familyHistory: "Asthma" },
+      bloodGroup: "B-", allergies: "None", mobile: "9845011008", flags: ["Critical"], admitted: window._HIS_PRETTY(0, '10:45'), ipNumber: "—", opNumber: "OP-240007", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    },
+    {
+      uhid: "SH-2026-04870", name: "Pramod Rao", age: 45, gender: "Male",
+      type: "Emergency", ward: "Emergency Bay", bed: "EMG-02", los: 1,
+      primaryConsultant: "Dr. Fatima Sheikh", department: "Emergency Medicine",
+      payer: "Self Pay", payerType: "Cash", preAuthStatus: "—",
+      alerts: [], newsScore: 3, status: "In Triage", lastActivity: "Registration · 11:30 AM",
+      vitals: { bp: "115/75", hr: 80, temp: 98.4, spo2: 98, weight: 70, bmi: 22.8, pain: 1, rr: 16 },
+      prescriptions: [],
+      clinicalData: { complaint: "Mild chest pain", hpi: "None", examination: "NAD", diagnosis: "Evaluation", treatmentPlan: "ECG, monitoring", carePlan: "Observation" },
+      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
+      bloodGroup: "A+", allergies: "None", mobile: "9845011039", flags: [], admitted: window._HIS_PRETTY(0, '11:30'), ipNumber: "—", opNumber: "OP-240070", vitalsOverdue: false, labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
     }
   ];
 
-  // Programmatically generate 293 custom patients to make it exactly 300 total (MH-2026-4802 to MH-2026-5094)
-  const surNamesGen = ["Sharma", "Patel", "Nair", "Mehta", "Iyer", "Patil", "Desai", "Joshi", "Kulkarni", "Rao", "Gupta", "Sen", "Bose", "Das", "Roy", "Singh", "Kumar", "Prasad"];
-  const femaleNamesGen = ["Priya", "Sunita", "Anjali", "Pooja", "Deepika", "Komal", "Asha", "Sneha", "Geeta", "Neeti", "Mamta", "Lata", "Kiran", "Rekha", "Hema", "Jaya", "Sushma", "Vidya"];
-  const maleNamesGen = ["Rajesh", "Vijay", "Rohan", "Sanjay", "Amit", "Bheem", "Harish", "Sachin", "Sourav", "Rahul", "VVS", "MS", "Virat", "Rohit", "Shikhar", "Hardik", "KL", "Rishabh", "Jasprit", "Ravindra"];
-  const docsGen = [
-    { name: "Dr. Amit Verma", dept: "Pediatrics" },
-    ...DOCTORS_DATABASE.map(d => ({ name: d.name, dept: d.spec }))
-  ];
+  // Store static rows
+  state.patients = [...staticPatients];
 
-  // We need to generate:
-  // - 21 IPD patients (type: "IPD", status: "Admitted")
-  // - 19 OPD Scheduled patients (type: "OPD", status: "Scheduled")
-  // - 57 OPD Checked In patients (type: "OPD", status: "Checked In")
-  // - 1 Emergency patient (type: "Emergency", status: "Emergency")
-  // - 3 Day Care patients (type: "Daycare", status: "Day Care")
-  // - 192 Discharged patients (status: "Registered", type: "IPD", "Daycare", or "Emergency")
-  const targetGeneration = [];
-  for (let i = 0; i < 21; i++) targetGeneration.push({ type: "IPD", status: "Admitted" });
-  for (let i = 0; i < 19; i++) targetGeneration.push({ type: "OPD", status: "Scheduled" });
-  for (let i = 0; i < 57; i++) targetGeneration.push({ type: "OPD", status: "Checked In" });
-  for (let i = 0; i < 1; i++) targetGeneration.push({ type: "Emergency", status: "Emergency" });
-  for (let i = 0; i < 3; i++) targetGeneration.push({ type: "Daycare", status: "Day Care" });
-  for (let i = 0; i < 192; i++) targetGeneration.push({ type: i % 3 === 0 ? "IPD" : (i % 3 === 1 ? "Daycare" : "Emergency"), status: "Registered" });
+  // Set up collections
+  state.appointments = [];
+  state.admissions = [];
+  state.daycareAdmissions = [];
+  state.billing = [];
 
-  for (let idx = 0; idx < targetGeneration.length; idx++) {
-    const patIdNum = 4802 + idx;
-    const config = targetGeneration[idx];
-    const isMale = idx % 2 === 0;
-    const name = isMale
-      ? maleNamesGen[idx % maleNamesGen.length] + " " + surNamesGen[(idx * 3) % surNamesGen.length]
-      : femaleNamesGen[idx % femaleNamesGen.length] + " " + surNamesGen[(idx * 7) % surNamesGen.length];
-    
-    const age = idx % 8 === 0 ? (idx % 12) : 12 + (idx * 3) % 70;
-    const pedsDocs = docsGen.filter(d => d.dept === 'Pediatrics');
-    const nonPedsDocs = docsGen.filter(d => d.dept !== 'Pediatrics');
-    const docObj = age < 12 
-      ? (pedsDocs.length > 0 ? pedsDocs[idx % pedsDocs.length] : docsGen[idx % docsGen.length])
-      : (nonPedsDocs.length > 0 ? nonPedsDocs[idx % nonPedsDocs.length] : docsGen[idx % docsGen.length]);
-    
-    let ward = "—";
-    let bed = "—";
-    if (config.status === "Admitted" && config.type === "IPD") {
-      ward = idx % 2 === 0 ? "Ward A" : "Ward B";
-      bed = idx % 2 === 0 ? `Bed A-${210 + idx}` : `Bed B-${110 + idx}`;
-    } else if (config.status === "Emergency") {
-      ward = "Emergency Bay";
-      bed = `Resus-${2 + idx}`;
-    } else if (config.status === "Day Care") {
-      ward = "Day Care Unit";
-      bed = `DC-${10 + idx}`;
-    }
+  // Seed canonical bed mappings for all 25 patients
+  var _staticBedMap = {
+    'SH-2026-04821': { bed: 'GW(M)-409',   wardKey: 'GENERAL-WARD-M', wardName: 'General Ward (Male)' },
+    'SH-2026-04803': { bed: 'PVT-201',     wardKey: 'PRIVATE',         wardName: 'Private Room' },
+    'SH-2026-04799': { bed: 'CCU-BED-01',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04788': { bed: 'CCU-BED-02',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04810': { bed: 'GW(F)-414',   wardKey: 'GENERAL-WARD-F',  wardName: 'General Ward (Female)' },
+    'SH-2026-04790': { bed: 'CCU-BED-03',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04831': { bed: 'SP-301',      wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
+    'SH-2026-04768': { bed: 'SP-302',      wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
+    'SH-2026-04798': { bed: 'ICCU-BED-01', wardKey: 'ICCU',            wardName: 'Intensive Cardiac Care Unit' },
+    'SH-2026-04850': { bed: 'GW(M)-410',   wardKey: 'GENERAL-WARD-M',  wardName: 'General Ward (Male)' },
+    'SH-2026-04822': { bed: 'DC-B1',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04812': { bed: 'DC-B2',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04801': { bed: 'DC-B3',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04755': { bed: 'EMG-01',      wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' },
+    'SH-2026-04870': { bed: 'EMG-02',      wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' }
+  };
 
-    customPatients.push({
-      uhid: `MH-2026-${patIdNum}`,
-      abhaId: `9100-2026-${patIdNum}`,
-      aadhaar: `34567890${patIdNum}`,
-      passport: `L700${patIdNum}`,
-      insuranceId: `POL800${patIdNum}`,
-      name: name,
-      age: age,
-      gender: isMale ? "Male" : "Female",
-      type: config.type,
-      mobile: `+91 99999 99${String(800 + idx).substring(0, 3)}`,
-      email: `${name.toLowerCase().replace(/\s+/g, '')}@email.com`,
-      address: `HSR Layout, Bengaluru`,
-      bloodGroup: ["A+", "B+", "O+", "AB+"][idx % 4],
-      allergies: "No Known Allergies",
-      pregnancyStatus: "Not Pregnant",
-      egfr: 90,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Relative", relation: "Sibling", phone: "+91 9999999900" },
-      payer: "Cash Tariff",
-      payerType: "Direct",
-      sponsor: "Self",
-      primaryConsultant: docObj.name,
-      department: docObj.dept,
-      status: config.status,
-      vitals: { bp: "120/80", hr: 75, temp: 98.6, spo2: 98, weight: 65, bmi: 22 },
-      clinicalData: { complaint: "Routine Checkup", hpi: "Presents for general consultation.", examination: "NAD", diagnosis: "None", treatmentPlan: "NAD", carePlan: "NAD" },
-      prescriptions: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" },
-      ward: ward,
-      bed: bed,
-      insurance: { provider: "Cash", plan: "" },
-      alerts: config.status === "Scheduled" ? ["Appt: 10:00 AM"] : ["No alerts"],
-      lastActivity: "09:00 AM",
-      dischargedToday: (config.status === "Registered" && idx >= 101 && idx < 105)
-    });
-  }
-
-  // Change some OPD patients' statuses for demonstration purposes (Completed, Cancelled, No Show)
-  let opdCheckedInCount = 0;
-  customPatients.forEach(p => {
-    if (p.type === 'OPD' && p.status === 'Checked In') {
-      opdCheckedInCount++;
-      if (opdCheckedInCount <= 5) {
-        p.status = 'Completed';
-      } else if (opdCheckedInCount <= 8) {
-        p.status = 'Cancelled';
-      } else if (opdCheckedInCount <= 11) {
-        p.status = 'No Show';
-      }
-    }
-  });
-
-  customPatients.forEach(p => {
-    state.patients.push(p);
-
-    const isIPDAdmitted = p.status === "Admitted" || p.status === "Discharge pending" || p.status === "Emergency" || p.status === "Day Care";
-    if (isIPDAdmitted && p.ward && p.ward !== "—") {
-      let wardKey = "GENERAL-WARD-M";
-      if (p.ward === "Ward A") {
-        wardKey = p.gender === "Female" ? "GENERAL-WARD-F" : "GENERAL-WARD-M";
-      } else if (p.ward === "Ward B") {
-        wardKey = "SEMI-PRIVATE";
-      } else if (p.ward === "Emergency Bay") {
-        wardKey = "EMERGENCY";
-      } else if (p.ward === "Day Care Unit") {
-        wardKey = "DAYCARE";
-      }
-
-      let bedId = p.bed === "Bed A-204" ? "GW(M)-412" : 
-                  (p.bed === "Bed B-108" ? "SP-301" : 
-                  (p.bed === "Bed A-201" ? "GW(F)-414" : 
-                  (p.bed === "Resus-1" ? "EMG-01" : 
-                  (p.bed === "DC-03" ? "DC-B3" : 
-                  (p.bed && p.bed.startsWith("DC-") ? "DC-B" + ((parseInt(p.bed.replace("DC-", "")) - 1) % 10 + 1) : 
-                  p.bed)))));
-
-      p.admissionWardKey = wardKey;
-      p.admissionBedId = bedId;
-
-      state.admissions.push({
-        id: "ADM" + String(5000 + state.admissions.length + 1),
-        uhid: p.uhid,
-        patientName: p.name,
-        doctorName: p.primaryConsultant,
-        ward: wardKey,
-        bed: bedId,
-        date: "2026-06-20",
-        status: "Active"
-      });
-      state.bedsStatus[bedId] = {
-        wardKey: wardKey,
-        status: "Occupied",
+  state.patients.forEach(function(p, idx) {
+    var mapping = _staticBedMap[p.uhid];
+    if (mapping) {
+      p.bed = mapping.bed;
+      if (p.type !== 'OPD') p.ward = mapping.wardName;
+      state.bedsStatus[mapping.bed] = {
+        wardKey:     mapping.wardKey,
+        status:      (p.status === 'Discharged') ? 'Available' : 'Occupied',
         patientUhid: p.uhid,
-        notes: `Admitted under ${p.primaryConsultant}`
+        patientName: p.name,
+        doctorName:  p.primaryConsultant || '',
+        diagnosis:   (p.clinicalData && p.clinicalData.diagnosis) || '',
+        notes:       'Admitted under ' + (p.primaryConsultant || '')
       };
-
-      if (wardKey === "DAYCARE") {
-        state.daycareAdmissions = state.daycareAdmissions || [];
-        // Check if patient is already in daycare admissions to avoid duplicates
-        if (!state.daycareAdmissions.some(a => a.patient.uhid === p.uhid)) {
-          state.daycareAdmissions.push({
-            patient: p,
-            bedId: bedId,
-            ward: 'Daycare Ward',
-            bedNo: bedId,
-            consultantName: p.primaryConsultant,
-            procedureName: p.clinicalData?.treatmentPlan || 'Minor Procedure',
-            admissionType: 'Daycare',
-            admissionTimestamp: new Date().toISOString(),
-            status: 'Registered',
-            historyLogs: [{ timestamp: new Date().toISOString(), action: 'Daycare Bed Allocated & Registered' }],
-            tasks: [
-              { id: 'vitals-1', name: 'Take Pre-Op Vitals (BP, pulse, SpO2, Temp)', completed: false },
-              { id: 'meds-1', name: 'Verify Medication Dose and Frequency', completed: false },
-              { id: 'postcheck-1', name: 'Post-procedure Site Assessment', completed: false }
-            ]
-          });
-        }
+      
+      // Ensure a matching active admission record exists for IPD
+      if (p.type === 'IPD' && p.status !== 'Discharged') {
+        state.admissions.push({
+          id: 'ADM-SEED-' + p.uhid,
+          uhid: p.uhid,
+          patientName: p.name,
+          doctorName: p.primaryConsultant || '',
+          ward: mapping.wardKey,
+          bed: mapping.bed,
+          date: window._HIS_DATE(p.los || 1),
+          status: 'Active'
+        });
       }
 
-      // Seed outstanding bill for EMR tests compatibility
-      state.billing.push({
-        id: "INV" + String(8000 + state.billing.length + 1),
-        uhid: p.uhid,
-        patientName: p.name,
-        date: "2026-06-21",
-        amount: 15000,
-        paid: 5000,
-        status: "Outstanding",
-        items: [
-          { desc: "Room Rent / Bed Charges", qty: 1, rate: 10000, total: 10000 },
-          { desc: "Clinical Fee", qty: 1, rate: 5000, total: 5000 }
-        ]
-      });
+      // Add Daycare Admissions
+      if (p.type === "Daycare") {
+        state.daycareAdmissions.push({
+          patient: p,
+          bedId: mapping.bed,
+          ward: 'Daycare Ward',
+          bedNo: mapping.bed,
+          consultantName: p.primaryConsultant,
+          procedureName: 'Evaluation checkup',
+          admissionType: 'Daycare',
+          admissionTimestamp: new Date().toISOString(),
+          status: p.status === 'Discharged' ? 'Cleared & Discharged' : 'Registered',
+          dischargeClearances: { clinical: p.status === 'Discharged', billing: p.status === 'Discharged', summaryReady: p.status === 'Discharged' }
+        });
+      }
     }
 
+    // Add OPD Appointments
     if (p.type === "OPD") {
       state.appointments.push({
-        id: "APT" + String(1100 + state.appointments.length + 1),
+        id: `APT${6000 + idx}`,
         uhid: p.uhid,
         patientName: p.name,
         doctorName: p.primaryConsultant,
-        spec: p.department,
-        date: "2026-06-22",
-        time: p.uhid === "MRC-240002" ? "09:30 AM" : "11:15 AM",
-        status: "Scheduled"
+        deptName: p.department,
+        time: "10:30 AM",
+        date: window._HIS_DATE(1),
+        status: p.status === "Scheduled" ? "Scheduled" : (p.status === "Checked In" ? "Arrived" : "Completed"),
+        mobile: p.mobile,
+        gender: p.gender,
+        age: p.age,
+        visitType: "OPD Regular",
+        checkedInTime: "09:45 AM"
       });
     }
+
+    // Add Invoices
+    state.billing.push({
+      id: `INV${7000 + idx}`,
+      uhid: p.uhid,
+      patientName: p.name,
+      amount: 1500 + (idx * 250) % 8000,
+      paid: p.status === "Discharged" ? 1500 + (idx * 250) % 8000 : 0,
+      status: p.status === "Discharged" ? "Paid" : "Pending",
+      date: window._HIS_DATE(1),
+      items: [
+        { desc: "General Consultation Fee", qty: 1, rate: 800, total: 800 },
+        { desc: "Facility Support Charges", qty: 1, rate: 700 + (idx * 250) % 7200, total: 700 + (idx * 250) % 7200 }
+      ]
+    });
   });
 
-  // Seed Laboratory & Radiology orders
-  for (let j = 1; j <= 10; j++) {
-    const patient = state.patients[j * 3];
-    const doctor = state.doctors[j % state.doctors.length];
-
-    state.orders.push({
-      id: "ORD" + String(6000 + j),
-      uhid: patient.uhid,
-      patientName: patient.name,
-      doctorName: doctor.name,
-      type: j % 2 === 0 ? "Laboratory" : "Radiology",
-      name: j % 2 === 0 ? "Complete Blood Count (CBC)" : "Chest X-Ray PA View",
-      date: "2026-06-17",
-      priority: j % 3 === 0 ? "Urgent" : "Routine",
-      status: j % 4 === 0 ? "Approved" : (j % 3 === 0 ? "Result Entered" : "Sample Collected"),
-      result: j % 4 === 0 ? "Hemoglobin: 14.2 g/dL (Normal), WBC: 7,500 /uL (Normal)" : ""
-    });
+  // ── SEED LAB ORDERS (cross-module: EMR → Lab Dashboard) ─────────────────
+  if (!state.labOrders || state.labOrders.length === 0) {
+    state.labOrders = [
+      { id: 'LO-001', uhid: 'SH-2026-04821', patientName: 'Rajesh Kumar',     ward: 'GW(M)-409',   test: 'Troponin I (hs)',         dept: 'Biochemistry',     tube: 'yellow',   priority: 'Urgent',  orderedBy: 'Dr. Srinivasan', orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0101' },
+      { id: 'LO-002', uhid: 'SH-2026-04821', patientName: 'Rajesh Kumar',     ward: 'GW(M)-409',   test: 'ECG (Report)',             dept: 'Cardiology',       tube: 'none',     priority: 'Routine', orderedBy: 'Dr. Srinivasan', orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0102' },
+      { id: 'LO-003', uhid: 'SH-2026-04799', patientName: 'Mohammed Iqbal',   ward: 'CCU-BED-01',  test: 'LFT + KFT',               dept: 'Biochemistry',     tube: 'yellow',   priority: 'Routine', orderedBy: 'Dr. Mehta',      orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0103' },
+      { id: 'LO-004', uhid: 'SH-2026-04810', patientName: 'Fatima Begum',     ward: 'GW(F)-414',   test: 'HbA1c + FBS',             dept: 'Biochemistry',     tube: 'lavender', priority: 'Urgent',  orderedBy: 'Dr. Ramesh Iyer', orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0104' },
+      { id: 'LO-005', uhid: 'SH-2026-04788', patientName: 'Arun Pillai',      ward: 'CCU-BED-02',  test: 'Serum Creatinine + eGFR', dept: 'Biochemistry',     tube: 'yellow',   priority: 'Routine', orderedBy: 'Dr. Srinivasan', orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0105' },
+      { id: 'LO-006', uhid: 'SH-2026-04755', patientName: 'Deepak Verma',     ward: 'EMG-01',      test: 'CBC + ABG',               dept: 'Haematology',      tube: 'lavender', priority: 'STAT',    orderedBy: 'Dr. Fatima Sheikh', orderedAt: window._HIS_DATE(0), status: 'Pending', accNo: 'SPEC-TODAY-0106' },
+      { id: 'LO-007', uhid: 'SH-2026-04790', patientName: 'Vikram Singh',     ward: 'CCU-BED-03',  test: 'Lipid Profile',           dept: 'Biochemistry',     tube: 'yellow',   priority: 'Routine', orderedBy: 'Dr. Mehta',      orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0107' },
+      { id: 'LO-008', uhid: 'SH-2026-04831', patientName: 'Anitha Rao',       ward: 'SP-301',      test: 'Complete Blood Count',    dept: 'Haematology',      tube: 'lavender', priority: 'Routine', orderedBy: 'Dr. Priya Nair', orderedAt: window._HIS_DATE(0), status: 'Pending',  accNo: 'SPEC-TODAY-0108' },
+      { id: 'LO-009', uhid: 'SH-2026-04798', patientName: 'Arjun Nair',       ward: 'ICCU-BED-01', test: 'Cardiac Enzymes Panel',   dept: 'Biochemistry',     tube: 'yellow',   priority: 'Urgent',  orderedBy: 'Dr. Anand',      orderedAt: window._HIS_DATE(0), status: 'In Progress', accNo: 'SPEC-TODAY-0109' },
+      { id: 'LO-010', uhid: 'SH-2026-04817', patientName: 'Sunita Sharma',    ward: 'OPD',         test: 'Urine Routine + Microscopy', dept: 'Clinical Path', tube: 'yellow-cap', priority: 'Routine', orderedBy: 'Dr. Priya Nair', orderedAt: window._HIS_DATE(0), status: 'Pending', accNo: 'SPEC-TODAY-0110' }
+    ];
   }
 
-  // Seed 7 Gynecology patients & appointments specifically for Dr. Reeta Verma
-  const gynPatientsData = [
-    {
-      name: "Divya Verma",
-      age: 26,
-      pregnancyStatus: "Pregnant",
-      edd: "2026-11-20",
-      fhr: "144 bpm",
-      menstrualHistory: { lmp: "2026-02-13", cycle: "28 Days", flow: "Regular", dysmenorrhea: "Mild" },
-      obstetricHistory: [{ pregnancy: "G2 P1 L1 A0", details: "Prev LSCS (2024), Healthy Baby Boy, 3.1kg", complications: "None" }],
-      prescriptions: [
-        { drug: "Tab. Folic Acid 5mg", dose: "1 OD", freq: "Daily", duration: "30 Days", instruction: "After breakfast" },
-        { drug: "Tab. Iron 100mg", dose: "1 OD", freq: "Daily", duration: "30 Days", instruction: "Before dinner" }
-      ],
-      prescriptionHistory: [
-        { date: "22 May 2026", doctor: "Dr. Reeta Verma", medicines: ["Tab. Folic Acid 5mg OD x 30 days", "Tab. Iron 100mg OD x 30 days"] }
-      ],
-      files: [
-        { name: "Anomaly Scan Report.pdf", size: "2.4 MB", type: "PDF" },
-        { name: "First Trimester Scan.pdf", size: "1.8 MB", type: "PDF" }
-      ],
-      medicalReports: [
-        { testName: "Complete Blood Count (CBC)", date: "10 Jun 2026", result: "Hb: 11.2 g/dL (Mildly Low), WBC: 7,200", status: "Completed" },
-        { testName: "Urine Routine", date: "10 Jun 2026", result: "Pus cells: 1-2, Sugar: Nil, Albumin: Nil", status: "Completed" }
-      ],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "120/80", wt: "62 kg", hr: "82 bpm", temp: "98.4 F" },
-        { date: "15 May 2026", bp: "118/76", wt: "59 kg", hr: "80 bpm", temp: "98.6 F" }
-      ],
-      investigationsHistory: [
-        { name: "Ultrasonography (USG) Obstetric", date: "15 May 2026", result: "Single live intrauterine gestation, 14 weeks. FHR 145 bpm.", status: "Normal" }
-      ],
-      history: { pastConditions: "Hypothyroidism (controlled)", surgeries: "None", familyHistory: "Mother - Diabetes" }
-    },
-    {
-      name: "Sumitha Rani",
-      age: 32,
-      pregnancyStatus: "Pregnant",
-      edd: "2026-09-10",
-      fhr: "150 bpm",
-      menstrualHistory: { lmp: "2025-12-04", cycle: "30 Days", flow: "Regular", dysmenorrhea: "None" },
-      obstetricHistory: [
-        { pregnancy: "G3 P1 L1 A1", details: "Prev Normal Delivery (2020), 2.9kg", complications: "Miscarriage at 8 weeks in 2022" }
-      ],
-      prescriptions: [
-        { drug: "Tab. Iron 100mg", dose: "1 OD", freq: "Daily", duration: "30 Days", instruction: "Before dinner" },
-        { drug: "Tab. Calcium 500mg", dose: "1 BD", freq: "Twice daily", duration: "30 Days", instruction: "After meals" }
-      ],
-      prescriptionHistory: [
-        { date: "10 May 2026", doctor: "Dr. Reeta Verma", medicines: ["Tab. Iron 100mg OD", "Tab. Calcium 500mg BD"] }
-      ],
-      files: [
-        { name: "Double Marker Test.pdf", size: "1.2 MB", type: "PDF" }
-      ],
-      medicalReports: [
-        { testName: "TSH Level", date: "05 May 2026", result: "2.4 uIU/mL (Normal)", status: "Completed" }
-      ],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "110/70", wt: "68 kg", hr: "76 bpm", temp: "98.2 F" }
-      ],
-      investigationsHistory: [
-        { name: "Double Marker Test", date: "05 May 2026", result: "Low Risk", status: "Completed" }
-      ],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "Father - Hypertension" }
-    },
-    {
-      name: "Rubina",
-      age: 28,
-      pregnancyStatus: "Pregnant",
-      edd: "2027-01-05",
-      fhr: "140 bpm",
-      menstrualHistory: { lmp: "2026-03-30", cycle: "28 Days", flow: "Heavy", dysmenorrhea: "Severe" },
-      obstetricHistory: [],
-      prescriptions: [
-        { drug: "Tab. Folic Acid 5mg", dose: "1 OD", freq: "Daily", duration: "30 Days", instruction: "After breakfast" }
-      ],
-      prescriptionHistory: [],
-      files: [],
-      medicalReports: [
-        { testName: "Hemoglobin Estimation", date: "22 Jun 2026", result: "Hb: 10.5 g/dL", status: "Completed" }
-      ],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "115/75", wt: "54 kg", hr: "84 bpm", temp: "98.5 F" }
-      ],
-      investigationsHistory: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" }
-    },
-    {
-      name: "Sunita Krishnan",
-      age: 35,
-      pregnancyStatus: "Not Pregnant",
-      edd: null,
-      fhr: null,
-      menstrualHistory: { lmp: "2026-06-10", cycle: "28 Days", flow: "Regular", dysmenorrhea: "None" },
-      obstetricHistory: [{ pregnancy: "G1 P1 L1 A0", details: "Prev normal delivery (2018)", complications: "None" }],
-      prescriptions: [],
-      prescriptionHistory: [],
-      files: [],
-      medicalReports: [],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "130/85", wt: "70 kg", hr: "80 bpm", temp: "98.6 F" }
-      ],
-      investigationsHistory: [],
-      history: { pastConditions: "Mild PCOD", surgeries: "None", familyHistory: "Diabetes both parents" }
-    },
-    {
-      name: "Anjali Deshmukh",
-      age: 29,
-      pregnancyStatus: "Not Pregnant",
-      edd: null,
-      fhr: null,
-      menstrualHistory: { lmp: "2026-06-02", cycle: "32 Days", flow: "Irregular", dysmenorrhea: "Moderate" },
-      obstetricHistory: [],
-      prescriptions: [],
-      prescriptionHistory: [],
-      files: [],
-      medicalReports: [],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "118/76", wt: "61 kg", hr: "72 bpm", temp: "98.4 F" }
-      ],
-      investigationsHistory: [],
-      history: { pastConditions: "Irregular Cycles", surgeries: "None", familyHistory: "None" }
-    },
-    {
-      name: "Pooja Banerjee",
-      age: 24,
-      pregnancyStatus: "Not Pregnant",
-      edd: null,
-      fhr: null,
-      menstrualHistory: { lmp: "2026-06-14", cycle: "28 Days", flow: "Regular", dysmenorrhea: "None" },
-      obstetricHistory: [],
-      prescriptions: [],
-      prescriptionHistory: [],
-      files: [],
-      medicalReports: [],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "112/70", wt: "50 kg", hr: "75 bpm", temp: "98.2 F" }
-      ],
-      investigationsHistory: [],
-      history: { pastConditions: "None", surgeries: "None", familyHistory: "None" }
-    },
-    {
-      name: "Kavita Rao",
-      age: 40,
-      pregnancyStatus: "Not Pregnant",
-      edd: null,
-      fhr: null,
-      menstrualHistory: { lmp: "2026-05-28", cycle: "26 Days", flow: "Heavy", dysmenorrhea: "Severe" },
-      obstetricHistory: [{ pregnancy: "G2 P2 L2 A0", details: "Prev normal delivery (2012, 2015)", complications: "None" }],
-      prescriptions: [],
-      prescriptionHistory: [],
-      files: [],
-      medicalReports: [],
-      vitalsHistory: [
-        { date: "22 Jun 2026", bp: "124/80", wt: "65 kg", hr: "78 bpm", temp: "98.6 F" }
-      ],
-      investigationsHistory: [],
-      history: { pastConditions: "Endometriosis", surgeries: "Laparoscopic Cystectomy (2021)", familyHistory: "Mother - Breast Cancer" }
-    }
-  ];
+  // ── SEED RAD ORDERS (cross-module: EMR → Radiology Dashboard) ───────────
+  if (!state.radOrders || state.radOrders.length === 0) {
+    state.radOrders = [
+      { id: 'RO-001', uhid: 'SH-2026-04821', patientName: 'Rajesh Kumar',   ward: 'GW(M)-409',   study: 'ECG Treadmill Stress Test',    modality: 'ECG',       priority: 'Routine', orderedBy: 'Dr. Srinivasan',   orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-X1', studyId: 'STUDY-SEED-001' },
+      { id: 'RO-002', uhid: 'SH-2026-04799', patientName: 'Mohammed Iqbal', ward: 'CCU-BED-01',  study: 'X-Ray Chest PA View',          modality: 'X-Ray',     priority: 'Urgent',  orderedBy: 'Dr. Mehta',        orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-X1', studyId: 'STUDY-SEED-002' },
+      { id: 'RO-003', uhid: 'SH-2026-04755', patientName: 'Deepak Verma',   ward: 'EMG-01',      study: 'CT Brain Non-Contrast',        modality: 'CT Scan',   priority: 'STAT',    orderedBy: 'Dr. Fatima Sheikh', orderedAt: window._HIS_DATE(0), status: 'Called',    room: 'ROOM-CT1', studyId: 'STUDY-SEED-003' },
+      { id: 'RO-004', uhid: 'SH-2026-04788', patientName: 'Arun Pillai',    ward: 'CCU-BED-02',  study: 'USG Abdomen (kidneys)',        modality: 'Ultrasound',priority: 'Routine', orderedBy: 'Dr. Srinivasan',   orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-U1', studyId: 'STUDY-SEED-004' },
+      { id: 'RO-005', uhid: 'SH-2026-04831', patientName: 'Anitha Rao',     ward: 'SP-301',      study: 'USG Pelvis (Follow-up)',       modality: 'Ultrasound',priority: 'Routine', orderedBy: 'Dr. Priya Nair',   orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-U2', studyId: 'STUDY-SEED-005' }
+    ];
+  }
 
-  gynPatientsData.forEach((data, idx) => {
-    const patIdNum = 6001 + idx;
-    const isCheckedIn = idx < 4; // 4 Checked In, 3 Scheduled
-    const status = isCheckedIn ? "Checked In" : "Scheduled";
-    const patient = {
-      uhid: `MH-2026-${patIdNum}`,
-      abhaId: `9100-2026-${patIdNum}`,
-      aadhaar: `34567890${patIdNum}`,
-      passport: `L700${patIdNum}`,
-      insuranceId: `POL800${patIdNum}`,
-      name: data.name,
-      age: data.age,
-      gender: "Female",
-      type: "OPD",
-      mobile: `+91 98888 88${String(700 + idx).substring(0, 3)}`,
-      email: `${data.name.toLowerCase().replace(/\s+/g, '')}@email.com`,
-      address: `Indiranagar, Bengaluru`,
-      bloodGroup: ["A+", "B+", "O+", "AB+"][idx % 4],
-      allergies: data.history.pastConditions.includes("Hypothyroidism") ? "None" : "No Known Allergies",
-      pregnancyStatus: data.pregnancyStatus,
-      edd: data.edd,
-      fhr: data.fhr,
-      menstrualHistory: data.menstrualHistory,
-      obstetricHistory: data.obstetricHistory,
-      prescriptionHistory: data.prescriptionHistory,
-      files: data.files,
-      medicalReports: data.medicalReports,
-      vitalsHistory: data.vitalsHistory,
-      investigationsHistory: data.investigationsHistory,
-      egfr: 95,
-      liverFunction: "Normal",
-      emergencyContact: { name: "Husband", relation: "Spouse", phone: "+91 9888888800" },
-      payer: "Cash Tariff",
-      payerType: "Direct",
-      sponsor: "Self",
-      primaryConsultant: "Dr. Reeta Verma",
-      department: "Gynecology & Obs",
-      status: status,
-      vitals: { bp: data.vitalsHistory[0].bp, hr: parseInt(data.vitalsHistory[0].hr), temp: parseFloat(data.vitalsHistory[0].temp), spo2: 98, weight: parseInt(data.vitalsHistory[0].wt), bmi: 21 },
-      clinicalData: { complaint: data.pregnancyStatus === "Pregnant" ? "Routine Ante-Natal Checkup" : "General Checkup", hpi: "Patient came for routine evaluation.", examination: "NAD", diagnosis: data.pregnancyStatus === "Pregnant" ? "Pregnancy Routine Checkup" : "General Wellness Evaluation", treatmentPlan: "Routine plan", carePlan: "Routine follow-up" },
-      prescriptions: data.prescriptions,
-      history: data.history,
-      ward: "—",
-      bed: "—",
-      insurance: { provider: "Cash", plan: "" },
-      alerts: isCheckedIn ? ["Arrived"] : [`Appt: 10:${String(15 * idx).padStart(2, '0')} AM`],
-      lastActivity: "09:00 AM"
-    };
+  // Save to local storage for persistence across views
+  localStorage.setItem('saronil_patients', JSON.stringify(state.patients));
+  localStorage.setItem('saronil_doctors', JSON.stringify(state.doctors));
+  localStorage.setItem('saronil_nurses', JSON.stringify(state.nurses));
+  localStorage.setItem('saronil_staff', JSON.stringify(state.staff));
 
-    state.patients.push(patient);
-
-    state.appointments.push({
-      id: "APT" + String(2000 + idx),
-      uhid: patient.uhid,
-      patientName: patient.name,
-      doctorName: "Dr. Reeta Verma",
-      spec: "Gynecology & Obs",
-      date: "2026-06-22",
-      time: `10:${String(15 * idx).padStart(2, '0')} AM`,
-      status: status
-    });
-  });
-
-  console.log(`State Seeded: ${state.patients.length} patients, ${state.appointments.length} appointments, ${state.admissions.length} admissions loaded.`);
-
-  console.log(`State Seeded: ${state.patients.length} patients, ${state.appointments.length} appointments, ${state.admissions.length} admissions loaded.`);
+  console.log(`Synchronized database seeded successfully: ${state.patients.length} patients, ${state.doctors.length} doctors, ${state.nurses.length} nurses, ${state.staff.length} staff.`);
 }
+
+// Expose globally
+window.seedState = seedState;
 
 // Execute Seeding
 seedState();
@@ -2230,4 +1872,483 @@ state.logBedMovement = function({
   });
 };
 
-window.state = state;
+state.triggerHousekeepingRequest = function(bedId, wardKey, notes) {
+  if (!bedId || !wardKey) return;
+  state.housekeepingTasks = state.housekeepingTasks || [];
+  
+  // Check if there is an active (non-Completed, non-Verified) task for this bed
+  const exists = state.housekeepingTasks.some(t => t.bedId === bedId && t.status !== 'Completed' && t.status !== 'Verified');
+  if (exists) return;
+
+  const taskId = 'HK-' + String(1000 + state.housekeepingTasks.length + 1);
+  const newTask = {
+    id: taskId,
+    taskId: taskId,
+    type: "Discharge Cleaning",
+    source: "IPD",
+    bedId: bedId,
+    wardKey: wardKey,
+    priority: (bedId.startsWith('EMG') || bedId.startsWith('CCU') || bedId.startsWith('ICCU')) ? 'High' : 'Normal',
+    status: 'New',
+    createdTime: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    assignee: null,
+    assignedTime: null,
+    completedTime: null,
+    verifiedTime: null,
+    icNurseSigned: false,
+    icNurseName: null,
+    checklist: {
+      "Floor mopped with disinfectant": false,
+      "Surfaces wiped": false,
+      "Bin emptied and relined": false,
+      "Linen changed": false,
+      "Bathroom cleaned": false,
+      "Equipment wiped": false
+    },
+    remarks: notes || 'Awaiting cleaning request',
+    audit: [{ timestamp: new Date().toISOString(), user: 'ATD System', role: 'System', action: 'CREATE', remarks: notes || 'Awaiting clean request' }]
+  };
+
+  state.housekeepingTasks.push(newTask);
+  localStorage.setItem('saronil_housekeeping_tasks', JSON.stringify(state.housekeepingTasks));
+
+  // Sync state.hkAuditLogs
+  state.hkAuditLogs = state.hkAuditLogs || [];
+  state.hkAuditLogs.unshift({
+    timestamp: new Date().toISOString(),
+    user: 'ATD System',
+    role: 'System',
+    action: 'AUTO_CREATE',
+    taskId: taskId,
+    roomBed: bedId,
+    remarks: notes || 'Cleaning request automatically assigned.'
+  });
+  localStorage.setItem('saronil_hk_audit_logs', JSON.stringify(state.hkAuditLogs));
+};
+
+state.completeHousekeepingTasks = function(bedId) {
+  if (!bedId) return;
+  state.housekeepingTasks = state.housekeepingTasks || [];
+  let updated = false;
+  state.housekeepingTasks.forEach(t => {
+    if (t.bedId === bedId && t.status !== 'Completed' && t.status !== 'Verified') {
+      t.status = 'Verified';
+      t.completedTime = new Date().toISOString();
+      t.verifiedTime = new Date().toISOString();
+      t.audit.push({ timestamp: new Date().toISOString(), user: 'ATD System', role: 'System', action: 'VERIFY', remarks: 'Bed marked ready/available in Bed Board.' });
+      
+      state.hkAuditLogs = state.hkAuditLogs || [];
+      state.hkAuditLogs.unshift({
+        timestamp: new Date().toISOString(),
+        user: 'ATD System',
+        role: 'System',
+        action: 'VERIFY',
+        taskId: t.id,
+        roomBed: bedId,
+        remarks: 'Cleaning verified and bed marked available.'
+      });
+      updated = true;
+    }
+  });
+  if (updated) {
+    localStorage.setItem('saronil_housekeeping_tasks', JSON.stringify(state.housekeepingTasks));
+    localStorage.setItem('saronil_hk_audit_logs', JSON.stringify(state.hkAuditLogs));
+  }
+};
+  // Initialize Daycare collections
+  state.daycareBookings = [];
+  state.daycareAuditLogs = [];
+  state.unplannedReturns = [];
+  
+  // Insurer Daycare cashless eligible procedure lists
+  state.daycarePayerProcedureLists = {
+    "Star Health": ["Cataract Surgery", "Chemotherapy Infusion", "Biopsy Sample Collection", "Dialysis Treatment"],
+    "HDFC ERGO": ["Chemotherapy Infusion", "Endoscopy Scope Evaluation", "Laparoscopic Appendectomy", "Hernia Repair"],
+    "ICICI Lombard": ["Cataract Surgery", "Minor Debridement & Dressing", "Biopsy Sample Collection", "Laparoscopic Cholecystectomy"]
+  };
+
+  // Seed the 3 custom daycare admissions with specific elapsed times
+  state.daycareAdmissions = [];
+  
+  // Setup 3 patients for daycare
+  const dcPatients = [
+    state.patients.find(p => p.uhid === "SH-2026-04822") || state.patients[0],
+    state.patients.find(p => p.uhid === "SH-2026-04812") || state.patients[1],
+    state.patients.find(p => p.uhid === "SH-2026-04801") || state.patients[2]
+  ];
+
+  // Admission timestamps to get exact elapsed stay clocks
+  const nowMs = Date.now();
+  const timeA = new Date(nowMs - 2 * 60 * 60 * 1000).toISOString(); // 2 hours stay
+  const timeB = new Date(nowMs - (10 * 60 + 15) * 60 * 1000).toISOString(); // 10h 15m stay
+  const timeC = new Date(nowMs - (12 * 60 + 5) * 60 * 1000).toISOString(); // 12h 5m stay (breached)
+
+  state.daycareAdmissions.push({
+    patient: dcPatients[0],
+    bedId: "DC-B1",
+    ward: "Daycare Ward",
+    bedNo: "DC-B1",
+    consultantName: "Dr. Amit Verma",
+    procedureName: "Chemotherapy Infusion",
+    admissionType: "Daycare",
+    admissionTimestamp: timeA,
+    status: "Registered",
+    historyLogs: [{ timestamp: timeA, action: "Daycare Bed Allocated & Registered" }],
+    tasks: [
+      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
+      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: false },
+      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: false }
+    ]
+  });
+
+  state.daycareAdmissions.push({
+    patient: dcPatients[1],
+    bedId: "DC-B2",
+    ward: "Daycare Ward",
+    bedNo: "DC-B2",
+    consultantName: "Dr. Neha Sharma",
+    procedureName: "Cataract Surgery",
+    admissionType: "Daycare",
+    admissionTimestamp: timeB,
+    status: "Tasks Updated",
+    historyLogs: [
+      { timestamp: timeB, action: "Daycare Bed Allocated & Registered" },
+      { timestamp: timeB, action: "Pre-Procedure Checklist Submitted & Locked" }
+    ],
+    tasks: [
+      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
+      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: true },
+      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: true }
+    ],
+    checklist: {
+      bp: "130/80", pulse: 72, spo2: 98, temp: "98.6", weight: 60, fasting: "Yes", fastingHours: 8, consent: "Yes", allergyFlag: "No"
+    }
+  });
+
+  state.daycareAdmissions.push({
+    patient: dcPatients[2],
+    bedId: "DC-B3",
+    ward: "Daycare Ward",
+    bedNo: "DC-B3",
+    consultantName: "Dr. Rajesh Patel",
+    procedureName: "Laparoscopic Hernia Repair",
+    admissionType: "Daycare",
+    admissionTimestamp: timeC,
+    status: "Post-op Monitored",
+    historyLogs: [
+      { timestamp: timeC, action: "Daycare Bed Allocated & Registered" },
+      { timestamp: timeC, action: "Pre-Procedure Checklist Submitted & Locked" },
+      { timestamp: timeC, action: "Post-op Recovery Logs Submitted & Saved" }
+    ],
+    tasks: [
+      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
+      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: true },
+      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: true }
+    ],
+    checklist: {
+      bp: "120/80", pulse: 68, spo2: 99, temp: "98.4", weight: 78, fasting: "Yes", fastingHours: 12, consent: "Yes", allergyFlag: "No"
+    },
+    postopCheck: {
+      bp: "118/78", pulse: 70, spo2: 98, temp: "98.2", condition: "Stable", notes: "Post-op recovery uneventful. Complaining of mild surgical site pain."
+    }
+  });
+
+  // Assign these beds as Occupied in state.bedsStatus
+  state.bedsStatus["DC-B1"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[0].uhid, notes: "Chemotherapy Infusion" };
+  state.bedsStatus["DC-B2"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[1].uhid, notes: "Cataract Surgery" };
+  state.bedsStatus["DC-B3"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[2].uhid, notes: "Laparoscopic Hernia Repair" };
+
+  // Set DC-B4 to DC-B10 as Available
+  for (let i = 4; i <= 10; i++) {
+    state.bedsStatus[`DC-B${i}`] = { wardKey: "DAYCARE", status: "Available", patientUhid: null, notes: "" };
+  }
+
+  // Pre-seed local storage so it loads properly immediately
+  localStorage.setItem('saronil_daycare_admissions', JSON.stringify(state.daycareAdmissions));
+
+  // Initialize Housekeeping structures
+  state.hkSlaSettings = JSON.parse(localStorage.getItem('saronil_hk_sla_settings')) || {
+    'Discharge Cleaning': 30,
+    'Isolation Room Cleaning': 15,
+    'OT Cleaning': 20,
+    'Bed Cleaning': 45,
+    'General Room Cleaning': 60,
+    'Public Area Cleaning': 60,
+    'Scheduled Cleaning': 60
+  };
+
+  state.hkStaffList = JSON.parse(localStorage.getItem('saronil_hk_staff')) || [
+    { id: "HK-STF01", name: "Ramu K.", shift: "Morning", activeTasks: 1 },
+    { id: "HK-STF02", name: "Somu L.", shift: "Morning", activeTasks: 1 },
+    { id: "HK-STF03", name: "Ajay S.", shift: "Afternoon", activeTasks: 0 },
+    { id: "HK-STF04", name: "Shalini V.", shift: "Afternoon", activeTasks: 0 },
+    { id: "HK-STF05", name: "Vijay M.", shift: "Night", activeTasks: 0 },
+    { id: "HK-STF06", name: "Priya S.", shift: "Night", activeTasks: 0 }
+  ];
+
+  state.hkAuditLogs = JSON.parse(localStorage.getItem('saronil_hk_audit_logs')) || [
+    { timestamp: new Date(Date.now() - 3600000).toISOString(), user: "System", role: "System", action: "AUTO_CREATE", taskId: "HK-1001", roomBed: "GW(M)-409", remarks: "Discharge order confirmed for patient, task created." }
+  ];
+
+  state.housekeepingTasks = JSON.parse(localStorage.getItem('saronil_housekeeping_tasks')) || [
+    {
+      id: "HK-1001",
+      type: "Discharge Cleaning",
+      source: "IPD",
+      bedId: "GW(M)-409",
+      status: "New",
+      createdTime: new Date(Date.now() - 720000).toISOString(), // 12 minutes ago -> triggers supervisor warning if unassigned > 10 min
+      assignee: null,
+      assignedTime: null,
+      completedTime: null,
+      verifiedTime: null,
+      icNurseSigned: false,
+      icNurseName: null,
+      checklist: {
+        "Floor mopped with disinfectant": false,
+        "Surfaces wiped": false,
+        "Bin emptied and relined": false,
+        "Linen changed": false,
+        "Bathroom cleaned": false,
+        "Equipment wiped": false
+      },
+      audit: [
+        { timestamp: new Date(Date.now() - 720000).toISOString(), user: "System", role: "System", action: "AUTO_CREATE", remarks: "System auto-created task on patient discharge order confirmation." }
+      ]
+    },
+    {
+      id: "HK-1002",
+      type: "Bed Cleaning",
+      source: "IPD",
+      bedId: "SP-301",
+      status: "Assigned",
+      createdTime: new Date(Date.now() - 1200000).toISOString(),
+      assignee: "Ramu K.",
+      assignedTime: new Date(Date.now() - 1100000).toISOString(),
+      completedTime: null,
+      verifiedTime: null,
+      icNurseSigned: false,
+      icNurseName: null,
+      checklist: {
+        "Mattress wipe": false,
+        "Surfaces wiped": false,
+        "Bin emptied and relined": false
+      },
+      audit: [
+        { timestamp: new Date(Date.now() - 1200000).toISOString(), user: "Nurse Anjali", role: "Ward Nurse", action: "CREATE", remarks: "Manual request raised by ward nursing desk." },
+        { timestamp: new Date(Date.now() - 1100000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "ASSIGN", remarks: "Assigned to Ramu K. for Morning shift." }
+      ]
+    },
+    {
+      id: "HK-1003",
+      type: "Isolation Room Cleaning",
+      source: "IPD",
+      bedId: "PVT-201",
+      status: "In Progress",
+      createdTime: new Date(Date.now() - 600000).toISOString(),
+      assignee: "Somu L.",
+      assignedTime: new Date(Date.now() - 550000).toISOString(),
+      completedTime: null,
+      verifiedTime: null,
+      icNurseSigned: false,
+      icNurseName: null,
+      checklist: {
+        "PPE donned": true,
+        "Enhanced disinfectant used": true,
+        "Post-clean fumigation logged": false,
+        "IC Nurse notified": false,
+        "Floor mopped with disinfectant": false,
+        "Surfaces wiped": false,
+        "Bin emptied and relined": false
+      },
+      audit: [
+        { timestamp: new Date(Date.now() - 600000).toISOString(), user: "Nurse Preeti", role: "IC Nurse", action: "CREATE", remarks: "Isolation room release terminal clean requested." },
+        { timestamp: new Date(Date.now() - 550000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "ASSIGN", remarks: "Assigned to Somu L. on priority." }
+      ]
+    },
+    {
+      id: "HK-1004",
+      type: "General Room Cleaning",
+      source: "ICU",
+      bedId: "CCU-BED-02",
+      status: "Completed",
+      createdTime: new Date(Date.now() - 1800000).toISOString(),
+      assignee: "Ramu K.",
+      assignedTime: new Date(Date.now() - 1700000).toISOString(),
+      completedTime: new Date(Date.now() - 100000).toISOString(),
+      verifiedTime: null,
+      icNurseSigned: false,
+      icNurseName: null,
+      checklist: {
+        "Floor mopped with disinfectant": true,
+        "Surfaces wiped": true,
+        "Bin emptied and relined": true,
+        "Equipment wiped": true
+      },
+      audit: [
+        { timestamp: new Date(Date.now() - 1800000).toISOString(), user: "Nurse Deepa", role: "Ward Nurse", action: "CREATE", remarks: "Routine daily room sanitisation." },
+        { timestamp: new Date(Date.now() - 1700000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "ASSIGN", remarks: "Assigned to Ramu K." },
+        { timestamp: new Date(Date.now() - 100000).toISOString(), user: "Ramu K.", role: "HK Staff", action: "COMPLETE", remarks: "Standard clean completed, checklist items validated." }
+      ]
+    },
+    {
+      id: "HK-1005",
+      type: "Discharge Cleaning",
+      source: "IPD",
+      bedId: "GW(F)-414",
+      status: "Verified",
+      createdTime: new Date(Date.now() - 3600000).toISOString(),
+      assignee: "Somu L.",
+      assignedTime: new Date(Date.now() - 3500000).toISOString(),
+      completedTime: new Date(Date.now() - 1500000).toISOString(),
+      verifiedTime: new Date(Date.now() - 1000000).toISOString(),
+      icNurseSigned: false,
+      icNurseName: null,
+      checklist: {
+        "Floor mopped with disinfectant": true,
+        "Surfaces wiped": true,
+        "Bin emptied and relined": true,
+        "Linen changed": true,
+        "Bathroom cleaned": true,
+        "Equipment wiped": true
+      },
+      audit: [
+        { timestamp: new Date(Date.now() - 3600000).toISOString(), user: "System", role: "System", action: "AUTO_CREATE", remarks: "Auto-created on patient discharge order." },
+        { timestamp: new Date(Date.now() - 3500000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "ASSIGN", remarks: "Assigned to Somu L." },
+        { timestamp: new Date(Date.now() - 1500000).toISOString(), user: "Somu L.", role: "HK Staff", action: "COMPLETE", remarks: "Clean complete." },
+        { timestamp: new Date(Date.now() - 1000000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "VERIFY", remarks: "Clean inspected and verified. Bed released to Ready." }
+      ]
+    }
+  ];
+
+  // Set some beds to Dirty or Blocked for demonstration
+  state.bedsStatus["GW(M)-409"] = { wardKey: "GENERAL-WARD-M", status: "Dirty", patientUhid: null, notes: "Discharged patient" };
+  state.bedsStatus["SP-301"] = { wardKey: "SEMI-PRIVATE", status: "Dirty", patientUhid: null, notes: "Awaiting clean" };
+  state.bedsStatus["PVT-201"] = { wardKey: "PRIVATE", status: "Cleaning", patientUhid: null, notes: "Isolation clean in progress" };
+  state.bedsStatus["CCU-BED-02"] = { wardKey: "CCU", status: "Cleaning", patientUhid: null, notes: "Daily routine clean in progress" };
+  state.bedsStatus["DELUXE-401"] = { wardKey: "DELUXE", status: "Blocked", patientUhid: null, notes: "AC servicing in progress" };
+
+  // Initialize Laundry stock & active batches
+  state.laundryLinenStock = JSON.parse(localStorage.getItem('saronil_laundry_linen_stock')) || [
+    { item: "Double Bed Sheets", available: 180, dirty: 45, minStock: 50 },
+    { item: "Pillow Covers", available: 220, dirty: 60, minStock: 60 },
+    { item: "OT Towels", available: 95, dirty: 15, minStock: 30 },
+    { item: "Doctor Gowns", available: 54, dirty: 8, minStock: 20 }
+  ];
+
+  state.laundryBatches = JSON.parse(localStorage.getItem('saronil_laundry_batches')) || [
+    { id: "LND-B001", dispatchTime: new Date(Date.now() - 7200000).toISOString(), items: "Double Bed Sheets x30", status: "Sent to Laundry", expectedReturn: new Date(Date.now() + 14400000).toISOString() },
+    { id: "LND-B002", dispatchTime: new Date(Date.now() - 86400000).toISOString(), items: "OT Towels x15, Doctor Gowns x10", status: "Clean Received", expectedReturn: new Date(Date.now() - 7200000).toISOString() }
+  ];
+
+  // Initialize CSSD stock & loads
+  state.cssdInventory = JSON.parse(localStorage.getItem('saronil_cssd_inventory')) || [
+    { kitName: "Ortho Surgical Kit A", available: 6, dirty: 2, sterilizedAt: new Date(Date.now() - 18000000).toISOString() },
+    { kitName: "General Surgery Pack", available: 12, dirty: 4, sterilizedAt: new Date(Date.now() - 7200000).toISOString() },
+    { kitName: "Cardio Surgical Tray B", available: 3, dirty: 1, sterilizedAt: new Date(Date.now() - 86400000).toISOString() }
+  ];
+
+  state.cssdActiveLoads = JSON.parse(localStorage.getItem('saronil_cssd_active_loads')) || [
+    { loadId: "LOAD-2041", machine: "Autoclave-01 (Pre-Vac)", loadType: "General Surgery Packs", temp: 134, time: 30, status: "Sterilization in Progress", startedAt: new Date(Date.now() - 900000).toISOString() }
+  ];
+
+  // Initialize Laundry Department Stock levels (Low / Critical alerts)
+  state.laundryDeptStock = JSON.parse(localStorage.getItem('saronil_laundry_dept_stock')) || [
+    { dept: "ICU Ward", available: 12, status: "Critical", minStock: 25 },
+    { dept: "OT Complex", available: 8, status: "Critical", minStock: 20 },
+    { dept: "IPD Wards", available: 95, status: "OK", minStock: 80 },
+    { dept: "OPD Clinics", available: 14, status: "Low", minStock: 30 }
+  ];
+  state.laundryVendorOverdue = JSON.parse(localStorage.getItem('saronil_laundry_vendor_overdue')) || true;
+
+  // Initialize CSSD active sterilizations
+  state.cssdActiveSterilizations = JSON.parse(localStorage.getItem('saronil_cssd_active_sterilizations')) || [
+    { id: "CSSD-T101", name: "Ortho Major Kit A", stage: "Sterilizing", requestedBy: "OT Room 2", startedAt: new Date(Date.now() - 3600000).toISOString(), eta: new Date(Date.now() + 1800000).toISOString(), status: "On Time", expired: false },
+    { id: "CSSD-T102", name: "General Delivery Tray", stage: "Ready", requestedBy: "Maternity Ward", startedAt: new Date(Date.now() - 72000000).toISOString(), eta: new Date(Date.now() - 18000000).toISOString(), status: "On Time", expired: true, expiryDate: new Date(Date.now() - 86400000).toISOString() },
+    { id: "CSSD-T103", name: "Cardio Surgery Pack B", stage: "Decontamination", requestedBy: "OT Room 1", startedAt: new Date(Date.now() - 1800000).toISOString(), eta: new Date(Date.now() + 7200000).toISOString(), status: "On Time", expired: false }
+  ];
+  state.cssdOverdueReturnsAlert = JSON.parse(localStorage.getItem('saronil_cssd_overdue_returns_alert')) || "Alert: 2 Ortho kits overdue for return from Ward-3 since yesterday.";
+
+  // Initialize BMW bags including overdue bags (> 4 hours)
+  state.bmwBags = JSON.parse(localStorage.getItem('saronil_bmw_bags')) || [
+    { bagId: "BMW-B01", category: "Red Bag (Infected Plastics)", weight: 4.2, department: "IPD Ward", collectedAt: new Date(Date.now() - 1800000).toISOString() },
+    { bagId: "BMW-B02", category: "Yellow Bag (Anatomical Waste)", weight: 2.8, department: "OT Complex", collectedAt: new Date(Date.now() - 18000000).toISOString() }, // 5 hours ago (overdue)
+    { bagId: "BMW-B03", category: "Blue Glass (Ampoules/Vials)", weight: 1.5, department: "ICU Ward", collectedAt: new Date(Date.now() - 5400000).toISOString() }
+  ];
+  state.bmwVendorOverdue = JSON.parse(localStorage.getItem('saronil_bmw_vendor_overdue')) || true;
+  state.bmwManifestSubmissions = JSON.parse(localStorage.getItem('saronil_bmw_manifest_submissions')) || {
+    "IPD Ward": "Submitted",
+    "OT Complex": "Submitted",
+    "ICU Ward": "Submitted",
+    "OPD Clinic": "Missing"
+  };
+
+  // Seed detailed HK Audit logs with sub-module markers
+  state.hkAuditLogs = JSON.parse(localStorage.getItem('saronil_hk_audit_logs')) || [
+    { timestamp: new Date(Date.now() - 1800000).toISOString(), user: "System", role: "System", action: "AUTO_CREATE", subModule: "HK Ops", locationItem: "Bed GW(M)-409", remarks: "Discharge order confirmed for patient, task created." },
+    { timestamp: new Date(Date.now() - 3600000).toISOString(), user: "Supervisor Satish", role: "HK Supervisor", action: "ASSIGN", subModule: "HK Ops", locationItem: "Bed SP-301", remarks: "Assigned task to Ramu K." },
+    { timestamp: new Date(Date.now() - 5400000).toISOString(), user: "Ramu K.", role: "HK Staff", action: "LAUNDRY_DISPATCH", subModule: "Laundry", locationItem: "Double Bed Sheets x30", remarks: "Sent dirty sheets to external vendor." },
+    { timestamp: new Date(Date.now() - 7200000).toISOString(), user: "Sister Anitha", role: "Infection Control Nurse", action: "IC_SIGN_OFF", subModule: "HK Ops", locationItem: "Bed PVT-201", remarks: "Isolation clean signed off." },
+    { timestamp: new Date(Date.now() - 9000000).toISOString(), user: "Technician Raj", role: "CSSD Staff", action: "CSSD_LOAD", subModule: "CSSD", locationItem: "General Surgery Pack", remarks: "Autoclave machine pre-vacuum load initiated." },
+    { timestamp: new Date(Date.now() - 10800000).toISOString(), user: "Somu L.", role: "HK Staff", action: "BMW_COLLECT", subModule: "BMW", locationItem: "Yellow Bag", remarks: "Collected anatomical waste from OT." }
+  ];
+
+  // Seed Scheduled Cleaning configurations (Schedules list)
+  state.hkSchedules = JSON.parse(localStorage.getItem('saronil_hk_schedules')) || [
+    { areaName: "OPD Waiting Area", frequency: "Daily", times: "07:00, 13:00, 19:00", zone: "OPD Zone", staff: "Ramu K.", nextDue: new Date(Date.now() + 7200000).toISOString(), lastCompleted: new Date(Date.now() - 14400000).toISOString(), status: "Active" },
+    { areaName: "Corridors", frequency: "Daily", times: "06:00, 18:00", zone: "General Zone", staff: "Somu L.", nextDue: new Date(Date.now() - 900000).toISOString(), lastCompleted: new Date(Date.now() - 36000000).toISOString(), status: "Missed" }, // 15 mins overdue
+    { areaName: "ICU", frequency: "Daily", times: "06:00, 14:00", zone: "ICU Zone", staff: "Ajay S.", nextDue: new Date(Date.now() + 3600000).toISOString(), lastCompleted: new Date(Date.now() - 28800000).toISOString(), status: "Active" }
+  ];
+
+  // Seed Quality Inspections database
+  state.hkInspections = JSON.parse(localStorage.getItem('saronil_hk_inspections')) || [
+    { id: "INSP-501", area: "IPD Wards", date: new Date().toISOString().slice(0, 10), shift: "Morning", inspector: "Manager Satish", score: 4.8, threshold: 3.5, remarks: "Excellent cleanliness maintained." },
+    { id: "INSP-502", area: "OPD Waiting Area", date: new Date().toISOString().slice(0, 10), shift: "Morning", inspector: "Manager Satish", score: 2.8, threshold: 3.5, remarks: "Dust on chairs. Cleanliness scores breached threshold.", rootCause: "Lack of cleaning consumables in OPD closet." }
+  ];
+
+  localStorage.setItem('saronil_hk_sla_settings', JSON.stringify(state.hkSlaSettings));
+  localStorage.setItem('saronil_hk_staff', JSON.stringify(state.hkStaffList));
+  localStorage.setItem('saronil_hk_audit_logs', JSON.stringify(state.hkAuditLogs));
+  localStorage.setItem('saronil_housekeeping_tasks', JSON.stringify(state.housekeepingTasks));
+  localStorage.setItem('saronil_bedsStatus', JSON.stringify(state.bedsStatus));
+  localStorage.setItem('saronil_laundry_linen_stock', JSON.stringify(state.laundryLinenStock));
+  localStorage.setItem('saronil_laundry_batches', JSON.stringify(state.laundryBatches));
+  localStorage.setItem('saronil_cssd_inventory', JSON.stringify(state.cssdInventory));
+  localStorage.setItem('saronil_cssd_active_loads', JSON.stringify(state.cssdActiveLoads));
+  localStorage.setItem('saronil_bmw_manifests', JSON.stringify(state.bmwManifests));
+  localStorage.setItem('saronil_bmw_bags', JSON.stringify(state.bmwBags));
+  localStorage.setItem('saronil_laundry_dept_stock', JSON.stringify(state.laundryDeptStock));
+  localStorage.setItem('saronil_laundry_vendor_overdue', JSON.stringify(state.laundryVendorOverdue));
+  localStorage.setItem('saronil_cssd_active_sterilizations', JSON.stringify(state.cssdActiveSterilizations));
+  localStorage.setItem('saronil_cssd_overdue_returns_alert', JSON.stringify(state.cssdOverdueReturnsAlert));
+  localStorage.setItem('saronil_bmw_vendor_overdue', JSON.stringify(state.bmwVendorOverdue));
+  localStorage.setItem('saronil_bmw_manifest_submissions', JSON.stringify(state.bmwManifestSubmissions));
+  localStorage.setItem('saronil_hk_schedules', JSON.stringify(state.hkSchedules));
+  localStorage.setItem('saronil_hk_inspections', JSON.stringify(state.hkInspections));
+
+  window.state = state;
+
+/* ==========================================================================
+   CENTRALIZED PATIENT TIMELINE LOGGER
+   Call from ANY module:
+     window.logPatientTimeline(uhid, { icon, title, desc, type })
+   ========================================================================== */
+window.logPatientTimeline = function(uhid, event) {
+  if (!uhid || !event) return;
+  const st = window.state || state;
+  if (!st || !st.patients) return;
+  const pat = st.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+  pat.timelineEvents = pat.timelineEvents || [];
+  pat.timelineEvents.unshift({
+    date: new Date().toISOString(),
+    type: event.type || 'general',
+    icon: event.icon || '📌',
+    title: event.title || 'Activity',
+    desc: event.desc || ''
+  });
+  // Persist immediately so timeline survives page refresh
+  try { localStorage.setItem('saronil_patients', JSON.stringify(st.patients)); } catch(e) {}
+};
+

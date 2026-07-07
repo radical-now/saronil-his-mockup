@@ -99,26 +99,65 @@ const router = {
     
     // Verify view function exists, default to dashboard
     let targetPage = pageId;
+    if (targetPage === 'atd') {
+      window.location.hash = 'ipdAdmission?tab=atd';
+      return;
+    }
     if (!window.views[targetPage]) {
       console.warn(`View "${targetPage}" not found. Falling back to dashboard.`);
       targetPage = 'dashboard';
     }
 
-    // Toggle active state in sidebar menu
+    // Toggle active state in sidebar menu (with query parameter matching)
     document.querySelectorAll('.menu-item').forEach(item => {
-      if (item.dataset.target === targetPage) {
+      const fullHash = window.location.hash.substring(1) || 'dashboard';
+      const baseTarget = item.dataset.target ? item.dataset.target.split('?')[0] : '';
+      
+      if (item.dataset.target === fullHash || (baseTarget === targetPage && !item.dataset.target.includes('?'))) {
         item.classList.add('active');
-        // Expand parent category if needed
       } else {
         item.classList.remove('active');
       }
     });
+
+    // Auto-expand/collapse OPD group based on target page
+    var subOpd = document.getElementById('submenu-opd');
+    var arrowOpd = document.getElementById('arrow-opd');
+    if (subOpd && arrowOpd) {
+      if (targetPage === 'appointments' || targetPage === 'emr') {
+        subOpd.style.display = 'flex';
+        arrowOpd.style.transform = 'rotate(180deg)';
+      } else {
+        subOpd.style.display = 'none';
+        arrowOpd.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // Auto-expand/collapse IPD group based on target page
+    var subIpd = document.getElementById('submenu-ipd');
+    var arrowIpd = document.getElementById('arrow-ipd');
+    if (subIpd && arrowIpd) {
+      if (targetPage === 'ipdAdmission') {
+        subIpd.style.display = 'flex';
+        arrowIpd.style.transform = 'rotate(180deg)';
+      } else {
+        subIpd.style.display = 'none';
+        arrowIpd.style.transform = 'rotate(0deg)';
+      }
+    }
 
     // Update active page titles / breadcrumbs
     const pageTitleEl = document.getElementById('active-page-title');
     if (pageTitleEl) {
       const formattedTitle = targetPage.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       pageTitleEl.textContent = targetPage === 'dashboard' ? 'Hospital Overview Dashboard' : (targetPage === 'daybed' ? 'Day Care' : formattedTitle);
+      
+      // Hide title on dashboard since heading is displayed above the KPI cards in the dashboard body
+      if (targetPage === 'dashboard') {
+        pageTitleEl.style.display = 'none';
+      } else {
+        pageTitleEl.style.display = 'block';
+      }
     }
 
     // Toggle global back button visibility

@@ -3,7 +3,11 @@
    ========================================================================== */
 
 window.views.lab = function(container, subAnchor, params) {
-  renderLabView(container);
+  if (window.views && window.views.labDashboard) {
+    window.views.labDashboard(container);
+  } else {
+    renderLabView(container);
+  }
 };
 
 function renderLabView(container) {
@@ -50,8 +54,9 @@ function renderLabView(container) {
     <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem;">
       <!-- Column 1: Lab Orders List -->
       <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">LIS Order Worklist</h3>
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 class="card-title" style="margin:0;">LIS Order Worklist</h3>
+          <button class="btn btn-secondary btn-sm" style="background:#1d4ed8; color:#fff;" onclick="window.showStockRequestOverlay({dept:'Laboratory', urgency:'Routine'})">📦 Request Stock</button>
         </div>
         <div class="card-body">
           <div class="custom-table-container">

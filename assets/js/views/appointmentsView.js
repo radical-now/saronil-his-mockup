@@ -3,7 +3,7 @@
    ========================================================================== */
 
 window.views.appointments = function(container, subAnchor, params) {
-  const systemToday = "2026-06-17"; // Standard system dummy date context
+  const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10); // Dynamic real-world date
   
   // Seed more variety in appointments if only basic ones exist
   if (state.appointments.length > 0 && !state.appointments.some(a => a.status === 'Completed')) {
@@ -441,16 +441,12 @@ window.views.appointments = function(container, subAnchor, params) {
             <table class="custom-table" id="appointments-table">
               <thead>
                 <tr>
-                  <th style="padding: 0.85rem 1rem;">Token ID</th>
-                  <th style="padding: 0.85rem 1rem;">Date</th>
-                  <th style="padding: 0.85rem 1rem;">Time</th>
                   <th style="padding: 0.85rem 1rem;">Patient Info</th>
-                  <th style="padding: 0.85rem 1rem;">Mobile</th>
+                  <th style="padding: 0.85rem 1rem;">Date & Time</th>
                   <th style="padding: 0.85rem 1rem;">Doctor</th>
                   <th style="padding: 0.85rem 1rem;">Department</th>
                   <th style="padding: 0.85rem 1rem;">Type</th>
                   <th style="padding: 0.85rem 1rem;">Status</th>
-                  <th style="padding: 0.85rem 1rem;">Created By</th>
                   <th style="padding: 0.85rem 1rem; text-align: right;">Actions</th>
                 </tr>
               </thead>
@@ -543,7 +539,7 @@ window.views.appointments = function(container, subAnchor, params) {
     filterDoctor.value = activeFilters.doctor;
   };
 
-  // Helper: compute dates relative to systemToday ("2026-06-17")
+  // Helper: compute dates relative to systemToday (current date)
   const getRelativeDateString = (daysOffset) => {
     const baseDate = new Date(systemToday);
     baseDate.setDate(baseDate.getDate() + daysOffset);
@@ -789,11 +785,12 @@ window.views.appointments = function(container, subAnchor, params) {
         return hours * 60 + minutes;
       };
 
+      // Sort: most recent date first, then latest time within same day (recent-first)
       appointmentsList.sort((a, b) => {
         if (a.date !== b.date) {
-          return new Date(a.date) - new Date(b.date);
+          return new Date(b.date) - new Date(a.date); // newest date first
         }
-        return parseTime(a.time) - parseTime(b.time);
+        return parseTime(b.time) - parseTime(a.time); // latest time first within same day
       });
 
       // Slice the list for the current page
@@ -833,23 +830,25 @@ window.views.appointments = function(container, subAnchor, params) {
 
         return `
           <tr class="hover:bg-slate-50 transition">
-            <td class="py-2.5 px-3 font-semibold text-slate-800 mono">${appt.id}</td>
-            <td class="py-2.5 px-3 font-medium">${dateFormatted}</td>
-            <td class="py-2.5 px-3 font-mono text-xs text-slate-600">${appt.time}</td>
             <td class="py-2.5 px-3">
               <div class="font-bold text-slate-900"><a href="#patients?uhid=${appt.uhid}" class="hover:underline text-blue-600">${appt.patientName}</a></div>
-              <div class="text-[10px] text-slate-500 mono">${appt.uhid}</div>
+              <div class="text-[10px] text-slate-500 flex flex-col gap-0.5" style="margin-top: 2px;">
+                <span class="mono">UHID: ${appt.uhid}</span>
+                <span class="mono">Mob: ${patientMobile}</span>
+              </div>
             </td>
-            <td class="py-2.5 px-3 text-xs font-mono text-slate-600">${patientMobile}</td>
+            <td class="py-2.5 px-3 font-medium text-slate-800">
+              <div style="font-weight: 600;">${dateFormatted}</div>
+              <div style="font-size: 11px; color: var(--text-secondary, #64748b);" class="mono">${appt.time}</div>
+            </td>
             <td class="py-2.5 px-3 font-medium text-slate-800">${appt.doctorName}</td>
             <td class="py-2.5 px-3 text-xs text-slate-600">${appt.spec}</td>
-            <td class="py-2.5 px-3">
-              <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">${appt.type}</span>
+            <td class="py-2.5 px-3 text-xs text-slate-700 font-medium">
+              ${appt.type}
             </td>
             <td class="py-2.5 px-3">
               <span class="badge ${badgeClass}">${appt.status}</span>
             </td>
-            <td class="py-2.5 px-3 text-xs text-slate-500 font-medium">${appt.createdBy || 'System'}</td>
             <td class="py-2.5 px-3 text-right">
               <div class="relative inline-block text-left">
                 <button class="text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 font-medium text-[11px] px-2.5 py-1.5 rounded transition inline-flex items-center gap-1"
@@ -1095,6 +1094,7 @@ window.views.appointments = function(container, subAnchor, params) {
     document.body.style.overflow = '';
     renderViewData(); // Refresh the table automatically
   };
+  window.closeModal = closeModal;
 
   modalBackdrop.addEventListener('click', closeModal);
 
@@ -1446,7 +1446,8 @@ window.views.appointments = function(container, subAnchor, params) {
         return;
       }
 
-      // Add appointment
+      // Add appointment in Pending Payment status
+      const invId = 'INV-APT-' + String(4000 + state.billing.length);
       const newAppt = {
         id: "APT" + String(1000 + state.appointments.length + 1),
         uhid: finalPatient.uhid,
@@ -1455,20 +1456,47 @@ window.views.appointments = function(container, subAnchor, params) {
         spec: deptVal,
         date: dateVal,
         time: timeVal,
-        status: "Booked",
+        status: "Pending Payment",
         type: typeVal,
         createdBy: "Sarah Jones",
-        remarks: remarks
+        remarks: remarks,
+        invoiceId: invId
       };
       state.appointments.push(newAppt);
 
-      // Auto update patient state
-      if (dateVal === systemToday) {
-        finalPatient.status = "Registered";
+      // Create a pending bill of ₹500 in state.billing
+      state.billing = state.billing || [];
+      state.billing.push({
+        id: invId,
+        uhid: finalPatient.uhid,
+        patientName: finalPatient.name,
+        amount: 500,
+        paid: 0,
+        status: 'Pending',
+        visitType: 'OPD',
+        date: dateVal,
+        paymentCategory: 'Self Pay',
+        items: [
+          { desc: `OPD Consultation Fee - ${docVal}`, qty: 1, rate: 500, total: 500 }
+        ],
+        auditLogs: [{ timestamp: new Date().toISOString(), user: "Front Desk", action: `Generated pending appointment invoice ${invId}` }]
+      });
+      localStorage.setItem('saronil_billing', JSON.stringify(state.billing));
+
+      // Log to patient engagement timeline
+      if (window.logPatientTimeline) {
+        window.logPatientTimeline(finalPatient.uhid, {
+          type: 'appointment',
+          icon: '📅',
+          title: 'OPD Appointment Created (Pending Payment)',
+          desc: `Appointment ${newAppt.id} with ${docVal} (${deptVal}) on ${dateVal} at ${timeVal} is pending payment. Invoice: ${invId}.`
+        });
       }
 
-      alert(`OPD appointment ${newAppt.id} successfully created for ${finalPatient.name}.`);
+      alert(`✓ OPD appointment ${newAppt.id} successfully created!\n\nPending payment invoice ${invId} of ₹500 generated. Patient must make payment at the billing counter to confirm booking and join the queue.`);
+
       closeModal();
+
     });
   };
 

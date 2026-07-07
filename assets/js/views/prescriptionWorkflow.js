@@ -1842,7 +1842,7 @@ window.renderPrescriptionWorkflow = function(container, patient) {
             👁️ Preview
           </button>
           <button class="btn btn-secondary" id="rx-btn-print" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.55rem; font-size: 0.85rem; font-weight:700; border-radius: 8px; height: auto;">
-            🖨️ Print
+            🏁 End Consultation
           </button>
           <button class="btn btn-primary" id="rx-btn-finalize" style="flex: 2; display: flex; align-items: center; justify-content: center; padding: 0.55rem; font-size: 0.85rem; font-weight:700; border-radius: 8px; background-color: #005f87; border: none; height: auto;">
             💾 Save Orders
@@ -2388,6 +2388,30 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     }
   };
 
+  window.removePrescription = function(uhid, idx) {
+    const pat = (window.state.patients || []).find(p => p.uhid === uhid);
+    if (pat && pat.prescriptions) {
+      const activePrescs = pat.prescriptions.filter(p => p.status !== 'Discontinued');
+      const targetPresc = activePrescs[idx];
+      if (targetPresc) {
+        const masterIdx = pat.prescriptions.indexOf(targetPresc);
+        if (masterIdx > -1) {
+          if (confirm(`Are you sure you want to remove prescription for "${targetPresc.drug}"?`)) {
+            pat.prescriptions.splice(masterIdx, 1);
+            localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+            alert("Prescription removed successfully.");
+            if (window.views.patients) {
+              const container = document.getElementById('main-content');
+              if (container) {
+                window.views.patients(container, '', { uhid: uhid });
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+
   // Save & Finalize handler
   btnFinalize.addEventListener('click', () => {
     if (activeCart.length === 0) {
@@ -2545,35 +2569,189 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     modal.style.display = 'flex';
   });
 
+  function generateDetailedConsultationHTML() {
+    const rxDate = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+    const diagnosis = patient.clinicalData?.diagnosis || 'Major depressive disorder, single episode, moderate';
+    const icdCode = patient.clinicalData?.icdCode || 'ICD-11: 6A70.1';
+    const complaint = patient.clinicalData?.complaint || 'Depressed mood, poor sleep, anhedonia';
+    const hpi = patient.clinicalData?.hpi || 'Patient reports persistent low mood, early morning awakening, loss of interest in previously enjoyable activities. Difficulty concentrating at work. No energy. Some passive suicidal ideation (wishing not to wake up) but no plan or intent.';
+    
+    return `
+      <div style="font-family: Arial, sans-serif; color: #1e293b; line-height: 1.5; padding: 4px;">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 20px;">
+          <div>
+            <h2 style="color: #4f46e5; margin: 0; font-size: 1.4rem; font-weight: 800;">Saronil Health Clinic</h2>
+            <div style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 4px;">${patient.primaryConsultant || 'Dr. Riya Sharma'}, MD Psychiatry</div>
+            <div style="font-size: 0.75rem; color: #64748b;">Reg No. MH-2019-4521 · Bengaluru</div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Prescription Date</span><br>
+            <strong style="font-size: 1.1rem; color: #0f172a;">${rxDate}</strong>
+          </div>
+        </div>
+
+        <!-- Patient details box -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div>
+            <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:0.8rem;">Patient:</span> <strong style="color:#0f172a; font-size:0.95rem;">${patient.name}</strong></div>
+            <div style="margin-bottom: 4px;"><span style="color:#64748b; font-size:0.8rem;">Age/Gender:</span> <strong style="color:#0f172a; font-size:0.9rem;">${patient.age} yrs / ${patient.gender}</strong></div>
+            <div><span style="color:#64748b; font-size:0.8rem;">UHID:</span> <strong style="color:#4f46e5; font-family: monospace; font-size:0.9rem;">${patient.uhid}</strong></div>
+          </div>
+          <div style="border-left: 1px solid #e2e8f0; padding-left: 16px;">
+            <div style="color:#64748b; font-size:0.8rem; margin-bottom: 2px;">Diagnosis:</div>
+            <strong style="color:#0f172a; font-size:0.95rem; display:block; margin-bottom:4px;">${diagnosis}</strong>
+            <span style="color:#64748b; font-size:0.75rem; font-weight:700;">${icdCode}</span>
+          </div>
+        </div>
+
+        <!-- 1. CLINICAL HISTORY -->
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #3538cd; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin: 0 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. CLINICAL HISTORY & COMPLAINTS</h4>
+          
+          <div style="margin-bottom: 10px; font-size: 0.85rem;"><strong style="color:#334155;">Chief Complaint:</strong> <span style="color:#0f172a;">${complaint}</span></div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; font-size: 0.8rem; background: #fafafa; padding: 10px; border-radius: 6px; border: 1px dashed #e2e8f0; margin-bottom: 12px;">
+            <div><span style="color:#64748b;">Onset:</span> <strong style="color:#334155;">Gradual</strong></div>
+            <div><span style="color:#64748b;">Duration:</span> <strong style="color:#334155;">3 months</strong></div>
+            <div><span style="color:#64748b;">Progression:</span> <strong style="color:#334155;">Worsening</strong></div>
+            <div><span style="color:#64748b;">Functional Impact:</span> <strong style="color:#334155;">Significant</strong></div>
+            <div style="grid-column: span 2;"><span style="color:#64748b;">Triggers:</span> <strong style="color:#334155;">Job loss, relationship stress</strong></div>
+          </div>
+          
+          <div style="font-size: 0.85rem; background: #fff; border-left: 3px solid #cbd5e1; padding-left: 10px; margin-top: 8px;">
+            <strong style="color:#334155; display:block; font-size:0.8rem; margin-bottom:4px;">HPI Narrative:</strong>
+            <span style="color:#334155; font-style: italic;">"${hpi}"</span>
+          </div>
+        </div>
+
+        <!-- 2. MENTAL STATE EXAMINATION -->
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #3538cd; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin: 0 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. MENTAL STATE EXAMINATION (MSE)</h4>
+          <p style="margin: 0; font-size: 0.85rem; color: #475569;">
+            General appearance: Co-operative but poor eye contact, disheveled appearance. Speech: Low tone and volume. Mood: Depressed. Affect: Restricted. Thought: Depressive themes. Perception: Intact. Cognition: Intact.
+          </p>
+        </div>
+
+        <!-- 3. RX MEDICATIONS -->
+        <div>
+          <h4 style="color: #3538cd; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin: 0 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Rx (Prescribed Medications)</h4>
+          ${activeCart.length === 0 ? `
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b; font-style: italic;">No medications prescribed.</p>
+          ` : `
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Medicine</th>
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Dose</th>
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Route</th>
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Freq</th>
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Duration</th>
+                  <th style="padding: 6px 8px; color: #475569; font-weight:700;">Instructions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activeCart.map(item => `
+                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 8px; color: #0f172a;"><strong>${item.drug}</strong><br><span style="font-size:0.75rem; color:#64748b;">${item.genericName}</span></td>
+                    <td style="padding: 8px; color: #334155;">${item.dose}</td>
+                    <td style="padding: 8px; color: #334155;">${item.route}</td>
+                    <td style="padding: 8px; color: #334155;">${item.freq}</td>
+                    <td style="padding: 8px; color: #334155;">${item.duration}</td>
+                    <td style="padding: 8px; color: #475569; font-style: italic; font-size:0.8rem;">${item.instruction || 'None'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
   btnPrint.addEventListener('click', () => {
-    if (activeCart.length === 0) {
-      alert("No medications to print.");
-      return;
+    // Show End Consultation Modal
+    let modal = document.getElementById('end-consultation-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'end-consultation-modal';
+      modal.className = 'modal-overlay';
+      modal.style.cssText = "display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; padding:16px;";
+      modal.innerHTML = `
+        <div class="modal-box" style="width:100%; max-width:1050px; height: 90vh; max-height:800px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-bottom:1px solid #e2e8f0; background:#fff;">
+            <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#0f172a; font-family: sans-serif;">Finish Consultation</h3>
+            <span style="cursor:pointer; font-size:1.5rem; color:#64748b; line-height:1; font-weight: bold;" onclick="document.getElementById('end-consultation-modal').style.display='none'">&times;</span>
+          </div>
+          <div style="display:flex; flex:1; overflow:hidden; background:#f8fafc; padding:24px; gap:24px;">
+            <!-- Left Column (Actions) -->
+            <div style="width: 280px; flex: 0 0 280px; display:flex; flex-direction:column; gap:16px;">
+              <div style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:4px; font-family:sans-serif;">ACTIONS</div>
+              
+              <button class="btn" id="modal-rx-send-btn" style="background:#4f46e5; color:#fff; border:none; padding:12px 16px; border-radius:8px; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; width:100%;">
+                ✉️ Send Prescription to Patient
+              </button>
+              
+              <button class="btn" id="modal-rx-print-btn" style="background:#fff; color:#0f172a; border:1px solid #cbd5e1; padding:12px 16px; border-radius:8px; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; width:100%;">
+                🖨️ Print Prescription
+              </button>
+              
+              <button class="btn" id="modal-rx-confirm-btn" style="background:#0d9488; color:#fff; border:none; padding:12px 16px; border-radius:8px; font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; width:100%; margin-top:auto; box-shadow:0 2px 4px rgba(13, 148, 136, 0.2);">
+                ✅ Confirm Finish Consultation
+              </button>
+            </div>
+            
+            <!-- Right Column (Prescription Preview Card) -->
+            <div style="flex:1; overflow-y:auto; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+              <div id="modal-rx-preview-content"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Attach button events
+      document.getElementById('modal-rx-send-btn').addEventListener('click', () => {
+        alert("Success!\nPrescription sent successfully to patient's registered email address and mobile phone via secure SMS.");
+      });
+
+      document.getElementById('modal-rx-print-btn').addEventListener('click', () => {
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Prescription - ${patient.name}</title>
+              <style>
+                body { margin: 0; padding: 20px; background: #fff; font-family: Arial, sans-serif; }
+                @media print {
+                  body { -webkit-print-color-adjust: exact; padding: 0; }
+                }
+              </style>
+            </head>
+            <body>
+              ${generateDetailedConsultationHTML()}
+              <script>
+                setTimeout(() => {
+                  window.print();
+                  window.close();
+                }, 500);
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+      });
+
+      document.getElementById('modal-rx-confirm-btn').addEventListener('click', () => {
+        document.getElementById('end-consultation-modal').style.display = 'none';
+        // Trigger finalize saving routine
+        document.getElementById('rx-btn-finalize').click();
+      });
     }
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Prescription - ${patient.name}</title>
-          <style>
-            body { margin: 0; padding: 0; background: #fff; }
-            @media print {
-              body { -webkit-print-color-adjust: exact; }
-            }
-          </style>
-        </head>
-        <body>
-          ${generatePrescriptionHTML()}
-          <script>
-            setTimeout(() => {
-              window.print();
-              window.close();
-            }, 500);
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    
+    // Populate and show
+    document.getElementById('modal-rx-preview-content').innerHTML = generateDetailedConsultationHTML();
+    modal.style.display = 'flex';
   });
 
   // Initial runs

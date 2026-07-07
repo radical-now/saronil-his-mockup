@@ -973,7 +973,7 @@ window.views.patientTransfer = function(container) {
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.5rem; text-align: left; background: var(--bg-surface-elevated); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); width: 100%; max-width: 400px;">
           <div>🏢 <strong>Bed Board & ATD</strong>: Click on any occupied bed and choose <strong>Transfer Bed</strong>.</div>
-          <div>👤 <strong>Patient Profile (360°)</strong>: Click on <strong>Transfer Bed</strong> under Bed Details.</div>
+          <div>👤 <strong>Patient Profile</strong>: Click on <strong>Transfer Bed</strong> under Bed Details.</div>
         </div>
         <button class="btn btn-primary" onclick="router.navigate('atd')" style="padding: 0.5rem 2rem; font-weight: bold; margin-top: 0.5rem;">
           Go to Bed Board & ATD ➡️

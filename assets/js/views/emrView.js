@@ -36,6 +36,18 @@ window.setDistractionFreeMode = function(active) {
 window.views.emr = function(container, subAnchor, params) {
   emrContainer = container;
   
+  if (params && params.start) {
+    window.activeConsultationStarted = true;
+    delete params.start;
+  }
+
+  if (params && params.uhid) {
+    if (!window.activeConsultationStarted) {
+      window.router.navigate(`patients?uhid=${params.uhid}`);
+      return;
+    }
+  }
+  
   if (window.activeEmrTab === undefined) window.activeEmrTab = 'queue';
   
   // Resolve active doctor from sidebar selection
@@ -473,6 +485,9 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
             </div>
             
             <div style="display: flex; gap: 0.5rem; align-items: center;">
+              ${patient.type !== 'OPD' ? `
+                <button class="btn btn-secondary" onclick="window.showStockRequestOverlay({dept: (patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU'})" style="font-weight: 600; padding: 0.4rem 0.8rem; background: #1d4ed8; color: #fff; border: 1px solid rgba(255,255,255,0.25);">📦 Request Stock</button>
+              ` : ''}
               ${window.activeConsultationStarted ? `
                 <button class="btn btn-secondary" onclick="window.showConsultationExitModal('emr?uhid=${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">← Back to Dashboard</button>
                 <button class="btn btn-secondary" onclick="window.previewConsultation('${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">👁️ Preview</button>
@@ -482,7 +497,7 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
                 ` : ''}
               ` : `
                 ${window.state?.activeUserRole === 'Doctor' ? `
-                  <button class="btn btn-primary" onclick="window.activeConsultationStarted = true; router.handleRouting();" style="background-color: #10b981; border: none; font-weight: 700; padding: 0.4rem 0.8rem; color: #fff;">
+                  <button class="btn btn-primary" onclick="window.router.navigate('emr?uhid=${patient.uhid}&start=true');" style="background-color: #10b981; border: none; font-weight: 700; padding: 0.4rem 0.8rem; color: #fff; cursor: pointer; border-radius: 4px;">
                     ${patient.status === 'Paused' ? '🩺 Resume Consultation' : '🩺 Start Consultation'}
                   </button>
                   <button class="btn btn-secondary" onclick="alert('Certificate created successfully.')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">📜 Certificate</button>
@@ -491,6 +506,32 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
               `}
             </div>
           </div>
+
+          <!-- Ward Sub-store strip (IPD/Daycare only) -->
+          ${patient.type !== 'OPD' ? `
+          <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:1rem; display:flex; flex-direction:column; gap:8px; text-align:left; color:var(--text-primary);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+              <span style="font-weight:700; font-size:0.78rem; text-transform:uppercase; color:var(--text-secondary);">🏢 WARD SUB-STORE (${(patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU'} par level)</span>
+              <span style="font-size:0.7rem; color:var(--text-muted);">Top 8 Ward Items</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
+              <div style="font-size:0.75rem; border:1px solid var(--border-color); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>IV NS 500ml: <strong>12 bags</strong> <span class="badge badge-danger" style="font-size:8px;">LOW</span></span>
+                <button class="btn btn-primary btn-xs" style="padding:1px 4px; font-size:8px;" onclick="window.showStockRequestOverlay({dept:(patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU', urgency:'Urgent', prefillItem:{code:'ITM-CON-006', name:'IV NS 500ml', qty:50, unit:'bags'}})">Request →</button>
+              </div>
+              <div style="font-size:0.75rem; border:1px solid var(--border-color); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Sterile Gloves: <strong>85 pcs</strong> <span class="badge badge-success" style="font-size:8px;">OK</span></span>
+              </div>
+              <div style="font-size:0.75rem; border:1px solid var(--border-color); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Dressing Gauze: <strong>0 rolls</strong> <span class="badge badge-danger" style="font-size:8px;">OUT</span></span>
+                <button class="btn btn-primary btn-xs" style="padding:1px 4px; font-size:8px;" onclick="window.showStockRequestOverlay({dept:(patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU', urgency:'Urgent', prefillItem:{code:'ITM-CON-004', name:'Dressing Gauze', qty:20, unit:'rolls'}})">Request →</button>
+              </div>
+              <div style="font-size:0.75rem; border:1px solid var(--border-color); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Sterile Drape Set: <strong>8 pcs</strong> <span class="badge badge-success" style="font-size:8px;">OK</span></span>
+              </div>
+            </div>
+          </div>
+          ` : ''}
 
           <!-- Main Workspace Body -->
           ${!window.activeConsultationStarted ? `
@@ -714,6 +755,8 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
               </div>
 
             </div>
+            <!-- My Recent Requests -->
+            ${window.renderMyRecentRequestsHTML ? window.renderMyRecentRequestsHTML((patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU') : ''}
           ` : `
             <!-- ACTIVE CONSULTATION SCREEN -->
             <div class="emr-layout" style="grid-template-columns: ${patient.pregnancyStatus === 'Pregnant' ? '450px 1fr 320px' : '1fr 320px'}; display: grid; gap: 1.25rem; align-items: start;">
@@ -853,41 +896,10 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
               <!-- Column 2 (or Column 1 if not pregnant): Stacked Consultation Sections -->
               <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
                 
-                <!-- Specialty Selector Card -->
-                <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem 1.25rem;">
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                      <span>🩺</span> Clinical Consultation
-                    </h3>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <label style="font-weight: 700; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Active Specialty:</label>
-                      <select id="consultation-specialty-select" onchange="window.changeConsultationSpecialty(this.value)" style="font-size: 0.8rem; height: 32px; border-radius: 6px; border: 1px solid var(--border-color); padding: 0 0.5rem; background: var(--bg-surface-elevated); color: var(--text-primary); font-weight: 600; cursor: pointer;">
-                        <option value="Gynecology & Obs" ${window.activeConsultation.specialty === 'Gynecology & Obs' ? 'selected' : ''}>Gynecology & Obs</option>
-                        <option value="Pediatrics" ${window.activeConsultation.specialty === 'Pediatrics' ? 'selected' : ''}>Pediatrics</option>
-                        <option value="IVF & Fertility" ${window.activeConsultation.specialty === 'IVF & Fertility' ? 'selected' : ''}>IVF & Fertility</option>
-                        <option value="Psychiatry" ${window.activeConsultation.specialty === 'Psychiatry' ? 'selected' : ''}>Psychiatry</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+
 
                 <!-- 1. Symptoms & Findings Tabbed Card -->
-                ${window.renderSymptomsFindingsCard ? window.renderSymptomsFindingsCard() : ''}
-
-                <!-- 3. Diagnosis Card -->
-                ${window.renderConsultationSectionCard ? window.renderConsultationSectionCard('Diagnosis', 'diagnoses') : ''}
-
-                <!-- 4. Medicines Card -->
-                ${window.renderConsultationSectionCard ? window.renderConsultationSectionCard('Medicines', 'medicines') : ''}
-
-                <!-- 5. Investigations Card -->
-                ${window.renderConsultationSectionCard ? window.renderConsultationSectionCard('Investigations', 'investigations') : ''}
-
-                <!-- 6. Procedures Card -->
-                ${window.renderConsultationSectionCard ? window.renderConsultationSectionCard('Procedures', 'procedures') : ''}
-
-                <!-- 7. Instructions Card -->
-                ${window.renderConsultationSectionCard ? window.renderConsultationSectionCard('Instructions', 'instructions') : ''}
+                <div id="consultation-sections-placeholder"></div>
 
               </div>
 
@@ -1406,12 +1418,44 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
       patient.history.familyHistory = document.getElementById('add-history-family').value;
     }
 
+    // Log key EMR actions to patient engagement timeline
+    if (window.logPatientTimeline && patient.uhid) {
+      if (boxType === 'vitals') {
+        const bp = document.getElementById('add-vital-bp') ? document.getElementById('add-vital-bp').value : '';
+        const hr = document.getElementById('add-vital-hr') ? document.getElementById('add-vital-hr').value : '';
+        window.logPatientTimeline(patient.uhid, {
+          type: 'clinical',
+          icon: '🩺',
+          title: 'Vitals Recorded',
+          desc: `Vitals updated in EMR. BP: ${bp || 'N/A'}, HR: ${hr || 'N/A'} bpm.`
+        });
+      } else if (boxType === 'investigations') {
+        const invName = document.getElementById('add-inv-name') ? document.getElementById('add-inv-name').value : 'Investigation';
+        const invResult = document.getElementById('add-inv-result') ? document.getElementById('add-inv-result').value : '';
+        window.logPatientTimeline(patient.uhid, {
+          type: 'lab',
+          icon: '🔬',
+          title: 'Investigation Result Added',
+          desc: `${invName} result recorded in EMR: ${invResult || 'Pending'}.`
+        });
+      } else if (boxType === 'reports') {
+        const rptName = document.getElementById('add-report-name') ? document.getElementById('add-report-name').value : 'Report';
+        window.logPatientTimeline(patient.uhid, {
+          type: 'clinical',
+          icon: '📄',
+          title: 'Medical Report Updated',
+          desc: `${rptName} report updated in EMR.`
+        });
+      }
+    }
+
     // Save state back to localStorage
     if (window.saveStateToLocalStorage) {
       window.saveStateToLocalStorage();
     }
 
     window.closeEmrAddDataModal();
+
     
     // Rerender EMR view
     const emrContainer = document.getElementById('emrView');
@@ -1441,6 +1485,18 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
       if (index === -1) selectedList.push(value);
     } else {
       if (index > -1) selectedList.splice(index, 1);
+    }
+    // Refresh
+    views.emr(emrContainer, null, { uhid: patient.uhid });
+  };
+
+  window.toggleConsultationPill = function(element, activeKey, value) {
+    const list = window.activeConsultation[activeKey];
+    const idx = list.indexOf(value);
+    if (idx > -1) {
+      list.splice(idx, 1);
+    } else {
+      list.push(value);
     }
     // Refresh
     views.emr(emrContainer, null, { uhid: patient.uhid });
@@ -1503,6 +1559,11 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
         </div>
         <div class="modal-body" style="padding: 1.5rem; font-size: 0.85rem; color: var(--text-primary); display: flex; flex-direction: column; gap: 1rem;">
           <p style="margin: 0;"><strong>${medName}</strong> is currently <span style="color: #ef4444; font-weight: 700;">Out of Stock</span>.</p>
+          <div style="background:#fef3c7; color:#d97706; padding:0.75rem; border-radius:6px; border:1px solid #fde68a; line-height:1.4; margin-bottom:0.5rem; font-size:0.75rem;">
+            <strong>⚠ ${medName} not in ward sub-store.</strong><br>
+            Available in pharmacy: Yes (12 vials) &middot; <a href="javascript:void(0)" onclick="window.closeSubstitutionModal(); window.showStockRequestOverlay({dept: (window.state.patients.find(p=>p.uhid==='${patient.uhid}')?.bed||'').includes('GW') ? 'General Ward' : 'ICU', urgency:'Urgent', prefillItem:{name:'${medName}', qty:12}, patientUhid:'${patient.uhid}'})" style="color:#2563eb; font-weight:700; text-decoration:underline;">[Request from Pharmacy]</a><br>
+            Available in main store: Yes (48 vials) &middot; <a href="javascript:void(0)" onclick="window.closeSubstitutionModal(); window.showStockRequestOverlay({dept: (window.state.patients.find(p=>p.uhid==='${patient.uhid}')?.bed||'').includes('GW') ? 'General Ward' : 'ICU', urgency:'Urgent', prefillItem:{name:'${medName}', qty:48}, patientUhid:'${patient.uhid}'})" style="color:#2563eb; font-weight:700; text-decoration:underline;">[Request from Store]</a>
+          </div>
           ${alternativesHTML}
           <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
             <button class="btn btn-secondary" onclick="window.closeSubstitutionModal()" style="height: 34px; font-size: 0.8rem; padding: 0 1rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-primary); cursor: pointer; font-weight: 600;">Cancel</button>
@@ -1687,13 +1748,19 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
   };
 
   window.renderSymptomsFindingsCard = function() {
+    // Delegates to _buildHTML (defined below). Used by switchSymptomsFindingsTab re-renders.
+    if (window.renderSymptomsFindingsCard._buildHTML) {
+      return window.renderSymptomsFindingsCard._buildHTML();
+    }
+    return '';
+  };
+
+  window.renderSymptomsFindingsCard._buildHTML = function() {
     window.activeSymptomsFindingsTab = window.activeSymptomsFindingsTab || 'symptoms';
     const queries = window.consultationSectionQueries || {};
     const query = queries[window.activeSymptomsFindingsTab] || "";
-    
     const symCount = window.activeConsultation.symptoms.length;
     const findCount = window.activeConsultation.findings.length;
-    
     const symBadge = symCount > 0 ? `<span style="background: #2563eb; color: #fff; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; margin-left: 0.25rem;">${symCount}</span>` : '';
     const findBadge = findCount > 0 ? `<span style="background: #059669; color: #fff; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; margin-left: 0.25rem;">${findCount}</span>` : '';
 
@@ -1727,6 +1794,21 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
     `;
   };
 
+  // Post-render injection: fill placeholder with all consultation section cards
+  // (must run after renderConsultationSectionCard and renderSymptomsFindingsCard are both defined)
+  if (window.activeConsultationStarted) {
+    const _ph = document.getElementById('consultation-sections-placeholder');
+    if (_ph) {
+      _ph.innerHTML = [
+        window.renderSymptomsFindingsCard._buildHTML(),
+        window.renderConsultationSectionCard('Diagnosis', 'diagnoses'),
+        window.renderConsultationSectionCard('Medicines', 'medicines'),
+        window.renderConsultationSectionCard('Investigations', 'investigations'),
+        window.renderConsultationSectionCard('Procedures', 'procedures'),
+        window.renderConsultationSectionCard('Instructions', 'instructions')
+      ].join('');
+    }
+  }
 
   window.toggleConsultationCardBody = function(btn) {
     const card = btn.closest('.card');
@@ -2003,39 +2085,262 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
     const patient = state.patients.find(p => p.uhid === uhid);
     if (!patient) return;
 
+    const ac = window.activeConsultation;
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const rxId = 'RX-' + today.getFullYear() + today.getMonth() + today.getDate() + '-' + Math.floor(Math.random() * 9000 + 1000);
+    const doctor = state.doctors ? state.doctors[0] : null;
+    const doctorName = doctor ? `Dr. ${doctor.name}` : 'Dr. Attending Physician';
+    const doctorDept = doctor ? (doctor.department || ac.specialty || 'General Medicine') : (ac.specialty || 'General Medicine');
+
+    // Build medicines table rows
+    const medsHTML = (ac.medicines && ac.medicines.length > 0)
+      ? ac.medicines.map((med, i) => `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #111827;">${i + 1}. ${med}</td>
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #374151;">500 mg</td>
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #374151;">Oral</td>
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #374151;">TDS</td>
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #374151;">5 Days</td>
+            <td style="padding: 0.5rem 0.25rem; font-size: 0.82rem; color: #374151;">After meals</td>
+          </tr>`)
+        .join('')
+      : `<tr><td colspan="6" style="padding: 0.75rem; font-size: 0.82rem; color: #9ca3af; text-align: center;">No medicines prescribed.</td></tr>`;
+
+    const symptomsText = (ac.symptoms && ac.symptoms.length) ? ac.symptoms.join(', ') : '—';
+    const findingsText = (ac.findings && ac.findings.length) ? ac.findings.join(', ') : '—';
+    const diagnosisText = (ac.diagnostics && ac.diagnostics.length) ? ac.diagnostics.join(', ') : '—';
+    const instructionsText = (ac.instructions && ac.instructions.length)
+      ? ac.instructions.map((inst, i) => `<li style="margin-bottom:0.25rem;">${inst}</li>`).join('')
+      : '<li style="color:#9ca3af;">No specific instructions.</li>';
+    const investigationsText = (ac.investigations && ac.investigations.length) ? ac.investigations.join(', ') : '—';
+
+    // Create or reuse modal
+    let modal = document.getElementById('finish-consultation-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'finish-consultation-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;box-sizing:border-box;';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;max-width:960px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;background:#f9fafb;flex-shrink:0;">
+          <h3 style="margin:0;font-size:1.05rem;font-weight:700;color:#111827;">🩺 Finish Consultation</h3>
+          <button onclick="document.getElementById('finish-consultation-modal').style.display='none';" style="background:none;border:none;font-size:1.4rem;color:#6b7280;cursor:pointer;line-height:1;padding:0.25rem;">&times;</button>
+        </div>
+
+        <!-- Body: Left Actions + Right Prescription -->
+        <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+          <!-- Left: Actions Panel -->
+          <div style="width:260px;flex-shrink:0;border-right:1px solid #e5e7eb;padding:1.5rem 1.25rem;display:flex;flex-direction:column;gap:1rem;background:#f9fafb;">
+            <div>
+              <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 0.75rem 0;">Actions</p>
+              <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                <button onclick="window.sendPrescriptionToPatient('${uhid}','${rxId}')" style="padding:0.65rem 1rem;border-radius:8px;border:none;background:#4f46e5;color:#fff;font-weight:600;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;justify-content:center;">
+                  🖨️ Send Prescription to Patient
+                </button>
+                <button onclick="window.printPrescription('${uhid}')" style="padding:0.65rem 1rem;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:600;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;justify-content:center;">
+                  🖨️ Print Prescription
+                </button>
+              </div>
+            </div>
+            <div style="margin-top:auto;">
+              <button id="confirm-finish-btn" onclick="window.confirmFinishConsultation('${uhid}','${rxId}')" style="width:100%;padding:0.75rem 1rem;border-radius:8px;border:none;background:#10b981;color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;justify-content:center;">
+                ✅ Confirm Finish Consultation
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Prescription Preview -->
+          <div style="flex:1;overflow-y:auto;padding:1.5rem;">
+            <div style="border:1.5px solid #c7d2fe;border-radius:10px;padding:1.5rem;background:#fff;font-family:'Inter',sans-serif;">
+
+              <!-- Hospital Header -->
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                <div>
+                  <div style="font-size:1.15rem;font-weight:800;color:#4f46e5;">Saronil Health Clinic</div>
+                  <div style="font-size:0.82rem;font-weight:600;color:#374151;margin-top:0.1rem;">${doctorName}, MD ${doctorDept}</div>
+                  <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.1rem;">Reg No. MH-2019-4521 · Bengaluru</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:0.72rem;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Prescription Date</div>
+                  <div style="font-size:0.9rem;font-weight:700;color:#111827;">${dateStr}</div>
+                  <div style="font-size:0.72rem;color:#9ca3af;margin-top:0.15rem;">Rx ID: ${rxId}</div>
+                </div>
+              </div>
+              <hr style="border:none;border-top:2px solid #4f46e5;margin-bottom:1rem;">
+
+              <!-- Patient Details Row -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1rem;margin-bottom:1.25rem;background:#f5f3ff;border-radius:6px;padding:0.85rem;">
+                <div><span style="font-size:0.8rem;color:#6b7280;">Patient:</span> <strong style="font-size:0.85rem;color:#111827;">${patient.name}</strong></div>
+                <div><span style="font-size:0.8rem;color:#6b7280;">Diagnosis:</span> <strong style="font-size:0.85rem;color:#111827;">${diagnosisText}</strong></div>
+                <div><span style="font-size:0.8rem;color:#6b7280;">Age/Gender:</span> <span style="font-size:0.82rem;color:#374151;">${patient.age || '—'} yrs / ${patient.gender || '—'}</span></div>
+                <div><span style="font-size:0.8rem;color:#6b7280;">UHID:</span> <span style="font-size:0.82rem;color:#374151;">${patient.uhid}</span></div>
+              </div>
+
+              <!-- Section 1: Clinical History -->
+              <div style="margin-bottom:1.25rem;">
+                <div style="font-size:0.78rem;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;border-bottom:1px solid #e0e7ff;padding-bottom:0.3rem;">1. Clinical History & Complaints</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1.5rem;font-size:0.82rem;">
+                  <div><strong>Chief Complaints:</strong> <span style="color:#374151;">${symptomsText}</span></div>
+                  <div><strong>Examination Findings:</strong> <span style="color:#374151;">${findingsText}</span></div>
+                </div>
+              </div>
+
+              <!-- Section 2: Investigations -->
+              ${investigationsText !== '—' ? `
+              <div style="margin-bottom:1.25rem;">
+                <div style="font-size:0.78rem;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;border-bottom:1px solid #e0e7ff;padding-bottom:0.3rem;">2. Investigations Ordered</div>
+                <p style="font-size:0.82rem;color:#374151;margin:0;">${investigationsText}</p>
+              </div>` : ''}
+
+              <!-- Section 3: Medicines -->
+              <div style="margin-bottom:1.25rem;">
+                <div style="font-size:0.78rem;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;border-bottom:1px solid #e0e7ff;padding-bottom:0.3rem;">3. Prescription (Rx)</div>
+                <table style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr style="background:#ede9fe;">
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Medicine</th>
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Dose</th>
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Route</th>
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Frequency</th>
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Duration</th>
+                      <th style="padding:0.4rem 0.25rem;font-size:0.75rem;color:#5b21b6;text-align:left;font-weight:700;">Instruction</th>
+                    </tr>
+                  </thead>
+                  <tbody>${medsHTML}</tbody>
+                </table>
+              </div>
+
+              <!-- Section 4: Instructions -->
+              <div style="margin-bottom:1rem;">
+                <div style="font-size:0.78rem;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;border-bottom:1px solid #e0e7ff;padding-bottom:0.3rem;">4. Advice & Instructions</div>
+                <ul style="margin:0;padding-left:1.25rem;font-size:0.82rem;color:#374151;line-height:1.7;">${instructionsText}</ul>
+              </div>
+
+              <!-- Signature -->
+              <div style="margin-top:1.5rem;display:flex;justify-content:flex-end;">
+                <div style="text-align:center;">
+                  <div style="width:140px;border-top:1px solid #374151;padding-top:0.35rem;">
+                    <div style="font-size:0.78rem;font-weight:700;color:#111827;">${doctorName}</div>
+                    <div style="font-size:0.72rem;color:#9ca3af;">${doctorDept}</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+  };
+
+  window.confirmFinishConsultation = function(uhid, rxId) {
+    const patient = state.patients.find(p => p.uhid === uhid);
+    if (!patient) return;
+
+    const ac = window.activeConsultation;
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const doctor = state.doctors ? state.doctors[0] : null;
+    const doctorName = doctor ? `Dr. ${doctor.name}` : 'Dr. Attending Physician';
+
     // Save modular fields back to patient clinicalData
-    patient.clinicalData.symptoms = window.activeConsultation.symptoms;
-    patient.clinicalData.findings = window.activeConsultation.findings;
-    patient.clinicalData.diagnosis = window.activeConsultation.diagnostics.join(', ') || 'None';
-    patient.clinicalData.treatmentPlan = window.activeConsultation.instructions.join('\n');
-    patient.clinicalData.carePlan = window.activeConsultation.instructions.join('\n');
-    
+    patient.clinicalData = patient.clinicalData || {};
+    patient.clinicalData.symptoms = ac.symptoms;
+    patient.clinicalData.findings = ac.findings;
+    patient.clinicalData.diagnosis = (ac.diagnostics && ac.diagnostics.join(', ')) || 'None';
+    patient.clinicalData.treatmentPlan = (ac.instructions && ac.instructions.join('\n')) || '';
+    patient.clinicalData.carePlan = patient.clinicalData.treatmentPlan;
+
     // Map selected medicines to patient.prescriptions
-    patient.prescriptions = window.activeConsultation.medicines.map(med => {
-      const existing = patient.prescriptions.find(p => p.drug.toLowerCase() === med.toLowerCase());
+    patient.prescriptions = (ac.medicines || []).map(med => {
+      const existing = (patient.prescriptions || []).find(p => (p.drug || p.name || '').toLowerCase() === med.toLowerCase());
       if (existing) return existing;
-      return {
-        drug: med,
-        dose: "500 mg",
-        route: "Oral",
-        freq: "TDS",
-        duration: "3 Days",
-        instruction: "Post Meal"
-      };
+      return { drug: med, name: med, dose: '500 mg', route: 'Oral', freq: 'TDS', duration: '5 Days', instruction: 'After meals' };
+    });
+
+    // Attach prescription record to patient profile (prescriptionHistory)
+    patient.prescriptionHistory = patient.prescriptionHistory || [];
+    patient.prescriptionHistory.unshift({
+      rxId: rxId,
+      date: dateStr,
+      doctor: doctorName,
+      diagnosis: patient.clinicalData.diagnosis,
+      medicines: [...(ac.medicines || [])],
+      instructions: [...(ac.instructions || [])],
+      investigations: [...(ac.investigations || [])],
+      symptoms: [...(ac.symptoms || [])],
+      findings: [...(ac.findings || [])],
+    });
+
+    // Add timeline event
+    patient.timelineEvents = patient.timelineEvents || [];
+    patient.timelineEvents.unshift({
+      date: new Date().toISOString(),
+      type: 'clinical',
+      icon: '💊',
+      title: 'Prescription Generated',
+      desc: `Consultation finalized by ${doctorName}. Diagnosis: ${patient.clinicalData.diagnosis || 'General Checkup'}. Prescription #${rxId} generated with ${ac.medicines ? ac.medicines.length : 0} medications.`
+    });
+
+    // Push to pharmacy prescriptions queue
+    window.state.prescriptionsQueue = window.state.prescriptionsQueue || [];
+    window.state.prescriptionsQueue.unshift({
+      rxId: rxId,
+      patientName: patient.name,
+      uhid: patient.uhid,
+      ward: patient.currentWard || patient.ward || 'OPD',
+      doctor: doctorName,
+      date: dateStr,
+      status: 'Pending',
+      items: (ac.medicines || []).map(med => ({
+        name: med, dose: '500 mg', route: 'Oral', freq: 'TDS', duration: '5 Days', qty: 15
+      }))
     });
 
     patient.status = 'Completed';
-    if (window.activeConsultation.ancData) {
-      patient.ancData = window.activeConsultation.ancData;
-    }
+    if (ac.ancData) patient.ancData = ac.ancData;
 
-    alert("Consultation records successfully saved!");
+    // Close modal and reset consultation
+    const modal = document.getElementById('finish-consultation-modal');
+    if (modal) modal.style.display = 'none';
+
+    window.activeConsultationStarted = false;
+    if (typeof window.setDistractionFreeMode === 'function') window.setDistractionFreeMode(false);
+
+    // Show brief success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;background:#10b981;color:#fff;padding:0.85rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.9rem;z-index:11000;box-shadow:0 8px 24px rgba(16,185,129,0.35);display:flex;align-items:center;gap:0.5rem;';
+    toast.innerHTML = '✅ Consultation saved & prescription attached to patient profile!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+
     if (window.router) {
       window.router.navigate('emr');
     } else {
       window.history.back();
     }
   };
+
+  window.sendPrescriptionToPatient = function(uhid, rxId) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;background:#4f46e5;color:#fff;padding:0.85rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.9rem;z-index:11000;box-shadow:0 8px 24px rgba(79,70,229,0.35);display:flex;align-items:center;gap:0.5rem;';
+    toast.innerHTML = '📨 Prescription sent to patient via SMS/Email!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+
+  window.printPrescription = function(uhid) {
+    window.print();
+  };
+
 
   // Initialize current prescribing mode if not set
   window.currentPrescribeMode = window.currentPrescribeMode || 'brand';
@@ -2126,6 +2431,13 @@ window.logNewVitals = function(uhid) {
       showSepsisWarningModal(patient, vitalsCheck.score, vitalsCheck.reasons, vitalsCheck.message);
     } else {
       alert('Vitals updated successfully.');
+      if (confirm("Last IV NS 500ml used. Request more?")) {
+        window.showStockRequestOverlay({
+          dept: patient.bed && patient.bed.includes('GW') ? 'General Ward' : 'ICU',
+          urgency: 'Urgent',
+          prefillItem: { code: 'ITM-CON-006', name: 'IV NS 500ml', qty: 50, unit: 'bags' }
+        });
+      }
     }
   }
 };
@@ -3036,60 +3348,108 @@ window.showConsultationExitModal = function(targetHash) {
 
 window.confirmPauseConsultation = function(uhid) {
   const patient = state.patients.find(p => p.uhid === uhid);
-  if (patient && window.activeConsultation) {
-    // Save current workspace state temporarily in patient object under clinicalData
-    patient.clinicalData = patient.clinicalData || {};
-    patient.clinicalData.symptoms = window.activeConsultation.symptoms;
-    patient.clinicalData.findings = window.activeConsultation.findings;
-    patient.clinicalData.diagnosis = window.activeConsultation.diagnostics.join(', ');
-    patient.clinicalData.treatmentPlan = window.activeConsultation.instructions.join('\n');
-    patient.clinicalData.carePlan = window.activeConsultation.instructions.join('\n');
-    
-    if (window.activeConsultation.ancData) {
-      patient.ancData = window.activeConsultation.ancData;
+
+  // Build and show custom confirmation popup
+  let modal = document.getElementById('emr-action-confirm-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'emr-action-confirm-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:2rem;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;" onclick="event.stopPropagation()">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">⏸️</div>
+      <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;font-weight:700;color:#1e3a8a;">Pause Consultation?</h3>
+      <p style="font-size:0.85rem;color:#64748b;line-height:1.6;margin:0 0 1.25rem 0;">
+        The current session for <strong>${patient ? patient.name : 'this patient'}</strong> will be paused and all clinical data saved temporarily.<br>You can resume it anytime from the queue.
+      </p>
+      <div style="display:flex;gap:0.75rem;">
+        <button onclick="document.getElementById('emr-action-confirm-modal').style.display='none';" style="flex:1;padding:0.65rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;font-weight:600;font-size:0.85rem;cursor:pointer;">Cancel</button>
+        <button id="pause-ok-btn" style="flex:1;padding:0.65rem;border-radius:8px;border:none;background:#d97706;color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;">✅ OK, Pause</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+
+  document.getElementById('pause-ok-btn').onclick = function() {
+    if (patient && window.activeConsultation) {
+      patient.clinicalData = patient.clinicalData || {};
+      patient.clinicalData.symptoms = window.activeConsultation.symptoms;
+      patient.clinicalData.findings = window.activeConsultation.findings;
+      patient.clinicalData.diagnosis = window.activeConsultation.diagnostics.join(', ');
+      patient.clinicalData.treatmentPlan = window.activeConsultation.instructions.join('\n');
+      patient.clinicalData.carePlan = window.activeConsultation.instructions.join('\n');
+      if (window.activeConsultation.ancData) {
+        patient.ancData = window.activeConsultation.ancData;
+      }
+      patient.status = 'Paused';
     }
-    
-    // Status update to Paused
-    patient.status = 'Paused';
-    
-    alert(`Consultation for ${patient.name} has been paused.`);
-  }
-
-  // Deactivate distraction-free mode & navigation lock
-  window.activeConsultationStarted = false;
-  window.setDistractionFreeMode(false);
-  window.closeConsultationExitModal();
-
-  // Route back to EMR main/queue
-  window.activeEmrTab = 'queue';
-  if (window.router) {
-    window.router.navigate(`emr?uhid=${uhid}`);
-  } else {
-    window.location.hash = `emr?uhid=${uhid}`;
-  }
+    window.activeConsultationStarted = false;
+    if (typeof window.setDistractionFreeMode === 'function') window.setDistractionFreeMode(false);
+    window.closeConsultationExitModal();
+    modal.style.display = 'none';
+    window.activeEmrTab = 'queue';
+    if (window.router) {
+      window.router.navigate('emr');
+    } else {
+      window.location.hash = 'emr';
+    }
+  };
 };
 
 window.confirmExitConsultation = function(targetHash, hasUnsavedChanges) {
-  if (hasUnsavedChanges) {
-    if (!confirm("Are you absolutely sure you want to exit and permanently discard all unsaved edits?")) {
-      return;
-    }
-  }
-
-  // Reset status back to Checked In if it wasn't Completed or Paused previously
   const patient = window.activeConsultation ? state.patients.find(p => p.uhid === window.activeConsultation.uhid) : null;
-  if (patient && patient.status !== 'Completed' && patient.status !== 'Paused') {
-    patient.status = 'Checked In';
+
+  // Build and show custom confirmation popup
+  let modal = document.getElementById('emr-action-confirm-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'emr-action-confirm-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(modal);
   }
 
-  // Deactivate distraction-free mode
-  window.activeConsultationStarted = false;
-  window.setDistractionFreeMode(false);
-  window.closeConsultationExitModal();
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:2rem;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;" onclick="event.stopPropagation()">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">🚪</div>
+      <h3 style="margin:0 0 0.5rem 0;font-size:1.1rem;font-weight:700;color:#991b1b;">Exit & Abandon Changes?</h3>
+      <p style="font-size:0.85rem;color:#64748b;line-height:1.6;margin:0 0 0.75rem 0;">
+        You are about to exit the consultation for <strong>${patient ? patient.name : 'this patient'}</strong>.
+      </p>
+      ${hasUnsavedChanges ? `
+        <div style="background:#fee2e2;color:#991b1b;padding:0.75rem;border-radius:6px;font-size:0.8rem;margin-bottom:1rem;text-align:left;">
+          ⚠️ <strong>Warning:</strong> You have unsaved clinical data. Exiting will permanently discard these changes.
+        </div>
+      ` : `
+        <div style="background:#f0fdf4;color:#166534;padding:0.75rem;border-radius:6px;font-size:0.8rem;margin-bottom:1rem;">
+          ✅ No unsaved changes detected.
+        </div>
+      `}
+      <div style="display:flex;gap:0.75rem;">
+        <button onclick="document.getElementById('emr-action-confirm-modal').style.display='none';" style="flex:1;padding:0.65rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;font-weight:600;font-size:0.85rem;cursor:pointer;">Cancel</button>
+        <button id="exit-ok-btn" style="flex:1;padding:0.65rem;border-radius:8px;border:none;background:#ef4444;color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;">🚪 OK, Exit</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
 
-  // Navigate to target hash
-  window.ignoreNextHashChange = true;
-  window.location.hash = targetHash;
+  document.getElementById('exit-ok-btn').onclick = function() {
+    if (patient && patient.status !== 'Completed' && patient.status !== 'Paused') {
+      patient.status = 'Checked In';
+    }
+    window.activeConsultationStarted = false;
+    if (typeof window.setDistractionFreeMode === 'function') window.setDistractionFreeMode(false);
+    window.closeConsultationExitModal();
+    modal.style.display = 'none';
+    if (window.router) {
+      window.router.navigate('emr');
+    } else {
+      window.ignoreNextHashChange = true;
+      window.location.hash = 'emr';
+    }
+  };
 };
 
 window.closeConsultationExitModal = function() {

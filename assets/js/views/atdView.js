@@ -60,7 +60,8 @@ function renderBedBoard(container) {
         <input type="number" id="hk-sla-limit-input" value="${state.hkSlaLimit || 15}" min="1" style="width: 60px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); text-align: center;" onchange="window.updateHkSlaLimit(this.value)">
         <span>minutes before escalation alert.</span>
       </div>
-      <div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-secondary btn-sm" style="background:#1d4ed8; color:#fff;" onclick="window.showStockRequestOverlay({dept:'ATD Desk', urgency:'Routine'})">📦 Request Stock</button>
         <strong style="color: var(--text-primary);">Total Facility Beds: ${totalBeds}</strong>
       </div>
     </div>
@@ -126,6 +127,33 @@ function renderBedBoard(container) {
           </thead>
           <tbody id="bed-audit-logs-body">
             <!-- Bed logs rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Transfers Log Section -->
+    <div class="card" style="margin-top: 1.5rem; border: 1px solid var(--border-color);">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="font-size: 0.95rem; margin: 0; font-weight: 700;">🔄 Transfers Log</h3>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">All intra-facility bed transfers — latest first</span>
+      </div>
+      <div class="card-body" style="padding: 0; overflow-x: auto;">
+        <table class="custom-table" style="font-size: 0.75rem; margin: 0;">
+          <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+            <tr>
+              <th>Date</th>
+              <th>Patient</th>
+              <th>UHID</th>
+              <th>From Bed</th>
+              <th>To Bed</th>
+              <th>Ward</th>
+              <th>Reason</th>
+              <th>Consultant</th>
+            </tr>
+          </thead>
+          <tbody id="transfers-log-body">
+            <!-- Populated dynamically -->
           </tbody>
         </table>
       </div>
@@ -227,6 +255,9 @@ function renderBedBoard(container) {
 
   // Render Audit Logs
   renderAuditLogs();
+
+  // Render Transfers Log
+  renderTransfersLog();
 }
 
 function renderHousekeepingList() {
@@ -318,6 +349,56 @@ function renderAuditLogs() {
       </tr>
     `;
   }).join('');
+}
+
+function renderTransfersLog() {
+  const tbody = document.getElementById('transfers-log-body');
+  if (!tbody) return;
+
+  // Collect all transferLogs from every admission, annotated with patient info
+  const allTransfers = [];
+  (state.admissions || []).forEach(adm => {
+    if (!adm.transferLogs || adm.transferLogs.length === 0) return;
+    const patient = (state.patients || []).find(p => p.uhid === adm.patientId || p.uhid === adm.uhid);
+    const patientName = patient ? patient.name : (adm.patientName || '-');
+    const uhid = adm.patientId || adm.uhid || '-';
+    const consultant = adm.primaryConsultant || (patient && patient.primaryConsultant) || '-';
+    // Resolve destination ward from the dest bed
+    adm.transferLogs.forEach(t => {
+      const destBedStatus = state.bedsStatus ? state.bedsStatus[t.dest] : null;
+      let ward = '-';
+      if (destBedStatus && destBedStatus.wardKey && state.wards && state.wards[destBedStatus.wardKey]) {
+        ward = state.wards[destBedStatus.wardKey].name;
+      } else {
+        // fallback: search wards
+        for (const [wk, wi] of Object.entries(state.wards || {})) {
+          if ((wi.beds || []).includes(t.dest)) { ward = wi.name; break; }
+        }
+      }
+      allTransfers.push({ date: t.date, patientName, uhid, source: t.source, dest: t.dest, ward, reason: t.reason || '-', consultant });
+    });
+  });
+
+  if (allTransfers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-muted); font-style:italic;">No intra-facility transfers recorded yet.</td></tr>`;
+    return;
+  }
+
+  // Latest first (sort by date descending)
+  allTransfers.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+
+  tbody.innerHTML = allTransfers.map(t => `
+    <tr>
+      <td style="white-space:nowrap;">${t.date}</td>
+      <td style="font-weight:600; color:var(--primary);">${t.patientName}</td>
+      <td class="admin-mono" style="font-size:0.7rem;">${t.uhid}</td>
+      <td><span class="badge badge-danger" style="font-size:0.68rem;">${t.source}</span></td>
+      <td><span class="badge badge-success" style="font-size:0.68rem;">${t.dest}</span></td>
+      <td style="font-size:0.72rem; color:var(--text-secondary);">${t.ward}</td>
+      <td style="font-size:0.72rem; max-width:180px; white-space:normal;">${t.reason}</td>
+      <td style="font-size:0.72rem;">${t.consultant}</td>
+    </tr>
+  `).join('');
 }
 
 window.startCleaningTask = function(taskId) {
@@ -618,9 +699,20 @@ window.markBedStatus = function(bedId, newStatus) {
 
     // Clean up active housekeeping task if marked Available
     if (newStatus === 'Available') {
-      const taskIndex = (state.housekeepingTasks || []).findIndex(t => t.bedId === bedId && t.status !== 'Completed');
-      if (taskIndex !== -1) {
-        state.housekeepingTasks[taskIndex].status = 'Completed';
+      if (typeof state.completeHousekeepingTasks === 'function') {
+        state.completeHousekeepingTasks(bedId);
+      } else {
+        const taskIndex = (state.housekeepingTasks || []).findIndex(t => t.bedId === bedId && t.status !== 'Completed');
+        if (taskIndex !== -1) {
+          state.housekeepingTasks[taskIndex].status = 'Completed';
+        }
+      }
+    }
+
+    // Auto trigger housekeeping request if marked vacated/dirty
+    if (newStatus === 'Vacated - Pending Housekeeping' || newStatus === 'Cleaning') {
+      if (typeof state.triggerHousekeepingRequest === 'function') {
+        state.triggerHousekeepingRequest(bedId, state.bedsStatus[bedId].wardKey, `Manual status change to ${newStatus}`);
       }
     }
 
@@ -643,7 +735,7 @@ window.initiateBedTransfer = function(currentBedId) {
   const statusObj = state.bedsStatus[currentBedId];
   if (statusObj && statusObj.patientUhid) {
     closeBedModal();
-    window.openCompactTransferModal(statusObj.patientUhid);
+    window.showUniversalTransferWorkflow(statusObj.patientUhid, currentBedId);
   } else {
     alert("No patient currently assigned to this bed.");
   }
@@ -746,77 +838,11 @@ window.executeBedTransfer = function(currentBedId, patientUhid) {
 
 window.dischargePatientFromBed = function(bedId) {
   const statusObj = state.bedsStatus[bedId];
-  const patientUhid = statusObj.patientUhid;
-  
-  if (confirm(`Are you sure you want to approve discharge and release bed ${bedId}?`)) {
-    // 1. Mark Admission as Discharged
-    const admission = state.admissions.find(a => a.uhid === patientUhid && a.status === 'Active');
-    if (admission) {
-      admission.status = 'Discharged';
-    }
-
-    // 2. Set Patient status back to Registered
-    const patient = state.patients.find(p => p.uhid === patientUhid);
-    if (patient) {
-      patient.status = 'Registered';
-      patient.dischargedToday = true;
-      const todayStr = new Date().toLocaleDateString('en-CA');
-      const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      patient.timelineEvents = patient.timelineEvents || [];
-      patient.timelineEvents.unshift({
-        date: `${todayStr} ${nowTime}`,
-        type: 'clinical',
-        icon: '🏥',
-        title: 'Patient Discharged',
-        desc: `Discharged from Inpatient care from Bed ${bedId}`
-      });
-    }
-
-    // 3. Mark Bed for Housekeeping
-    const isIsolation = (statusObj.wardKey === 'CCU' || statusObj.wardKey === 'ICCU');
-    const targetStatus = isIsolation ? 'Isolation Cleaning Required' : 'Vacated - Pending Housekeeping';
-    
-    state.bedsStatus[bedId] = {
-      wardKey: statusObj.wardKey,
-      status: targetStatus,
-      patientUhid: null,
-      transitionTimestamp: new Date().toISOString(),
-      notes: 'Awaiting cleaning after discharge'
-    };
-
-    // Auto-create housekeeping task
-    const isHighPriority = bedId.startsWith('EMG') || bedId.startsWith('CCU') || bedId.startsWith('ICCU');
-    state.housekeepingTasks = state.housekeepingTasks || [];
-    state.housekeepingTasks.push({
-      taskId: 'HK-' + String(1000 + state.housekeepingTasks.length + 1),
-      bedId: bedId,
-      wardKey: statusObj.wardKey,
-      priority: isHighPriority ? 'High' : 'Normal',
-      status: 'Pending',
-      assignedStaff: null,
-      createdAt: new Date().toISOString(),
-      notes: 'Awaiting cleaning after patient discharge'
-    });
-
-    // 4. Update or Add Billing details
-    const billing = state.billing.find(b => b.uhid === patientUhid && b.status === 'Outstanding');
-    if (billing) {
-      billing.status = 'Ready for Settlement';
-    }
-
-    // Log Bed Movement
-    state.logBedMovement({
-      patientId: patientUhid,
-      encounterId: admission ? admission.id : null,
-      bedId: bedId,
-      wardKey: statusObj.wardKey,
-      prevStatus: 'Occupied',
-      newStatus: targetStatus,
-      action: 'Patient Discharge',
-      remarks: 'Discharged from Inpatient care'
-    });
-
+  const patientUhid = statusObj?.patientUhid;
+  if (patientUhid) {
     closeBedModal();
-    renderBedBoard(document.getElementById('main-content'));
+    window.showUniversalDischargeWorkflow(patientUhid);
+  } else {
+    alert("No patient currently assigned to this bed.");
   }
 };

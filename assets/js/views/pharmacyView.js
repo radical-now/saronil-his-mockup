@@ -333,6 +333,9 @@ function renderPharmacyModule(container) {
         <p class="text-sm text-slate-500">Retail Counters, Ward Indents, Procurement, FEFO Stock Control & Digital Regulatory Registers</p>
       </div>
       <div class="flex items-center gap-3">
+        <button class="bg-[#1B3A5C] text-white hover:bg-slate-850 px-3 py-1.5 rounded-lg text-xs font-bold transition mr-2" onclick="window.showStockRequestOverlay({dept:'Pharmacy', urgency:'Urgent'})">
+          📦 Request Stock
+        </button>
         <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
           <span class="w-2 height-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span> Central Store Link Connected
         </span>
@@ -384,7 +387,7 @@ window.switchPharmTab = function(tabId) {
 
   switch (tabId) {
     case 'dashboard':
-      renderDashboardTab(tabContainer);
+      renderPharmacyDashboardTab(tabContainer);
       break;
     case 'queues':
       renderQueuesTab(tabContainer);
@@ -421,7 +424,7 @@ function updateStatCountBadge() {
 /**
  * DASHBOARD VIEW
  */
-function renderDashboardTab(container) {
+function renderPharmacyDashboardTab(container) {
   // Compile statistics
   const totalFormulary = state.inventory.pharmacyBatches.length;
   const lowStock = state.inventory.pharmacyBatches.filter(m => {
@@ -564,7 +567,7 @@ function renderQueuesTab(container) {
               <div class="flex justify-between items-start">
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="font-bold text-slate-900">${rx.patientName}</span>
+                    <span class="font-bold text-slate-900 hover:underline text-blue-600 cursor-pointer" onclick="router.navigate('patients?uhid=${rx.uhid}')">${rx.patientName}</span>
                     <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">${rx.uhid}</span>
                   </div>
                   <div class="text-xs text-slate-500 mt-1">Prescription: <strong class="text-slate-800">${rx.rxNo}</strong></div>
@@ -603,7 +606,7 @@ function renderQueuesTab(container) {
                 <div class="flex justify-between items-start">
                   <div>
                     <div class="flex items-center gap-2">
-                      <span class="font-bold text-slate-900">${indent.patientName}</span>
+                      <span class="font-bold text-slate-900 hover:underline text-blue-600 cursor-pointer" onclick="router.navigate('patients?uhid=${indent.uhid}')">${indent.patientName}</span>
                       <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">${indent.uhid}</span>
                     </div>
                     <div class="text-xs font-semibold text-indigo-700 mt-1">Ward Location: ${indent.wardBed}</div>
@@ -629,8 +632,8 @@ function renderQueuesTab(container) {
 
     </div>
 
-    <!-- Active workbench area loaded dynamically -->
-    <div id="active-dispense-workbench" class="mt-6"></div>
+    <!-- Active workbench area loaded dynamically as popup -->
+    <div id="active-dispense-workbench" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(15, 23, 42, 0.65); z-index: 9999; justify-content: center; align-items: center; padding: 20px; overflow-y: auto;" onclick="window.closeDispenseDesk()"></div>
   `;
 }
 
@@ -647,9 +650,12 @@ window.openDispenseDesk = function(type, id) {
 
   if (!data) return;
 
+  // Display backdrop overlay
+  workbench.style.display = 'flex';
+
   // Render Workspace
   workbench.innerHTML = `
-    <div class="bg-white rounded-xl border-2 border-[#1B3A5C] shadow-md p-6">
+    <div class="bg-white rounded-xl border-2 border-[#1B3A5C] shadow-md p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="flex justify-between items-center border-b border-slate-200 pb-4 mb-4">
         <div>
           <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded">${type} Dispense Deck</span>
@@ -791,7 +797,10 @@ window.openDispenseDesk = function(type, id) {
 
 window.closeDispenseDesk = function() {
   const workbench = document.getElementById('active-dispense-workbench');
-  if (workbench) workbench.innerHTML = "";
+  if (workbench) {
+    workbench.style.display = 'none';
+    workbench.innerHTML = "";
+  }
 };
 
 window.executeSecureDispense = function(type, id) {
@@ -905,7 +914,7 @@ function renderMasterTab(container) {
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <h3 class="text-base font-bold text-[#1B3A5C]">Pharmacy Formulary Directory</h3>
         ${hasPermission('Pharmacy Manager') ? `
-          <button onclick="openNewMedicineModal()" class="bg-[#1B3A5C] hover:bg-[#152e4a] text-white py-2 px-4 rounded-lg font-bold text-xs">
+          <button onclick="window.openNewMedicineModal()" class="bg-[#1B3A5C] hover:bg-[#152e4a] text-white py-2 px-4 rounded-lg font-bold text-xs">
             ➕ Add New Drug Master
           </button>
         ` : ''}
@@ -1075,6 +1084,128 @@ window.openAdjustmentModal = function() {
 window.closeAdjustmentModal = function() {
   const container = document.getElementById('adjustment-modal-container');
   if (container) container.innerHTML = "";
+};
+
+window.openNewMedicineModal = function() {
+  const container = document.getElementById('adjustment-modal-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-[9999] p-4">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-lg max-w-lg w-full p-6 text-left">
+        <h3 class="text-base font-bold text-[#1B3A5C] mb-4">Add New Drug Master (Formulary)</h3>
+        
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Brand Name</label>
+              <input type="text" id="new-brand" placeholder="e.g. Paracetamol" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Generic Name</label>
+              <input type="text" id="new-generic" placeholder="e.g. Acetaminophen" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Schedule</label>
+              <select id="new-schedule" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+                <option value="Schedule H">Schedule H</option>
+                <option value="Schedule H1">Schedule H1</option>
+                <option value="Schedule G">Schedule G</option>
+                <option value="Schedule X">Schedule X (Narcotics)</option>
+                <option value="General (OTC)">General (OTC)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Dosage Form</label>
+              <select id="new-form" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+                <option value="Tablet">Tablet</option>
+                <option value="Capsule">Capsule</option>
+                <option value="Syrup">Syrup</option>
+                <option value="Injection">Injection</option>
+                <option value="Ointment">Ointment</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Strength</label>
+              <input type="text" id="new-strength" placeholder="e.g. 500 mg" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">GST Rate (%)</label>
+              <input type="number" id="new-gst" value="12" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">MRP (₹)</label>
+              <input type="number" id="new-mrp" placeholder="e.g. 15.00" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Selling Price (₹)</label>
+              <input type="number" id="new-sp" placeholder="e.g. 12.00" class="w-full text-xs p-2.5 border border-slate-200 rounded">
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-2 border-t border-slate-200 pt-4">
+          <button onclick="window.closeNewMedicineModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded text-xs">Cancel</button>
+          <button onclick="window.submitNewMedicine()" class="bg-[#1B3A5C] hover:bg-[#152e4a] text-white font-bold px-4 py-2 rounded text-xs">Add to Formulary</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.closeNewMedicineModal = function() {
+  const container = document.getElementById('adjustment-modal-container');
+  if (container) container.innerHTML = "";
+};
+
+window.submitNewMedicine = function() {
+  const brand = document.getElementById('new-brand').value.trim();
+  const generic = document.getElementById('new-generic').value.trim();
+  const schedule = document.getElementById('new-schedule').value;
+  const form = document.getElementById('new-form').value;
+  const strength = document.getElementById('new-strength').value.trim();
+  const gst = parseFloat(document.getElementById('new-gst').value);
+  const mrp = parseFloat(document.getElementById('new-mrp').value);
+  const sp = parseFloat(document.getElementById('new-sp').value);
+
+  if (!brand || !generic || !strength || isNaN(mrp) || isNaN(sp)) {
+    alert("Please fill out all fields with valid data.");
+    return;
+  }
+
+  // Generate drug code
+  const lastCode = state.inventory.pharmacyBatches.reduce((max, cur) => {
+    const num = parseInt(cur.code.replace('PHA', ''));
+    return num > max ? num : max;
+  }, 100);
+  const newCode = `PHA${lastCode + 1}`;
+
+  const newDrug = {
+    code: newCode,
+    brandName: brand,
+    genericName: generic,
+    schedule: schedule,
+    dosageForm: form,
+    strength: strength,
+    gstRate: gst,
+    mrp: mrp,
+    sellingPrice: sp,
+    stock: 0,
+    reorderLevel: 50,
+    location: "Rack-A1",
+    batches: []
+  };
+
+  state.inventory.pharmacyBatches.push(newDrug);
+  localStorage.setItem('saronil_inventory_pharmacyBatches', JSON.stringify(state.inventory.pharmacyBatches));
+
+  alert(`Medicine ${brand} (${newCode}) successfully added to Pharmacy Formulary.`);
+  window.closeNewMedicineModal();
+  switchPharmTab('master');
 };
 
 window.submitStockAdjustment = function() {
@@ -1393,7 +1524,7 @@ window.renderRegisterData = function(type) {
                 <td class="p-2 font-medium">${r.date}</td>
                 <td class="p-2 font-bold">${r.medicineName}</td>
                 <td class="p-2 font-mono">${r.batchNo}</td>
-                <td class="p-2">${r.patientName} (${r.uhid})</td>
+                 <td class="p-2"><span class="hover:underline text-blue-600 cursor-pointer" onclick="router.navigate('patients?uhid=${r.uhid}')">${r.patientName} (${r.uhid})</span></td>
                 <td class="p-2">${r.doctorName}</td>
                 <td class="p-2 text-center font-bold text-red-600">${r.qtyIssued}</td>
                 <td class="p-2 text-center font-bold text-slate-800">${r.runningBalance}</td>

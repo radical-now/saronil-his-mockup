@@ -3,3 +3,6 @@ source.html
 .DS_Store
 **/.DS_Store
 encrypted/
+node_modules/
+__pycache__/
+*.pyc

@@ -96,6 +96,9 @@ const state = {
   // 8. Invoicing & Billing logs
   billing: [],
 
+  // 8b. Clinical validation rules library (Safety Rules / ruleManager)
+  validationRules: [],
+
   // 9. Blood Bank Stock (rupees based, bag history)
   bloodStock: {
     "A+": { bags: 12, components: { rbc: 6, platelets: 4, ffp: 2 } },
@@ -1263,6 +1266,19 @@ function seedState() {
       { id: 'RO-003', uhid: 'SH-2026-04755', patientName: 'Deepak Verma',   ward: 'EMG-01',      study: 'CT Brain Non-Contrast',        modality: 'CT Scan',   priority: 'STAT',    orderedBy: 'Dr. Fatima Sheikh', orderedAt: window._HIS_DATE(0), status: 'Called',    room: 'ROOM-CT1', studyId: 'STUDY-SEED-003' },
       { id: 'RO-004', uhid: 'SH-2026-04788', patientName: 'Arun Pillai',    ward: 'CCU-BED-02',  study: 'USG Abdomen (kidneys)',        modality: 'Ultrasound',priority: 'Routine', orderedBy: 'Dr. Srinivasan',   orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-U1', studyId: 'STUDY-SEED-004' },
       { id: 'RO-005', uhid: 'SH-2026-04831', patientName: 'Anitha Rao',     ward: 'SP-301',      study: 'USG Pelvis (Follow-up)',       modality: 'Ultrasound',priority: 'Routine', orderedBy: 'Dr. Priya Nair',   orderedAt: window._HIS_DATE(0), status: 'Scheduled', room: 'ROOM-U2', studyId: 'STUDY-SEED-005' }
+    ];
+  }
+
+  // ── SEED VALIDATION RULES (Safety Rules / ruleManager module) ───────────
+  if (!state.validationRules || state.validationRules.length === 0) {
+    state.validationRules = [
+      { id: 'RULE01', name: 'Drug-Allergy Conflict Check', category: 'Clinical', severity: 'Critical Safety Alert', trigger: 'Prescription', dept: 'Clinical EMR', status: 'Active', version: '1.2.0' },
+      { id: 'RULE02', name: 'ABO Blood Compatibility', category: 'Blood Bank', severity: 'Hard Stop', trigger: 'Transfusion Issue', dept: 'Blood Bank', status: 'Active', version: '2.0.1' },
+      { id: 'RULE03', name: 'Duplicate Patient Detection', category: 'Registration', severity: 'Warning', trigger: 'Demographic Entry', dept: 'Registration', status: 'Active', version: '1.0.4' },
+      { id: 'RULE04', name: 'NEWS2 Sepsis Warning', category: 'Vitals', severity: 'Critical Safety Alert', trigger: 'Vitals Entry', dept: 'Nursing', status: 'Active', version: '1.1.2' },
+      { id: 'RULE05', name: 'Drug-Drug Interaction Check', category: 'Pharmacy', severity: 'Hard Stop', trigger: 'Dispensing', dept: 'Pharmacy', status: 'Active', version: '2.1.0' },
+      { id: 'RULE06', name: 'Surgical Checklist Timeout Validation', category: 'OT/Surgery', severity: 'Hard Stop', trigger: 'Incision Clear', dept: 'Surgery', status: 'Active', version: '1.0.0' },
+      { id: 'RULE07', name: 'Bed Housekeeping Safety Constraint', category: 'ATD', severity: 'Hard Stop', trigger: 'Bed Status Update', dept: 'Admissions Desk', status: 'Active', version: '1.0.0' }
     ];
   }
 

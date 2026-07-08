@@ -3,10 +3,23 @@
    ========================================================================== */
 
 window.views.ruleManager = function(container, subAnchor, params) {
+  ensureValidationRules();
   renderRuleManager(container);
 };
 
+function ensureValidationRules() {
+  if (!window.state) window.state = {};
+  if (!Array.isArray(window.state.validationRules)) {
+    window.state.validationRules = [];
+  }
+  if (window.state.validationRules.length === 0 && typeof window.seedState === 'function') {
+    window.seedState();
+  }
+}
+
 function renderRuleManager(container) {
+  ensureValidationRules();
+  const rules = window.state.validationRules || [];
   container.innerHTML = `
     <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem;">
       <!-- Left Column: Rules Library list -->
@@ -31,7 +44,7 @@ function renderRuleManager(container) {
               </tr>
             </thead>
             <tbody>
-              ${state.validationRules.map(rule => {
+              ${rules.map(rule => {
                 let badgeColor = '';
                 if (rule.severity === 'Hard Stop') {
                   badgeColor = 'color: #ef4444;';

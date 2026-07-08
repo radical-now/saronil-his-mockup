@@ -149,7 +149,9 @@ const router = {
     // Update active page titles / breadcrumbs
     const pageTitleEl = document.getElementById('active-page-title');
     if (pageTitleEl) {
-      const formattedTitle = targetPage.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const formattedTitle = targetPage === 'customReports' ? 'Make Your Own Report'
+        : targetPage === 'pantryKitchen' ? 'Pantry & Kitchen Management'
+        : targetPage.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       pageTitleEl.textContent = targetPage === 'dashboard' ? 'Hospital Overview Dashboard' : (targetPage === 'daybed' ? 'Day Care' : formattedTitle);
       
       // Hide title on dashboard since heading is displayed above the KPI cards in the dashboard body

@@ -296,6 +296,37 @@ if (window.state) {
     }
   ];
 
+  // Expand the formulary directory with the full generated catalog so Medicine
+  // Master, Inventory and the dashboard reflect the complete ~60k-item
+  // formulary. The curated records above stay pinned at the top; each catalog
+  // item is mapped into the batch-level shape the pharmacy tabs expect.
+  if (Array.isArray(window.medicationCatalog) && state.inventory.pharmacyBatches.length < 1000) {
+    var gstFor = function (cat) {
+      return /insulin|vitamin|supplement|electrolyte|haematinic|iv fluid/i.test(cat || '') ? 5 : 12;
+    };
+    var shelfFor = function (i) { return 'Rack ' + String.fromCharCode(65 + (i % 6)) + '-' + (1 + (i % 20)); };
+    var mfgFrom = function (expiry) {
+      var d = new Date((expiry || '2027-06-30') + 'T00:00:00');
+      d.setMonth(d.getMonth() - 24);
+      return d.toISOString().slice(0, 10);
+    };
+    var mapped = window.medicationCatalog.map(function (c, i) {
+      return {
+        code: c.code, brandName: c.brandName, genericName: c.genericName,
+        dosageForm: c.dosageForm, strength: c.strength, manufacturer: c.manufacturer,
+        schedule: c.schedule, hsnCode: c.hsnCode, gstRate: gstFor(c.category),
+        mrp: c.price, sellingPrice: Math.max(1, Math.round(c.price * 0.92)),
+        purchasePrice: Math.max(1, Math.round(c.price * 0.65)),
+        reorderLevel: (c.minStock || 100) * 2, minStockLevel: c.minStock || 100,
+        maxStockLevel: (c.minStock || 100) * 10,
+        requiresRefrigeration: /insulin|vaccine/i.test(c.category || ''),
+        activeStatus: 'Active',
+        batches: [{ batchNo: c.batch, mfgDate: mfgFrom(c.expiry), expiryDate: c.expiry, qty: c.stock, shelfLocation: shelfFor(i) }]
+      };
+    });
+    state.inventory.pharmacyBatches = state.inventory.pharmacyBatches.concat(mapped);
+  }
+
   // Shared audit logs
   state.pharmacyAuditLogs = state.pharmacyAuditLogs || [];
 }
@@ -323,8 +354,11 @@ window.views.pharmacy = function(container, subAnchor, params) {
 };
 
 function renderPharmacyModule(container) {
-  // Setup primary CSS and template framework
-  container.className = "p-6 bg-slate-50 min-h-screen text-slate-800 font-sans";
+  // Setup primary CSS and template framework. Keep the `view-container` class
+  // (this is #main-content, the app's scroll container) — dropping it strips
+  // overflow-y:auto and breaks scrolling app-wide. `min-h-screen` is also
+  // omitted so it doesn't fight the flex scroll layout.
+  container.className = "view-container bg-slate-50 text-slate-800 font-sans";
   container.innerHTML = `
     <!-- Top Action bar with role & counter indicator -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-200">
@@ -909,16 +943,24 @@ window.executeSecureDispense = function(type, id) {
  * MEDICINE MASTER VIEW
  */
 function renderMasterTab(container) {
+  window._pharmMaster = window._pharmMaster || { q: '', page: 0, size: 50 };
   container.innerHTML = `
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <h3 class="text-base font-bold text-[#1B3A5C]">Pharmacy Formulary Directory</h3>
-        ${hasPermission('Pharmacy Manager') ? `
-          <button onclick="window.openNewMedicineModal()" class="bg-[#1B3A5C] hover:bg-[#152e4a] text-white py-2 px-4 rounded-lg font-bold text-xs">
-            ➕ Add New Drug Master
-          </button>
-        ` : ''}
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <input id="pharm-master-search" oninput="window.pharmMasterSearch(this.value)" value="${(window._pharmMaster.q || '').replace(/"/g, '&quot;')}"
+                 placeholder="Search brand, generic, code or schedule…"
+                 class="text-xs p-2 border border-slate-200 rounded w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/30">
+          ${hasPermission('Pharmacy Manager') ? `
+            <button onclick="window.openNewMedicineModal()" class="whitespace-nowrap bg-[#1B3A5C] hover:bg-[#152e4a] text-white py-2 px-4 rounded-lg font-bold text-xs">
+              ➕ Add New Drug Master
+            </button>
+          ` : ''}
+        </div>
       </div>
+
+      <div id="pharm-master-count" class="text-xs text-slate-500 mb-2"></div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
@@ -934,42 +976,95 @@ function renderMasterTab(container) {
               <th class="p-3 font-semibold text-slate-600 text-right">Hospital Selling Price</th>
             </tr>
           </thead>
-          <tbody>
-            ${state.inventory.pharmacyBatches.map(m => `
-              <tr class="border-b border-slate-100 hover:bg-slate-50">
-                <td class="p-3 font-mono font-semibold">${m.code}</td>
-                <td class="p-3 font-bold text-slate-900">${m.brandName}</td>
-                <td class="p-3 text-slate-600 italic">${m.genericName}</td>
-                <td class="p-3">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${m.schedule}</span>
-                </td>
-                <td class="p-3">${m.dosageForm} (${m.strength})</td>
-                <td class="p-3 text-right">${m.gstRate}%</td>
-                <td class="p-3 text-right">₹${m.mrp.toFixed(2)}</td>
-                <td class="p-3 text-right font-bold text-[#1B3A5C]">₹${m.sellingPrice.toFixed(2)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
+          <tbody id="pharm-master-tbody"></tbody>
         </table>
       </div>
+
+      <div id="pharm-master-pager" class="flex items-center justify-between mt-4"></div>
     </div>
   `;
+  window.renderPharmMasterRows();
 }
+
+window.pharmMasterFiltered = function () {
+  const q = (window._pharmMaster.q || '').trim().toLowerCase();
+  const all = state.inventory.pharmacyBatches;
+  if (!q) return all;
+  return all.filter(m =>
+    (m.brandName || '').toLowerCase().includes(q) ||
+    (m.genericName || '').toLowerCase().includes(q) ||
+    (m.code || '').toLowerCase().includes(q) ||
+    (m.schedule || '').toLowerCase().includes(q));
+};
+
+window.pharmMasterSearch = function (v) {
+  window._pharmMaster.q = v; window._pharmMaster.page = 0; window.renderPharmMasterRows();
+};
+
+window.pharmMasterPage = function (delta) {
+  const f = window.pharmMasterFiltered();
+  const maxPage = Math.max(0, Math.ceil(f.length / window._pharmMaster.size) - 1);
+  window._pharmMaster.page = Math.min(maxPage, Math.max(0, window._pharmMaster.page + delta));
+  window.renderPharmMasterRows();
+};
+
+window.renderPharmMasterRows = function () {
+  const st = window._pharmMaster;
+  const f = window.pharmMasterFiltered();
+  const start = st.page * st.size;
+  const pageItems = f.slice(start, start + st.size);
+  const tb = document.getElementById('pharm-master-tbody');
+  if (!tb) return;
+  tb.innerHTML = pageItems.map(m => `
+    <tr class="border-b border-slate-100 hover:bg-slate-50">
+      <td class="p-3 font-mono font-semibold">${m.code}</td>
+      <td class="p-3 font-bold text-slate-900">${m.brandName}</td>
+      <td class="p-3 text-slate-600 italic">${m.genericName}</td>
+      <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">${m.schedule}</span></td>
+      <td class="p-3">${m.dosageForm} (${m.strength})</td>
+      <td class="p-3 text-right">${m.gstRate}%</td>
+      <td class="p-3 text-right">₹${Number(m.mrp).toFixed(2)}</td>
+      <td class="p-3 text-right font-bold text-[#1B3A5C]">₹${Number(m.sellingPrice).toFixed(2)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" class="p-6 text-center text-slate-400">No medicines match your search.</td></tr>';
+
+  const cnt = document.getElementById('pharm-master-count');
+  if (cnt) cnt.textContent = f.length.toLocaleString('en-IN') + ' medicine' + (f.length === 1 ? '' : 's') +
+    (st.q ? ' matching "' + st.q + '"' : ' in formulary') +
+    (f.length ? ' · showing ' + (start + 1) + '–' + Math.min(f.length, start + st.size) : '');
+
+  const pager = document.getElementById('pharm-master-pager');
+  if (pager) {
+    const totalPages = Math.max(1, Math.ceil(f.length / st.size));
+    pager.innerHTML = `
+      <span class="text-xs text-slate-500">Page ${st.page + 1} of ${totalPages.toLocaleString('en-IN')}</span>
+      <div class="flex gap-2">
+        <button onclick="window.pharmMasterPage(-1)" ${st.page <= 0 ? 'disabled' : ''} class="px-3 py-1.5 text-xs rounded border border-slate-200 ${st.page <= 0 ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-50 text-slate-700'}">← Prev</button>
+        <button onclick="window.pharmMasterPage(1)" ${st.page >= totalPages - 1 ? 'disabled' : ''} class="px-3 py-1.5 text-xs rounded border border-slate-200 ${st.page >= totalPages - 1 ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-50 text-slate-700'}">Next →</button>
+      </div>`;
+  }
+};
 
 /**
  * INVENTORY & STOCK ADJUSTMENTS VIEW
  */
 function renderInventoryTab(container) {
+  window._pharmInv = window._pharmInv || { q: '', page: 0, size: 50 };
   container.innerHTML = `
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <h3 class="text-base font-bold text-[#1B3A5C]">Realtime Stock Levels & Storage Locations</h3>
-        <div class="flex gap-2">
-          <button onclick="openAdjustmentModal()" class="bg-amber-600 hover:bg-amber-700 text-white py-1.5 px-3 rounded text-xs font-semibold">
+        <div class="flex gap-2 w-full md:w-auto">
+          <input id="pharm-inv-search" oninput="window.pharmInvSearch(this.value)" value="${(window._pharmInv.q || '').replace(/"/g, '&quot;')}"
+                 placeholder="Search brand, generic, code…"
+                 class="text-xs p-2 border border-slate-200 rounded w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/30">
+          <button onclick="openAdjustmentModal()" class="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white py-1.5 px-3 rounded text-xs font-semibold">
             🔧 Manual Stock Adjustment
           </button>
         </div>
       </div>
+
+      <div id="pharm-inv-count" class="text-xs text-slate-500 mb-2"></div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
@@ -984,39 +1079,86 @@ function renderInventoryTab(container) {
               <th class="p-3 font-semibold text-slate-600">Reorder Alert Status</th>
             </tr>
           </thead>
-          <tbody>
-            ${state.inventory.pharmacyBatches.map(m => {
-              const totalStock = m.batches.reduce((sum, b) => sum + b.qty, 0);
-              const isLow = totalStock <= m.minStockLevel;
-
-              return m.batches.map(b => `
-                <tr class="border-b border-slate-100 hover:bg-slate-50">
-                  <td class="p-3 font-mono font-semibold">${m.code}</td>
-                  <td class="p-3">
-                    <div class="font-bold text-slate-900">${m.brandName}</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">${m.genericName}</div>
-                  </td>
-                  <td class="p-3 font-mono font-semibold text-slate-800">${b.batchNo}</td>
-                  <td class="p-3 text-slate-600">${b.shelfLocation}</td>
-                  <td class="p-3 text-right font-bold text-slate-900">${b.qty.toLocaleString()} units</td>
-                  <td class="p-3 text-slate-600">${b.expiryDate}</td>
-                  <td class="p-3">
-                    ${isLow 
-                      ? '<span class="text-amber-600 font-bold">⚠️ LOW STOCK (Reorder Level Reached)</span>' 
-                      : '<span class="text-emerald-600 font-bold">✅ STABLE</span>'}
-                  </td>
-                </tr>
-              `).join('');
-            }).join('')}
-          </tbody>
+          <tbody id="pharm-inv-tbody"></tbody>
         </table>
       </div>
+
+      <div id="pharm-inv-pager" class="flex items-center justify-between mt-4"></div>
     </div>
 
     <!-- Active modal mounts -->
     <div id="adjustment-modal-container"></div>
   `;
+  window.renderPharmInvRows();
 }
+
+window.pharmInvFiltered = function () {
+  const q = (window._pharmInv.q || '').trim().toLowerCase();
+  const all = state.inventory.pharmacyBatches;
+  if (!q) return all;
+  return all.filter(m =>
+    (m.brandName || '').toLowerCase().includes(q) ||
+    (m.genericName || '').toLowerCase().includes(q) ||
+    (m.code || '').toLowerCase().includes(q));
+};
+
+window.pharmInvSearch = function (v) {
+  window._pharmInv.q = v; window._pharmInv.page = 0; window.renderPharmInvRows();
+};
+
+window.pharmInvPage = function (delta) {
+  const f = window.pharmInvFiltered();
+  const maxPage = Math.max(0, Math.ceil(f.length / window._pharmInv.size) - 1);
+  window._pharmInv.page = Math.min(maxPage, Math.max(0, window._pharmInv.page + delta));
+  window.renderPharmInvRows();
+};
+
+window.renderPharmInvRows = function () {
+  const st = window._pharmInv;
+  const f = window.pharmInvFiltered();
+  const start = st.page * st.size;
+  const pageItems = f.slice(start, start + st.size);
+  const tb = document.getElementById('pharm-inv-tbody');
+  if (!tb) return;
+  tb.innerHTML = pageItems.map(m => {
+    const totalStock = m.batches.reduce((sum, b) => sum + b.qty, 0);
+    const isLow = totalStock <= m.minStockLevel;
+    return m.batches.map(b => `
+      <tr class="border-b border-slate-100 hover:bg-slate-50">
+        <td class="p-3 font-mono font-semibold">${m.code}</td>
+        <td class="p-3">
+          <div class="font-bold text-slate-900">${m.brandName}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${m.genericName}</div>
+        </td>
+        <td class="p-3 font-mono font-semibold text-slate-800">${b.batchNo}</td>
+        <td class="p-3 text-slate-600">${b.shelfLocation}</td>
+        <td class="p-3 text-right font-bold text-slate-900">${(b.qty || 0).toLocaleString()} units</td>
+        <td class="p-3 text-slate-600">${b.expiryDate}</td>
+        <td class="p-3">
+          ${isLow
+            ? '<span class="text-amber-600 font-bold">⚠️ LOW STOCK (Reorder Level Reached)</span>'
+            : '<span class="text-emerald-600 font-bold">✅ STABLE</span>'}
+        </td>
+      </tr>
+    `).join('');
+  }).join('') || '<tr><td colspan="7" class="p-6 text-center text-slate-400">No medicines match your search.</td></tr>';
+
+  const cnt = document.getElementById('pharm-inv-count');
+  if (cnt) cnt.textContent = f.length.toLocaleString('en-IN') + ' stocked item' + (f.length === 1 ? '' : 's') +
+    (st.q ? ' matching "' + st.q + '"' : '') +
+    (f.length ? ' · showing ' + (start + 1) + '–' + Math.min(f.length, start + st.size) : '');
+
+  const pager = document.getElementById('pharm-inv-pager');
+  if (pager) {
+    const totalPages = Math.max(1, Math.ceil(f.length / st.size));
+    pager.innerHTML = `
+      <span class="text-xs text-slate-500">Page ${st.page + 1} of ${totalPages.toLocaleString('en-IN')}</span>
+      <div class="flex gap-2">
+        <button onclick="window.pharmInvPage(-1)" ${st.page <= 0 ? 'disabled' : ''} class="px-3 py-1.5 text-xs rounded border border-slate-200 ${st.page <= 0 ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-50 text-slate-700'}">← Prev</button>
+        <button onclick="window.pharmInvPage(1)" ${st.page >= totalPages - 1 ? 'disabled' : ''} class="px-3 py-1.5 text-xs rounded border border-slate-200 ${st.page >= totalPages - 1 ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-50 text-slate-700'}">Next →</button>
+      </div>`;
+  }
+};
 
 /**
  * ADJUSTMENT FORM MODAL
@@ -1039,8 +1181,9 @@ window.openAdjustmentModal = function() {
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Select Medicine</label>
             <select id="adj-medicine" class="w-full text-xs p-2.5 border border-slate-200 rounded">
-              ${state.inventory.pharmacyBatches.map(m => `<option value="${m.code}">${m.brandName} (${m.code})</option>`).join('')}
+              ${state.inventory.pharmacyBatches.slice(0, 500).map(m => `<option value="${m.code}">${m.brandName} (${m.code})</option>`).join('')}
             </select>
+            <p class="text-[10px] text-slate-400 mt-1">Showing first 500 of ${state.inventory.pharmacyBatches.length.toLocaleString('en-IN')} formulary items.</p>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -1201,7 +1344,11 @@ window.submitNewMedicine = function() {
   };
 
   state.inventory.pharmacyBatches.push(newDrug);
-  localStorage.setItem('saronil_inventory_pharmacyBatches', JSON.stringify(state.inventory.pharmacyBatches));
+  // Persisting the full ~60k formulary can exceed the localStorage quota; keep
+  // it best-effort so adding a drug never throws (the seed rebuilds on reload).
+  try {
+    localStorage.setItem('saronil_inventory_pharmacyBatches', JSON.stringify(state.inventory.pharmacyBatches));
+  } catch (e) { /* quota exceeded — formulary is reseeded from the catalog on load */ }
 
   alert(`Medicine ${brand} (${newCode}) successfully added to Pharmacy Formulary.`);
   window.closeNewMedicineModal();

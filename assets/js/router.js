@@ -172,9 +172,12 @@ const router = {
       }
     }
 
-    // Reset scroll/layout state left behind by modals or full-screen views
+    // Reset scroll/layout state left behind by modals or full-screen views.
+    // Restoring the canonical `view-container` class guarantees the scroll
+    // container is intact even if a view overwrote #main-content's className.
     document.body.style.overflow = '';
     if (this.container) {
+      this.container.className = 'view-container';
       this.container.scrollTop = 0;
     }
 

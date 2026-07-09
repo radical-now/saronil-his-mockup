@@ -263,7 +263,8 @@ window.views = window.views || {};
         .mgmt-wrapper {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 52px);
+          flex: 1;
+          min-height: 0;
           overflow: hidden;
           background: #f8fafc;
         }
@@ -272,7 +273,8 @@ window.views = window.views || {};
           display: flex;
           flex-direction: column;
           overflow-y: auto;
-          height: 100%;
+          flex: 1;
+          min-height: 0;
           width: 100%;
         }
         .mgmt-topbar {

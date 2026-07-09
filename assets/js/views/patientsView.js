@@ -1749,7 +1749,8 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         display: flex;
         flex-direction: column;
         gap: 12px;
-        height: calc(100vh - 76px);
+        flex: 1;
+        min-height: 0;
         overflow: hidden;
       }
       .p360-wrap .mono {
@@ -1820,6 +1821,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       /* Right Column - Side Tabs Layout */
       .p360-right-workspace {
         flex: 1;
+        min-height: 0;
         display: flex;
         flex-direction: row;
         gap: 16px;
@@ -4848,7 +4850,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           </div>
 
           <!-- Viewport scrollable content -->
-          <div class="p360-viewport" style="flex:1; overflow-y:auto; background:var(--bg-surface, #ffffff); border:1px solid var(--border-color, #e2e8f0); border-radius:8px; padding:16px; height:100%;">
+          <div class="p360-viewport" style="flex:1; min-height:0; overflow-y:auto; background:var(--bg-surface, #ffffff); border:1px solid var(--border-color, #e2e8f0); border-radius:8px; padding:16px;">
             ${tabContentHtml}
           </div>
 

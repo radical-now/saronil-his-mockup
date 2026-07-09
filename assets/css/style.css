@@ -65,13 +65,18 @@
   padding: 0;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   font-family: var(--font-body);
   font-size: 14px;
   color: var(--text-secondary);
   background-color: var(--bg-base);
   overflow: hidden;
-  height: 100vh;
+  height: 100%;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -93,6 +98,7 @@ a:hover {
   display: flex;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -250,6 +256,8 @@ a:hover {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -337,7 +345,12 @@ a:hover {
    -------------------------------------------------------------------------- */
 .view-container {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -1138,6 +1151,7 @@ a:hover {
   width: 900px;
   max-width: 90vw;
   max-height: 90vh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1166,6 +1180,7 @@ a:hover {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -1504,6 +1519,7 @@ a:hover {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1752,7 +1768,8 @@ a:hover {
 .patient-workspace-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   position: relative;
 }

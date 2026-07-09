@@ -172,6 +172,12 @@ const router = {
       }
     }
 
+    // Reset scroll/layout state left behind by modals or full-screen views
+    document.body.style.overflow = '';
+    if (this.container) {
+      this.container.scrollTop = 0;
+    }
+
     // Render the view
     this.currentPage = targetPage;
     this.container.innerHTML = `<div class="loading-view" style="padding: 3rem; text-align: center; color: var(--text-muted);">

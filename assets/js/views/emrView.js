@@ -16,9 +16,12 @@ window.setDistractionFreeMode = function(active) {
     if (mainContent) {
       mainContent.style.padding = '0';
       mainContent.style.margin = '0';
-      mainContent.style.height = '100vh';
-      mainContent.style.width = '100vw';
-      mainContent.style.maxWidth = '100vw';
+      mainContent.style.flex = '1';
+      mainContent.style.minHeight = '0';
+      mainContent.style.height = '100%';
+      mainContent.style.width = '100%';
+      mainContent.style.maxWidth = '100%';
+      mainContent.style.overflow = 'hidden';
     }
   } else {
     if (sidebar) sidebar.style.display = '';
@@ -26,9 +29,12 @@ window.setDistractionFreeMode = function(active) {
     if (mainContent) {
       mainContent.style.padding = '';
       mainContent.style.margin = '';
+      mainContent.style.flex = '';
+      mainContent.style.minHeight = '';
       mainContent.style.height = '';
       mainContent.style.width = '';
       mainContent.style.maxWidth = '';
+      mainContent.style.overflow = '';
     }
   }
 };
@@ -406,7 +412,7 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
       }
     </style>
 
-    <div class="emr-workspace" style="display: flex; height: ${window.activeConsultationStarted ? '100vh' : 'calc(100vh - 60px)'}; margin: ${window.activeConsultationStarted ? '0' : '-1.5rem'}; overflow: hidden; background: var(--bg-body, #f3f4f6);">
+    <div class="emr-workspace" style="display: flex; flex: 1; min-height: 0; height: 100%; margin: ${window.activeConsultationStarted ? '0' : '-1.5rem'}; overflow: hidden; background: var(--bg-body, #f3f4f6);">
       <!-- LEFT SIDEBAR PATIENT QUEUE -->
       <aside style="width: 300px; border-right: 1px solid var(--border-color); background: var(--bg-surface); display: ${window.activeConsultationStarted ? 'none' : 'flex'}; flex-direction: column; flex-shrink: 0; height: 100%;">
         
@@ -453,7 +459,7 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
       </aside>
 
       <!-- RIGHT MAIN CONTENT CONTAINER -->
-      <main style="flex-grow: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+      <main style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column;">
         ${!patient ? `
           <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border-color); padding: 3rem;">
             <span style="font-size: 3rem; margin-bottom: 1rem;">🩺</span>

@@ -381,7 +381,10 @@ function renderPharmacyModule(container) {
     </div>
 
     <!-- Tab navigation -->
-    <div class="flex border-b border-slate-200 mt-6 overflow-x-auto gap-1">
+    <!-- shrink-0: this row sits in the flex-column view-container; its
+         overflow-x-auto sets min-height:0, so without shrink-0 a tall tab
+         (e.g. Medicine Master) would flex-shrink it to nothing and hide the tabs. -->
+    <div class="flex border-b border-slate-200 mt-6 overflow-x-auto gap-1 shrink-0">
       <button onclick="switchPharmTab('dashboard')" class="pharm-tab-btn active px-4 py-2 text-sm font-semibold border-b-2 border-[#1B3A5C] text-[#1B3A5C]" id="tab-btn-dashboard">Dashboard</button>
       <button onclick="switchPharmTab('queues')" class="pharm-tab-btn px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700" id="tab-btn-queues">Prescription Queue <span class="ml-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full" id="stat-queue-badge">0</span></button>
       <button onclick="switchPharmTab('master')" class="pharm-tab-btn px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700" id="tab-btn-master">Medicine Master</button>

@@ -57,7 +57,7 @@ window.updateDynamicSidebarUser = function(persona) {
   if (!nameEl || !roleEl || !avatarEl) return;
 
   const users = {
-    admin: { name: "Dr. Amit Verma", role: "System Admin", avatar: "AV" },
+    admin: { name: "Dr. Amit Verma", role: "Super Admin", avatar: "AV" },
     admission: { name: "Sarah Jones", role: "Admission Coord", avatar: "SJ" },
     doctor: { name: "Dr. Amit Verma", role: "Sr. Consultant", avatar: "AV" },
     nurse: { name: "Sister Maria", role: "Head Nurse", avatar: "SM" },

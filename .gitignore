@@ -2,7 +2,9 @@ source.html
 .staticrypt-password
 .DS_Store
 **/.DS_Store
+.claude/
 encrypted/
 node_modules/
 __pycache__/
 *.pyc
+scratch/

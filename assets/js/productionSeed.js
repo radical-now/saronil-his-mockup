@@ -597,19 +597,19 @@
     const pendingDefs = [
       {
         uhid: 'SH-2026-04880', name: 'Girish Nair', age: 48, gender: 'Male',
-        requestedBy: 'Dr. Srinivasan', ward: 'General Ward (Male)', bedPreference: 'GENERAL-WARD-M',
+        requestedBy: 'Dr. Srinivasan', department: 'Pulmonology', ward: 'General Ward (Male)', bedPreference: 'GENERAL-WARD-M',
         reason: 'Community-acquired pneumonia — IV Antibiotics required',
         payer: 'Star Health', requestedAt: '29 Jun 2026 · 10:30'
       },
       {
         uhid: 'SH-2026-04885', name: 'Poonam Singh', age: 31, gender: 'Female',
-        requestedBy: 'Dr. Priya Nair', ward: 'Semi-Private Ward', bedPreference: 'SEMI-PRIVATE',
+        requestedBy: 'Dr. Priya Nair', department: 'Gynecology & Obs', ward: 'Semi-Private Ward', bedPreference: 'SEMI-PRIVATE',
         reason: 'Ectopic pregnancy — urgent surgical management',
         payer: 'HDFC ERGO', requestedAt: '29 Jun 2026 · 11:00'
       },
       {
         uhid: 'SH-2026-04890', name: 'Ajit Kumar', age: 67, gender: 'Male',
-        requestedBy: 'Dr. Anand', ward: 'ICU / CCU', bedPreference: 'CCU',
+        requestedBy: 'Dr. Anand', department: 'Cardiology', ward: 'ICU / CCU', bedPreference: 'CCU',
         reason: 'NSTEMI — urgent cardiac monitoring & intervention',
         payer: 'United India', requestedAt: '29 Jun 2026 · 11:30'
       }
@@ -624,6 +624,7 @@
           type: 'IPD', status: 'Bed Pending',
           ward: '—', bed: '—', los: 0,
           primaryConsultant: def.requestedBy,
+          department: def.department || 'General Medicine',
           payer: def.payer, payerType: 'TPA/Insurance',
           mobile: '9800000000',
           bloodGroup: 'O+', allergies: 'None',

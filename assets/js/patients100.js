@@ -25,7 +25,104 @@
     if (!window.state || !window.state.patients) { setTimeout(waitAndSeed, 80); return; }
     seedPatients();
     seedWardBeds();
+    reconcileBeds();
+    seedAlerts();
     console.log('[Patients100] ✅ 100 production patients seeded.');
+  }
+
+  /* ── Clinical safety alerts tied to real patients ──────────────────────── */
+  function seedAlerts() {
+    if (!Array.isArray(window.state.alerts) || window.state.alerts.length) return;
+    const pts = window.state.patients;
+    const pick = (n) => pts[n % pts.length];
+    const allergic = pts.filter(p => p.allergies && p.allergies !== 'None' && p.allergies !== '—');
+    const highNews = pts.filter(p => (p.newsScore || 0) >= 3);
+    const inpatients = pts.filter(p => p.type !== 'OPD');
+
+    // [severity, source, eStatus, status, details, timeOffset, timeStr]
+    const scenarios = [
+      ['Hard Stop', 'EMR Prescribing (CDSS)', 'Escalated', 'Active', 'Prescribed cefixime conflicts with documented penicillin/cephalosporin allergy. Order blocked pending clinician override.', 0, '08:20'],
+      ['Hard Stop', 'Pharmacy Dispensing', 'Escalated', 'Active', 'Potassium chloride IV order exceeds safe infusion rate (>10 mEq/hr). Dispense halted for pharmacist review.', 0, '09:05'],
+      ['Critical Safety Alert', 'Nursing Vitals (NEWS2)', 'Escalated', 'Active', 'NEWS2 score 7 — SpO₂ 88% on room air, RR 26. Rapid Response Team notified for possible sepsis.', 0, '07:45'],
+      ['Critical Safety Alert', 'Laboratory Critical Value', 'Pending', 'Active', 'Critical serum potassium 6.8 mmol/L reported. Repeat sample and ECG requested; endocrine consult raised.', 0, '10:15'],
+      ['Critical Safety Alert', 'Radiology Reporting', 'Pending', 'Active', 'CT head flagged acute subdural haemorrhage. Neurosurgery on-call paged for urgent review.', 0, '11:30'],
+      ['High Risk', 'Nursing Assessment', 'Monitored', 'Active', 'Morse Fall Scale 65 — high fall risk. Bed rails up, hourly rounding and yellow wristband applied.', 1, '14:10'],
+      ['High Risk', 'EMR Prescribing (CDSS)', 'Monitored', 'Active', 'Warfarin + azithromycin interaction — INR monitoring advised; consider dose reduction.', 1, '15:25'],
+      ['High Risk', 'Infection Control', 'Monitored', 'Active', 'MRSA screen positive. Contact isolation precautions initiated; cohort nursing arranged.', 1, '16:40'],
+      ['Warning', 'Nursing Vitals', 'Pending', 'Active', 'Vitals observation overdue by 45 minutes for this admitted patient. Nursing station reminded.', 0, '12:05'],
+      ['Warning', 'Billing & TPA', 'Pending', 'Active', 'Insurance pre-authorization nearing expiry in 24 hours. Enhancement request recommended.', 2, '13:20'],
+      ['Warning', 'Pharmacy Stock', 'Pending', 'Active', 'Duplicate proton-pump inhibitor order detected across two active prescriptions. Reconcile advised.', 2, '11:50'],
+      ['Info', 'Care Coordination', 'Monitored', 'Resolved', 'Discharge medication counselling completed and documented. Follow-up scheduled in OPD.', 3, '10:30'],
+      ['Info', 'Dietetics', 'Monitored', 'Resolved', 'Diabetic diet plan reviewed and confirmed with patient. No further action required.', 3, '09:40'],
+      ['High Risk', 'Laboratory Critical Value', 'Pending', 'Active', 'Haemoglobin 6.4 g/dL — severe anaemia. Cross-match requested; transfusion consent in progress.', 1, '08:55']
+    ];
+
+    // Prefer real patients whose profile matches the scenario, else round-robin.
+    const preferred = [
+      allergic[0], allergic[1] || allergic[0], highNews[0], highNews[1] || pick(3),
+      highNews[2] || pick(5), inpatients[4], inpatients[7], inpatients[10],
+      inpatients[2], pick(20), pick(24), pick(30), pick(34), highNews[3] || pick(12)
+    ];
+
+    window.state.alerts = scenarios.map((sc, i) => {
+      const p = preferred[i] || pick(i);
+      return {
+        id: 'ALERT-' + String(4001 + i),
+        severity: sc[0],
+        source: sc[1],
+        eStatus: sc[2],
+        status: sc[3],
+        uhid: p.uhid,
+        patientName: p.name,
+        details: sc[4],
+        clinician: p.primaryConsultant || 'Dr. Srinivasan',
+        time: P(sc[5], sc[6])
+      };
+    });
+  }
+
+  /* ── Reconcile bed occupancy from patient records (single source of truth) ─
+     Every admitted non-OPD patient holding a real bed marks that bed Occupied;
+     any bed flagged Occupied without a matching active inpatient is released.
+     Keeps the IPD-census KPI (occupied beds) exactly aligned with the roster. */
+  function reconcileBeds() {
+    const bs = window.state.bedsStatus;
+    if (!bs) return;
+    const hasBed = (p) => p.bed && p.bed !== '—' && p.bed !== '' && bs[p.bed];
+    const active = window.state.patients.filter(p =>
+      p.type !== 'OPD' && !/discharg/i.test(p.status || '') && hasBed(p));
+    const claimed = new Set();
+
+    // Pick an unclaimed bed, preferring the same ward as the patient.
+    const freeBed = (wardKey) => {
+      const ids = Object.keys(bs);
+      let cand = ids.find(k => !claimed.has(k) && bs[k].wardKey === wardKey);
+      if (!cand) cand = ids.find(k => !claimed.has(k));
+      return cand || null;
+    };
+
+    active.forEach(p => {
+      let bedId = p.bed;
+      // Resolve double-booking: if this bed is already taken by someone else,
+      // move the patient to a free bed (same ward first) and sync their record.
+      if (claimed.has(bedId)) {
+        const alt = freeBed(bs[bedId].wardKey || p.wardKey);
+        if (alt) { bedId = alt; p.bed = alt; }
+        else return; // no beds left (should not happen: 87 beds > roster)
+      }
+      const dx = (p.clinicalData && p.clinicalData.diagnosis) || (p.clinicalData && p.clinicalData.complaint) || '';
+      bs[bedId].status = 'Occupied';
+      bs[bedId].patientUhid = p.uhid;
+      bs[bedId].wardKey = bs[bedId].wardKey || p.wardKey || null;
+      bs[bedId].notes = (p.primaryConsultant ? p.primaryConsultant + ' · ' : '') + dx;
+      claimed.add(bedId);
+    });
+    // Release stale occupancy (occupied but no active inpatient points here).
+    Object.keys(bs).forEach(k => {
+      if (bs[k].status === 'Occupied' && !claimed.has(k)) {
+        bs[k].status = 'Available'; bs[k].patientUhid = null; bs[k].notes = '';
+      }
+    });
   }
 
   /* ── Expand ward beds to support more patients ─────────────────────────── */

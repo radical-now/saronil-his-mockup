@@ -3,9 +3,11 @@
    ========================================================================== */
 
 // --------------------------------------------------------------------------
-// 1. DYNAMIC MEDICINE DATABASE SEEDING (EXACTLY 100 HIS MEDICINES)
+// 1. CURATED BRAND SHORTLIST — prepended to the full formulary generated in
+//    medicationCatalog.js (loaded earlier). These are well-known brands kept
+//    at the top of the catalog for quick demo recall.
 // --------------------------------------------------------------------------
-window.medicationCatalog = [
+window.__curatedMeds = [
   {
     "brandName": "Calpol 500",
     "genericName": "Paracetamol",
@@ -1307,6 +1309,24 @@ window.medicationCatalog = [
     "stock": 50
   }
 ];
+
+// Merge curated shortlist ahead of the full generated formulary. Fill the
+// extended fields (manufacturer / schedule / hsnCode / batch / expiry) that the
+// curated records predate, without clobbering any value already present.
+(function mergeCuratedIntoCatalog() {
+  var mfrs = ['GSK Pharmaceuticals', 'Abbott Healthcare', 'Cipla Ltd', 'Sun Pharmaceutical',
+              "Dr. Reddy's Laboratories", 'Mankind Pharma', 'Lupin Ltd', 'Alkem Laboratories'];
+  var enriched = window.__curatedMeds.map(function (m, i) {
+    return Object.assign({
+      manufacturer: mfrs[i % mfrs.length],
+      schedule: 'H',
+      hsnCode: '30049099',
+      batch: 'BAT-2026-' + String(2000 + i),
+      expiry: '2027-12-30'
+    }, m);
+  });
+  window.medicationCatalog = enriched.concat(window.medicationCatalog || []);
+})();
 
 // Seed to state.inventory.pharmacy for unified HIS search compatibility
 (function seedStateInventory() {

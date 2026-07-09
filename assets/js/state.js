@@ -724,26 +724,28 @@ const state = {
 };
 
 // --------------------------------------------------------------------------
-// GLOBAL DATE HELPERS — always relative to current real-world date
+// GLOBAL DATE HELPERS — anchored to the demo window (1 Jan – 5 Jul 2026).
+// "Today" is pinned to 5 Jul 2026 (the last day of the window) so that every
+// relative offset the seeds compute stays inside the mandated range and no
+// record drifts into the future as real-world time advances.
 // --------------------------------------------------------------------------
-window._HIS_TODAY = (function() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
-})();
+window._HIS_ANCHOR = '2026-07-05';
+function _hisBase() { return new Date(window._HIS_ANCHOR + 'T00:00:00'); }
+
+window._HIS_TODAY = window._HIS_ANCHOR; // YYYY-MM-DD
 
 window._HIS_TODAY_PRETTY = (function() {
-  const d = new Date();
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return _hisBase().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 })();
 
 window._HIS_DATE = function(daysAgo) {
-  const d = new Date();
+  const d = _hisBase();
   d.setDate(d.getDate() - (daysAgo || 0));
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 };
 
 window._HIS_PRETTY = function(daysAgo, timeStr) {
-  const d = new Date();
+  const d = _hisBase();
   d.setDate(d.getDate() - (daysAgo || 0));
   const pretty = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   return timeStr ? `${pretty} · ${timeStr}` : pretty;

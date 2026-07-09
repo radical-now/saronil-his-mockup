@@ -16,7 +16,10 @@
   }
 
   function todayPretty() {
-    return new Date().toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+    // Anchored to the demo window (see _HIS_ANCHOR) so the kitchen board's
+    // operating date stays consistent with the rest of the prototype.
+    const d = window._HIS_ANCHOR ? new Date(window._HIS_ANCHOR + 'T00:00:00') : new Date();
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   function ensureDietBridge() {

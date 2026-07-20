@@ -74,16 +74,7 @@ function triggerCSSDNotification(type, message, phone) {
 // Main render function for CSSD
 window.views.cssd = function(container, subAnchor, params) {
   const css = `
-    <style>
-      @keyframes slideIn {
-        from { transform: translateX(-120%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(-120%); opacity: 0; }
-      }
-    </style>
+    
   `;
 
   // Verify elements are present
@@ -108,13 +99,13 @@ window.views.cssd = function(container, subAnchor, params) {
   };
 
   // Sub-actions and queue handlers
-  window.cssdDirtyReceiptAction = function(setId, action) {
+  window.cssdDirtyReceiptAction = async function(setId, action) {
     const item = cs.instrumentSets.find(i => i.id === setId);
     if (!item) return;
 
     if (action === 'receive') {
-      const missing = prompt("Enter missing instruments (comma separated, leave blank if none):") || "";
-      const damaged = prompt("Enter damaged/corroded instruments (comma separated, leave blank if none):") || "";
+      const missing = await customPrompt("Enter missing instruments (comma separated, leave blank if none):") || "";
+      const damaged = await customPrompt("Enter damaged/corroded instruments (comma separated, leave blank if none):") || "";
       const missingList = missing ? missing.split(',').map(s => s.trim()) : [];
       const damagedList = damaged ? damaged.split(',').map(s => s.trim()) : [];
 
@@ -316,12 +307,12 @@ window.views.cssd = function(container, subAnchor, params) {
     window.views.cssd(container);
   };
 
-  window.cssdIncubateOverride = function(sterId) {
+  window.cssdIncubateOverride = async function(sterId) {
     const ster = cs.queues.sterilization.find(s => s.id === sterId);
     if (!ster) return;
 
-    const surgeon = prompt("Enter Treating Surgeon's Name for Emergency Release:") || "";
-    const justification = prompt("Enter Clinical Justification (e.g. dropped instrument, active bleed, life-threatening emergency):") || "";
+    const surgeon = await customPrompt("Enter Treating Surgeon's Name for Emergency Release:") || "";
+    const justification = await customPrompt("Enter Clinical Justification (e.g. dropped instrument, active bleed, life-threatening emergency):") || "";
 
     if (!surgeon || !justification) {
       alert("Emergency override requires surgeon name and clinical justification.");
@@ -392,7 +383,7 @@ window.views.cssd = function(container, subAnchor, params) {
   };
 
   // Issue Sterile set
-  window.cssdIssueSterileSet = function(setId) {
+  window.cssdIssueSterileSet = async function(setId) {
     const item = cs.instrumentSets.find(i => i.id === setId);
     if (!item) return;
 
@@ -401,18 +392,18 @@ window.views.cssd = function(container, subAnchor, params) {
     let procedure = "";
 
     if (item.isImplant) {
-      patientUhid = prompt("Enter Patient UHID (Mandatory for implant sets):") || "";
+      patientUhid = await customPrompt("Enter Patient UHID (Mandatory for implant sets):") || "";
       if (!patientUhid) {
         alert("Patient UHID is mandatory for sets containing implants!");
         return;
       }
-      surgeon = prompt("Enter Issuing Surgeon's Name:") || "";
-      procedure = prompt("Enter Surgical Procedure:") || "";
+      surgeon = await customPrompt("Enter Issuing Surgeon's Name:") || "";
+      procedure = await customPrompt("Enter Surgical Procedure:") || "";
     } else {
-      patientUhid = prompt("Enter Patient UHID (Optional for general sets):") || "";
+      patientUhid = await customPrompt("Enter Patient UHID (Optional for general sets):") || "";
     }
 
-    const dept = prompt("Enter Target Department (e.g. OT-01, ICU, Wards):") || "OT";
+    const dept = await customPrompt("Enter Target Department (e.g. OT-01, ICU, Wards):") || "OT";
 
     item.status = "Issued";
     item.location = dept;
@@ -1048,11 +1039,11 @@ window.views.cssd = function(container, subAnchor, params) {
       </div>
     `;
 
-    window.cssdReturnLoanerToVendor = function(lnrId) {
+    window.cssdReturnLoanerToVendor = async function(lnrId) {
       const lnr = cs.loanerSets.find(l => l.id === lnrId);
       if (!lnr) return;
 
-      const dispute = prompt("Enter damage/dispute remarks if any (leave blank if returned complete & undamaged):") || "";
+      const dispute = await customPrompt("Enter damage/dispute remarks if any (leave blank if returned complete & undamaged):") || "";
       
       lnr.status = "Returned to Vendor";
       lnr.returnStatus = dispute ? "Returned with Dispute" : "Returned (Clean)";

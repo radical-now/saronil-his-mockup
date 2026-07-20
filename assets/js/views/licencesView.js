@@ -138,7 +138,7 @@ window.views = window.views || {};
             +'<td style="white-space:nowrap;">'+fmtDate(l.issueDate)+'</td>'
             +'<td style="white-space:nowrap;">'+fmtDate(l.expiryDate)+'<br><span style="'+dc+'font-size:0.7rem;">'+dt+'</span></td>'
             +'<td>'+statusBadge(s)+'</td>'
-            +'<td style="font-size:0.73rem;">'+esc(l.renewalOwner)+'</td>'
+            +'<td style="font-size:0.73rem;"><a href="javascript:void(0)" onclick="event.stopPropagation(); window.openStaffProfile(\''+esc(l.renewalOwner)+'\')" style="color:var(--primary);text-decoration:underline;font-weight:600;">'+esc(l.renewalOwner)+'</a></td>'
             +'<td style="text-align:right;white-space:nowrap;" onclick="event.stopPropagation()">'
               +'<button class="btn btn-secondary btn-sm" onclick="window._licNav(\'detail\',\''+l.id+'\',false)">View</button>'
               +' <button class="btn btn-secondary btn-sm" onclick="window._licNav(\'form\',\''+l.id+'\',false)">Edit</button>'
@@ -147,7 +147,7 @@ window.views = window.views || {};
           +'</tr>';
         }).join('');
 
-    container.innerHTML = ''
+    window.ipdSafeRender(container, ''
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px;">'
         +'<div><h1 style="font-size:1.35rem;font-weight:700;color:var(--text-primary);margin:0;font-family:var(--font-display);">&#128220; Licence & Regulatory Compliance</h1>'
         +'<div style="font-size:0.78rem;color:var(--text-muted);margin-top:3px;">Repository of all institutional licences, statutory registrations and accreditations — auto-tracked with expiry alerts.</div></div>'
@@ -161,7 +161,7 @@ window.views = window.views || {};
       +'</div>'
       +'<div class="card" style="padding:14px 16px;margin-bottom:16px;">'
         +'<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">'
-          +'<input type="text" class="form-control" placeholder="Search by name or number..." value="'+esc(_fq)+'" oninput="window._licFilter(\'search\',this.value)" style="max-width:260px;font-size:0.82rem;padding:0.4rem 0.7rem;">'
+          +'<input type="text" id="lic-search" class="form-control" placeholder="Search by name or number..." value="'+esc(_fq)+'" oninput="window._licFilter(\'search\',this.value)" style="max-width:260px;font-size:0.82rem;padding:0.4rem 0.7rem;">'
           +'<select class="form-select" onchange="window._licFilter(\'branch\',this.value)" style="max-width:180px;font-size:0.82rem;padding:0.4rem 0.7rem;"><option value="All"'+(_fb==='All'?' selected':'')+'>All Branches</option>'+BRANCHES.map(function(b){return '<option value="'+b+'"'+(_fb===b?' selected':'')+'>'+b+'</option>';}).join('')+'</select>'
           +'<select class="form-select" onchange="window._licFilter(\'category\',this.value)" style="max-width:200px;font-size:0.82rem;padding:0.4rem 0.7rem;"><option value="All"'+(_fc==='All'?' selected':'')+'>All Categories</option>'+CATS.map(function(c){return '<option value="'+c+'"'+(_fc===c?' selected':'')+'>'+c+'</option>';}).join('')+'</select>'
           +'<select class="form-select" onchange="window._licFilter(\'status\',this.value)" style="max-width:180px;font-size:0.82rem;padding:0.4rem 0.7rem;"><option value="All"'+(_fs==='All'?' selected':'')+'>All Statuses</option><option value="Active"'+(_fs==='Active'?' selected':'')+'>Active</option><option value="Expiring Soon"'+(_fs==='Expiring Soon'?' selected':'')+'>Expiring Soon</option><option value="Expired"'+(_fs==='Expired'?' selected':'')+'>Expired</option><option value="Renewal in Progress"'+(_fs==='Renewal in Progress'?' selected':'')+'>Renewal in Progress</option></select>'
@@ -172,7 +172,7 @@ window.views = window.views || {};
       +'<div class="card"><div class="custom-table-container" style="overflow-x:auto;"><table class="custom-table" style="font-size:0.8rem;min-width:1000px;">'
         +'<thead><tr><th>Licence Name</th><th>Category</th><th>Branch</th><th>Licence Number</th><th>Issuing Authority</th><th>Issue Date</th><th>Expiry Date</th><th>Status</th><th>Renewal Owner</th><th style="text-align:right;">Actions</th></tr></thead>'
         +'<tbody>'+rows+'</tbody>'
-      +'</table></div></div>';
+      +'</table></div></div>');
   }
 
   /* ── SCREEN 2: FORM ──────────────────────────────────────────────────────── */

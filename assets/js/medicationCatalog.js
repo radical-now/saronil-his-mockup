@@ -438,6 +438,84 @@
   }
 
   window.medicationCatalog = catalog;
+
+  // Add Febrex Plus & alternatives explicitly
+  const specialMeds = [
+    {
+      brandName: "Febrex Plus",
+      genericName: "Paracetamol + Chlorpheniramine + Phenylephrine",
+      saltComposition: "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+      strength: "Combination",
+      dosageForm: "Tablet",
+      route: "PO",
+      price: 45,
+      category: "General Medicine",
+      code: "RX-MED-101",
+      manufacturer: "Indoco Remedies",
+      schedule: "OTC",
+      hsnCode: "30049099",
+      minStock: 100,
+      stock: 0,
+      batch: "BAT-2026-9021",
+      expiry: "2027-12-30"
+    },
+    {
+      brandName: "Sinarest",
+      genericName: "Paracetamol + Chlorpheniramine + Phenylephrine",
+      saltComposition: "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+      strength: "Combination",
+      dosageForm: "Tablet",
+      route: "PO",
+      price: 50,
+      category: "General Medicine",
+      code: "RX-MED-102",
+      manufacturer: "Centaur Pharmaceuticals",
+      schedule: "OTC",
+      hsnCode: "30049099",
+      minStock: 100,
+      stock: 120,
+      batch: "BAT-2026-9022",
+      expiry: "2027-12-30"
+    },
+    {
+      brandName: "Cheston Cold",
+      genericName: "Paracetamol + Cetirizine + Phenylephrine",
+      saltComposition: "Paracetamol 325mg + Cetirizine Dihydrochloride 5mg + Phenylephrine Hydrochloride 5mg",
+      strength: "Combination",
+      dosageForm: "Tablet",
+      route: "PO",
+      price: 48,
+      category: "General Medicine",
+      code: "RX-MED-103",
+      manufacturer: "Cipla Ltd",
+      schedule: "OTC",
+      hsnCode: "30049099",
+      minStock: 100,
+      stock: 150,
+      batch: "BAT-2026-9023",
+      expiry: "2027-12-30"
+    },
+    {
+      brandName: "Colgin Plus",
+      genericName: "Paracetamol + Chlorpheniramine + Phenylephrine",
+      saltComposition: "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+      strength: "Combination",
+      dosageForm: "Tablet",
+      route: "PO",
+      price: 40,
+      category: "General Medicine",
+      code: "RX-MED-104",
+      manufacturer: "Cadila Pharmaceuticals",
+      schedule: "OTC",
+      hsnCode: "30049099",
+      minStock: 100,
+      stock: 80,
+      batch: "BAT-2026-9024",
+      expiry: "2027-12-30"
+    }
+  ];
+  specialMeds.forEach(m => window.medicationCatalog.push(m));
+
   console.log('[MedicationCatalog] ✅ ' + catalog.length.toLocaleString('en-IN') +
               ' formulations across ' + G.length + ' generics seeded.');
 })();

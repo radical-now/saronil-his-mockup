@@ -515,12 +515,12 @@ window.editPkgItem = function(code) {
   renderPackageBuilderView(document.getElementById('main-content'));
 };
 
-window.freezePkgItem = function(code) {
+window.freezePkgItem = async function(code) {
   if (currentPackageRole !== "CHARGE_MASTER_ADMIN") {
     alert("❌ Access Denied: Only a Charge Master Admin can freeze package templates.");
     return;
   }
-  const reason = prompt("Enter justification to freeze/suspend this package template:");
+  const reason = await customPrompt("Enter justification to freeze/suspend this package template:");
   if (!reason) return;
   const pkg = state.packages.find(p => p.code === code);
   if (pkg) {
@@ -1167,7 +1167,7 @@ window.addExclusionGroup = function(groupType) {
   });
 };
 
-window.savePackageTemplate = function() {
+window.savePackageTemplate = async function() {
   if (currentPackageRole !== "CHARGE_MASTER_ADMIN") {
     alert("❌ Access Denied: Only Charge Master Admin can create/modify package templates.");
     return;
@@ -1226,7 +1226,7 @@ window.savePackageTemplate = function() {
 
   // Validation: At least 1 exclusion or confirmation
   if (exclusions.length === 0) {
-    const confirmNoEx = confirm("You have configured 0 exclusions. Are you sure this package has no exclusions?");
+    const confirmNoEx = await customConfirm("You have configured 0 exclusions. Are you sure this package has no exclusions?");
     if (!confirmNoEx) return;
   }
 
@@ -1347,7 +1347,7 @@ window.changeAssignPatient = function(val) {
   renderPkgTabContent();
 };
 
-window.confirmAssignmentAction = function(pkgCode) {
+window.confirmAssignmentAction = async function(pkgCode) {
   const pkg = state.packages.find(p => p.code === pkgCode);
   const patient = state.patients.find(p => p.uhid === selectAssignPatientUhid) || { name: "Sample Patient", uhid: selectAssignPatientUhid };
   
@@ -1356,7 +1356,7 @@ window.confirmAssignmentAction = function(pkgCode) {
     return;
   }
 
-  const confirmAssign = confirm(`Assign ${pkg.name} to patient ${patient.name} at flat price of ${formatINR(pkg.payerRates.Standard)}?`);
+  const confirmAssign = await customConfirm(`Assign ${pkg.name} to patient ${patient.name} at flat price of ${formatINR(pkg.payerRates.Standard)}?`);
   if (confirmAssign) {
     const asgId = "ASG-2026-" + Math.floor(100 + Math.random() * 900);
     state.packageAssignments.push({
@@ -1475,11 +1475,11 @@ function renderPkgTracking(space) {
   `;
 }
 
-window.postAddictionExclusionCharge = function(asgId) {
+window.postAddictionExclusionCharge = async function(asgId) {
   const asg = state.packageAssignments.find(a => a.id === asgId);
-  const code = prompt("Enter Charge Master service code to post as exclusion (e.g. LAB002):", "LAB002");
+  const code = await customPrompt("Enter Charge Master service code to post as exclusion (e.g. LAB002):", "LAB002");
   if (!code) return;
-  const cost = parseFloat(prompt("Enter amount to charge (₹):", "750"));
+  const cost = parseFloat(await customPrompt("Enter amount to charge (₹):", "750"));
   if (isNaN(cost)) return;
 
   asg.postedCharges.push({
@@ -1495,13 +1495,13 @@ window.postAddictionExclusionCharge = function(asgId) {
   renderPkgTabContent();
 };
 
-window.initiatePartialPackage = function(asgId) {
+window.initiatePartialPackage = async function(asgId) {
   if (!["BILLING_MANAGER", "BILLING_SUPERVISOR", "CHARGE_MASTER_ADMIN"].includes(currentPackageRole)) {
     alert("❌ Access Denied: Requires Supervisor or Manager desk override.");
     return;
   }
 
-  const reason = prompt("Enter cancellation/early pro-rating reason (e.g. Procedure Cancelled):");
+  const reason = await customPrompt("Enter cancellation/early pro-rating reason (e.g. Procedure Cancelled):");
   if (!reason) return;
 
   const asg = state.packageAssignments.find(a => a.id === asgId);
@@ -1614,7 +1614,7 @@ function renderPkgClosure(space) {
   `;
 }
 
-window.finalizePackageBill = function(asgId) {
+window.finalizePackageBill = async function(asgId) {
   if (currentPackageRole === "READ_ONLY") {
     alert("❌ Access Denied: Only Billing Supervisors or Admins can finalize billing files.");
     return;
@@ -1622,7 +1622,7 @@ window.finalizePackageBill = function(asgId) {
 
   const chkImplant = document.getElementById('chk-implant')?.checked;
   if (!chkImplant) {
-    const override = confirm("⚠️ Warning: Implant verification checkbox is unchecked. Would you like to request supervisor override to continue?");
+    const override = await customConfirm("⚠️ Warning: Implant verification checkbox is unchecked. Would you like to request supervisor override to continue?");
     if (!override) return;
   }
 

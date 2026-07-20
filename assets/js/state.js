@@ -2,6 +2,263 @@
    SARONIL HMS - CENTRAL SHARED STATE ENGINE (state.js)
    ========================================================================== */
 
+window.showToast = function(message, type = 'success') {
+  let container = document.getElementById('global-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'global-toast-container';
+    container.style.position = 'fixed';
+    container.style.top = '24px';
+    container.style.right = '24px';
+    container.style.zIndex = '99999';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '8px';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#f59e0b');
+  toast.style.color = '#ffffff';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontSize = '0.82rem';
+  toast.style.fontWeight = '700';
+  toast.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateY(-20px)';
+  toast.style.transition = 'all 0.3s ease';
+  toast.textContent = message;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  }, 10);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-20px)';
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3000);
+};
+window.showToastNotification = window.showToast;
+
+window.ipdSafeRender = function(container, html) {
+  const activeEl = document.activeElement;
+  let activeId = activeEl ? activeEl.id : null;
+  let selectionStart = null;
+  let selectionEnd = null;
+
+  if (activeId && activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+    try {
+      selectionStart = activeEl.selectionStart;
+      selectionEnd = activeEl.selectionEnd;
+    } catch (e) {}
+  }
+
+  container.innerHTML = html;
+
+  if (activeId) {
+    const el = document.getElementById(activeId);
+    if (el) {
+      el.focus();
+      if (selectionStart !== null && selectionEnd !== null) {
+        try {
+          el.setSelectionRange(selectionStart, selectionEnd);
+        } catch (e) {}
+      }
+    }
+  }
+};
+
+function generate2000Medicines() {
+  const categories = [
+    {
+      name: "Cardiovascular",
+      icd10: "I10",
+      icdTitle: "Essential (primary) hypertension",
+      generics: [
+        { name: "Telmisartan", brands: ["Telma", "Telpres", "Telsar"], strengths: ["20mg", "40mg", "80mg"], form: "Tablet", route: "Oral", priceRange: [8, 15] },
+        { name: "Amlodipine", brands: ["Amlopres", "Amlopin", "Stamlo"], strengths: ["2.5mg", "5mg", "10mg"], form: "Tablet", route: "Oral", priceRange: [3, 8] },
+        { name: "Metoprolol", brands: ["Metolar", "Starpress", "Supermet"], strengths: ["25mg", "50mg", "100mg"], form: "Tablet", route: "Oral", priceRange: [12, 25] },
+        { name: "Atorvastatin", brands: ["Atorva", "Lipvas", "Tonact"], strengths: ["10mg", "20mg", "40mg", "80mg"], form: "Tablet", route: "Oral", priceRange: [15, 45] },
+        { name: "Rosuvastatin", brands: ["Rosuvas", "Razel", "Crevast"], strengths: ["5mg", "10mg", "20mg", "40mg"], form: "Tablet", route: "Oral", priceRange: [18, 50] },
+        { name: "Clopidogrel", brands: ["Clopilet", "Plavix", "Deplatt"], strengths: ["75mg", "150mg"], form: "Tablet", route: "Oral", priceRange: [10, 20] },
+        { name: "Ramipril", brands: ["Cardace", "Ramipres", "Hopace"], strengths: ["2.5mg", "5mg", "10mg"], form: "Tablet", route: "Oral", priceRange: [6, 14] },
+        { name: "Losartan", brands: ["Covance", "Losacar", "Tozaar"], strengths: ["25mg", "50mg", "100mg"], form: "Tablet", route: "Oral", priceRange: [5, 12] }
+      ]
+    },
+    {
+      name: "Antidiabetics",
+      icd10: "E11",
+      icdTitle: "Type 2 diabetes mellitus",
+      generics: [
+        { name: "Metformin", brands: ["Glycomet", "Obimet", "Metfogamma"], strengths: ["500mg", "850mg", "1000mg"], form: "Tablet", route: "Oral", priceRange: [4, 10] },
+        { name: "Glimepiride", brands: ["Glimy", "Amaryl", "Gp"], strengths: ["1mg", "2mg", "3mg", "4mg"], form: "Tablet", route: "Oral", priceRange: [6, 18] },
+        { name: "Sitagliptin", brands: ["Januvia", "Istavel", "Sita"], strengths: ["50mg", "100mg"], form: "Tablet", route: "Oral", priceRange: [25, 60] },
+        { name: "Vildagliptin", brands: ["Galvus", "Jalra", "Vildamax"], strengths: ["50mg", "100mg"], form: "Tablet", route: "Oral", priceRange: [15, 35] },
+        { name: "Dapagliflozin", brands: ["Forxiga", "Oxra", "Dapa"], strengths: ["5mg", "10mg"], form: "Tablet", route: "Oral", priceRange: [30, 75] },
+        { name: "Teneligliptin", brands: ["Tenepride", "Teneza", "Teniva"], strengths: ["20mg", "40mg"], form: "Tablet", route: "Oral", priceRange: [10, 22] }
+      ]
+    },
+    {
+      name: "Analgesics & NSAIDs",
+      icd10: "R52",
+      icdTitle: "Pain, unspecified",
+      generics: [
+        { name: "Paracetamol", brands: ["Dolo", "Calpol", "Crocin"], strengths: ["500mg", "650mg"], form: "Tablet", route: "Oral", priceRange: [2, 5] },
+        { name: "Aceclofenac", brands: ["Zerodol", "Aceclo", "Hifenac"], strengths: ["100mg", "200mg"], form: "Tablet", route: "Oral", priceRange: [5, 12] },
+        { name: "Diclofenac", brands: ["Voveran", "Dynapar", "Reactin"], strengths: ["50mg", "75mg", "100mg"], form: "Tablet", route: "Oral", priceRange: [4, 15] },
+        { name: "Ibuprofen", brands: ["Brufen", "Ibugesic", "Ibumax"], strengths: ["200mg", "400mg", "600mg"], form: "Tablet", route: "Oral", priceRange: [3, 8] },
+        { name: "Etoricoxib", brands: ["Nucoxia", "Etoshine", "Ecox"], strengths: ["60mg", "90mg", "120mg"], form: "Tablet", route: "Oral", priceRange: [10, 25] },
+        { name: "Tramadol", brands: ["Tramazac", "Contramal", "Supridol"], strengths: ["50mg", "100mg"], form: "Capsule", route: "Oral", priceRange: [8, 18] }
+      ]
+    },
+    {
+      name: "Antibiotics",
+      icd10: "A49",
+      icdTitle: "Bacterial infection, unspecified",
+      generics: [
+        { name: "Amoxicillin + Clavulanate", brands: ["Augmentin", "Clavam", "Moxikind-CV"], strengths: ["375mg", "625mg", "1000mg"], form: "Tablet", route: "Oral", priceRange: [15, 30] },
+        { name: "Azithromycin", brands: ["Azee", "Azithral", "Zithrox"], strengths: ["250mg", "500mg"], form: "Tablet", route: "Oral", priceRange: [12, 28] },
+        { name: "Cefixime", brands: ["Taxim-O", "Zifi", "Ceftas"], strengths: ["100mg", "200mg", "400mg"], form: "Tablet", route: "Oral", priceRange: [10, 25] },
+        { name: "Ciprofloxacin", brands: ["Cifran", "Ciplox", "Cipro"], strengths: ["250mg", "500mg"], form: "Tablet", route: "Oral", priceRange: [6, 14] },
+        { name: "Ofloxacin", brands: ["Oflox", "Zenflox", "Oflomac"], strengths: ["200mg", "400mg"], form: "Tablet", route: "Oral", priceRange: [8, 16] },
+        { name: "Doxycycline", brands: ["Doxy-1", "Lenteclin", "Microdox"], strengths: ["100mg"], form: "Capsule", route: "Oral", priceRange: [4, 9] }
+      ]
+    },
+    {
+      name: "Gastrointestinal",
+      icd10: "K21",
+      icdTitle: "Gastro-esophageal reflux disease",
+      generics: [
+        { name: "Pantoprazole", brands: ["Pantocid", "Pan", "Pantodac"], strengths: ["20mg", "40mg"], form: "Tablet", route: "Oral", priceRange: [8, 15] },
+        { name: "Rabeprazole", brands: ["Rablet", "Rabicip", "Veloz"], strengths: ["20mg", "40mg"], form: "Tablet", route: "Oral", priceRange: [10, 18] },
+        { name: "Omeprazole", brands: ["Omez", "Omee", "Omecip"], strengths: ["20mg", "40mg"], form: "Capsule", route: "Oral", priceRange: [4, 10] },
+        { name: "Ondansetron", brands: ["Emeset", "Ondem", "Zofran"], strengths: ["4mg", "8mg"], form: "Tablet", route: "Oral", priceRange: [5, 10] },
+        { name: "Domperidone", brands: ["Domstal", "Dompan", "Motinorm"], strengths: ["10mg", "30mg"], form: "Tablet", route: "Oral", priceRange: [4, 8] }
+      ]
+    },
+    {
+      name: "Respiratory",
+      icd10: "J45",
+      icdTitle: "Asthma",
+      generics: [
+        { name: "Montelukast", brands: ["Montair", "Montek", "Montina"], strengths: ["5mg", "10mg"], form: "Tablet", route: "Oral", priceRange: [10, 18] },
+        { name: "Levocetirizine", brands: ["L-Hist", "Teczine", "Levocet"], strengths: ["5mg", "10mg"], form: "Tablet", route: "Oral", priceRange: [3, 8] },
+        { name: "Fexofenadine", brands: ["Allegra", "Fexo", "Altiva"], strengths: ["120mg", "180mg"], form: "Tablet", route: "Oral", priceRange: [15, 25] },
+        { name: "Budesonide", brands: ["Budecort", "Pulmicort", "Budair"], strengths: ["100mcg", "200mcg", "400mcg"], form: "Inhaler", route: "Inhalation", priceRange: [150, 350] },
+        { name: "Salbutamol", brands: ["Asthalin", "Ventorlin", "Salbair"], strengths: ["2mg", "4mg"], form: "Tablet", route: "Oral", priceRange: [2, 5] }
+      ]
+    },
+    {
+      name: "Neuro-Psychiatry",
+      icd10: "F41",
+      icdTitle: "Other anxiety disorders",
+      generics: [
+        { name: "Escitalopram", brands: ["Nexito", "Cipralex", "Estitalo"], strengths: ["5mg", "10mg", "20mg"], form: "Tablet", route: "Oral", priceRange: [8, 20] },
+        { name: "Clonazepam", brands: ["Lonazep", "Petril", "Clonefit"], strengths: ["0.25mg", "0.5mg", "1mg", "2mg"], form: "Tablet", route: "Oral", priceRange: [4, 12] },
+        { name: "Alprazolam", brands: ["Alprax", "Restyl", "Zolax"], strengths: ["0.25mg", "0.5mg", "1mg"], form: "Tablet", route: "Oral", priceRange: [3, 9] },
+        { name: "Gabapentin", brands: ["Gabapin", "Gabator", "Pentabin"], strengths: ["100mg", "300mg", "400mg"], form: "Tablet", route: "Oral", priceRange: [15, 35] },
+        { name: "Pregabalin", brands: ["Lyrica", "Pregabid", "Maxgalin"], strengths: ["75mg", "150mg", "300mg"], form: "Capsule", route: "Oral", priceRange: [20, 55] }
+      ]
+    },
+    {
+      name: "Vitamins & Supplements",
+      icd10: "E63",
+      icdTitle: "Other nutritional deficiencies",
+      generics: [
+        { name: "Cholecalciferol (Vit D3)", brands: ["Calcirol", "D3-Must", "Uprise-D3"], strengths: ["60K IU", "1K IU", "2K IU"], form: "Capsule", route: "Oral", priceRange: [10, 30] },
+        { name: "Methylcobalamin (Vit B12)", brands: ["Nurokind-OD", "Meconerve", "Rejunex"], strengths: ["500mcg", "1500mcg"], form: "Tablet", route: "Oral", priceRange: [8, 22] },
+        { name: "Calcium Carbonate", brands: ["Shelcal", "Calcicad", "Ostocalcium"], strengths: ["250mg", "500mg"], form: "Tablet", route: "Oral", priceRange: [5, 12] },
+        { name: "Ferrous Ascorbate", brands: ["Orofer-XT", "Fefol", "Cheri-XT"], strengths: ["100mg"], form: "Tablet", route: "Oral", priceRange: [8, 16] },
+        { name: "Folic Acid", brands: ["Folvite", "Foliage", "Fol-5"], strengths: ["5mg"], form: "Tablet", route: "Oral", priceRange: [1, 4] }
+      ]
+    }
+  ];
+
+  const manufacturers = ["Micro Labs Ltd", "Cipla Ltd", "Sun Pharmaceutical Industries", "Abbott India Ltd", "Lupin Ltd", "Alkem Laboratories", "Torrent Pharmaceuticals", "Intas Pharmaceuticals", "Zydus Lifesciences", "Dr. Reddy's Laboratories", "GSK India", "Pfizer India"];
+  const list = [];
+  let index = 1;
+
+  // Explicitly seed Dolo 650 as code PH-001 for backward compatibility
+  list.push({
+    code: "PH-001",
+    name: "Dolo 650",
+    brandName: "Dolo 650",
+    genericName: "Paracetamol",
+    saltComposition: "Paracetamol 650mg",
+    strength: "650mg",
+    dosageForm: "Tablet",
+    route: "Oral",
+    manufacturer: "Micro Labs Ltd",
+    packSize: "Strip of 15",
+    stock: 500,
+    minStock: 50,
+    price: 15,
+    expiry: "2028-12-01",
+    category: "Analgesics & NSAIDs",
+    icd10: "R52",
+    icdTitle: "Pain, unspecified",
+    locations: { "Main Pharmacy": 200, "Emergency Pharmacy": 50, "IPD Pharmacy": 100, "OT Pharmacy": 50, "Satellite Pharmacy": 100 },
+    pregnancyCategory: "B",
+    lactationSafety: "Safe",
+    kidneySafety: "No dose adjustment required",
+    liverSafety: "Use with caution.",
+    expiringSoon: false,
+    coPrescribed: []
+  });
+  index++;
+
+  while (list.length < 2000) {
+    const cat = categories[index % categories.length];
+    const gen = cat.generics[index % cat.generics.length];
+    const brand = gen.brands[index % gen.brands.length] + " " + gen.strengths[index % gen.strengths.length];
+    const strength = gen.strengths[index % gen.strengths.length];
+    const mfg = manufacturers[index % manufacturers.length];
+    const code = "PH-" + String(index).padStart(3, "0");
+    const dosage = gen.form;
+    const route = gen.route;
+    
+    // Calculate a price
+    const basePrice = gen.priceRange[0] + (index % (gen.priceRange[1] - gen.priceRange[0] + 1));
+    
+    list.push({
+      code: code,
+      name: brand,
+      brandName: brand,
+      genericName: gen.name,
+      saltComposition: `${gen.name} ${strength}`,
+      strength: strength,
+      dosageForm: dosage,
+      route: route,
+      manufacturer: mfg,
+      packSize: dosage === "Inhaler" ? "1 Inhaler" : (dosage === "Ointment" ? "Tube of 15g" : "Strip of 10"),
+      stock: 100 + (index % 900),
+      minStock: 50,
+      price: basePrice,
+      expiry: `2028-${String((index % 12) + 1).padStart(2, "0")}-01`,
+      category: cat.name,
+      icd10: cat.icd10,
+      icdTitle: cat.icdTitle,
+      locations: { "Main Pharmacy": 50, "Emergency Pharmacy": 10, "IPD Pharmacy": 20, "OT Pharmacy": 10, "Satellite Pharmacy": 10 },
+      pregnancyCategory: "B",
+      lactationSafety: "Safe",
+      kidneySafety: "No dose adjustment required",
+      liverSafety: "Use with caution.",
+      expiringSoon: false,
+      coPrescribed: []
+    });
+    
+    index++;
+  }
+  return list;
+}
+
 const DOCTORS_DATABASE = [
   { id: "DOC01", name: "Dr. Srinivasan", spec: "General Medicine", room: "101", phone: "+91 98450 11021", status: "Active", regNo: "KMC-48902" },
   { id: "DOC02", name: "Dr. Ramesh Iyer", spec: "Pediatrics", room: "102", phone: "+91 98450 11022", status: "Active", regNo: "KMC-55921" },
@@ -25,46 +282,195 @@ const DOCTORS_DATABASE = [
   { id: "DOC20", name: "Dr. Vijay Pipil", spec: "Dermatology", room: "120", phone: "+91 98450 11040", status: "Active", regNo: "MCI-90452" }
 ];
 
+// Generate 10 additional clinical doctors (DOC21 to DOC30)
+(function() {
+  const clinicalDepts = [
+    "General Medicine", "Pediatrics", "Cardiology", "Orthopedics", "Gynecology & Obs",
+    "Emergency Medicine", "Neurology", "Oncology", "Dermatology", "Gastroenterology"
+  ];
+  const docNames = [
+    "Dr. Rajesh Varma", "Dr. Shalini Sen", "Dr. Vikram Seth", "Dr. Ananya Roy", "Dr. David Miller",
+    "Dr. Kavitha Rao", "Dr. Manoj Nair", "Dr. Sarah Paul", "Dr. Arjun Saxena", "Dr. Sneha Patil"
+  ];
+  for (let i = 0; i < 10; i++) {
+    DOCTORS_DATABASE.push({
+      id: `DOC${21 + i}`,
+      name: docNames[i],
+      spec: clinicalDepts[i % clinicalDepts.length],
+      room: String(121 + i),
+      phone: `+91 98450 110${41 + i}`,
+      status: "Active",
+      regNo: `KMC-${78000 + i}`
+    });
+  }
+})();
+
 const state = {
-  alerts: [],
+  alerts: JSON.parse(localStorage.getItem('saronil_alerts')) || [
+    { id: "ALT101", severity: "Critical Safety Alert", patientName: "Aarav Sharma", uhid: "UH-2026-000001", details: "Potential Sepsis detected: NEWS2 Score = 8 (High Risk). Attending notified.", source: "Clinical Vitals", clinician: "Nurse Mary", time: "18-Jul-2026 10:15 AM", status: "Active", eStatus: "Open" },
+    { id: "ALT102", severity: "Hard Stop", patientName: "Priya Nair", uhid: "UH-2026-000002", details: "Drug-Drug Conflict: Potassium Chloride (PH-001) ordered with Spironolactone. High Risk of Hyperkalemia.", source: "Pharmacy Order", clinician: "Dr. Srinivasan", time: "18-Jul-2026 10:30 AM", status: "Active", eStatus: "Open" },
+    { id: "ALT103", severity: "Warning", patientName: "Sanjay Sen", uhid: "UH-2026-000003", details: "Panic Lab Value: Serum Potassium = 6.2 mEq/L (Critical High). Attending notified.", source: "Laboratory Integration", clinician: "Tech Amit", time: "18-Jul-2026 10:45 AM", status: "Active", eStatus: "Open" }
+  ],
+  alertsAuditTrail: JSON.parse(localStorage.getItem('saronil_alertsAuditTrail')) || [],
   // 1. Doctors Database (20+ Specialists)
   // Nurses and staff definitions
-  nurses: [
-    { id: "NUR01", name: "Staff Nurse Mary", dept: "General Medicine", shift: "Morning", phone: "+91 98450 22001", status: "Active" },
-    { id: "NUR02", name: "Staff Nurse John", dept: "Cardiology", shift: "Morning", phone: "+91 98450 22002", status: "Active" },
-    { id: "NUR03", name: "Staff Nurse Sarah", dept: "Pediatrics", shift: "Afternoon", phone: "+91 98450 22003", status: "Active" },
-    { id: "NUR04", name: "Staff Nurse Robert", dept: "Emergency Medicine", shift: "Night", phone: "+91 98450 22004", status: "Active" },
-    { id: "NUR05", name: "Staff Nurse Jessica", dept: "Gynecology & Obs", shift: "Morning", phone: "+91 98450 22005", status: "Active" },
-    { id: "NUR06", name: "Staff Nurse David", dept: "General Surgery", shift: "Afternoon", phone: "+91 98450 22006", status: "Active" },
-    { id: "NUR07", name: "Staff Nurse Karen", dept: "Neurology", shift: "Morning", phone: "+91 98450 22007", status: "Active" },
-    { id: "NUR08", name: "Staff Nurse James", dept: "Oncology", shift: "Night", phone: "+91 98450 22008", status: "Active" },
-    { id: "NUR09", name: "Staff Nurse Emily", dept: "Gastroenterology", shift: "Afternoon", phone: "+91 98450 22009", status: "Active" },
-    { id: "NUR10", name: "Staff Nurse Michael", dept: "Daycare", shift: "Morning", phone: "+91 98450 22010", status: "Active" }
-  ],
-  staff: [
-    { id: "STF01", name: "Ph. Satish Kumar", role: "Pharmacist", dept: "Pharmacy", shift: "Morning", phone: "+91 98450 33001" },
-    { id: "STF02", name: "Ph. Anita Rao", role: "Pharmacist", dept: "Pharmacy", shift: "Afternoon", phone: "+91 98450 33002" },
-    { id: "STF03", name: "Tech Amit Verma", role: "Lab Technician", dept: "Laboratory", shift: "Morning", phone: "+91 98450 33003" },
-    { id: "STF04", name: "Tech Preeti Reddy", role: "Lab Technician", dept: "Laboratory", shift: "Afternoon", phone: "+91 98450 33004" },
-    { id: "STF05", name: "Clerk Anand", role: "Billing Clerk", dept: "Billing", shift: "Morning", phone: "+91 98450 33005" },
-    { id: "STF06", name: "Clerk Sunita", role: "Billing Clerk", dept: "Billing", shift: "Afternoon", phone: "+91 98450 33006" },
-    { id: "STF07", name: "Rec. Ravi", role: "Receptionist", dept: "Front Desk", shift: "Morning", phone: "+91 98450 33007" },
-    { id: "STF08", name: "Rec. Priya", role: "Receptionist", dept: "Front Desk", shift: "Afternoon", phone: "+91 98450 33008" },
-    { id: "STF09", name: "Clerk Shalini", role: "Admission Assistant", dept: "Admission Desk", shift: "Morning", phone: "+91 98450 33009" },
-    { id: "STF10", name: "Clerk Ajay", role: "Admission Assistant", dept: "Admission Desk", shift: "Afternoon", phone: "+91 98450 33010" }
-  ],  doctors: DOCTORS_DATABASE,
+  nurses: (function() {
+    const baseNurses = [
+      { id: "NUR01", name: "Staff Nurse Mary", dept: "General Medicine", shift: "Morning", phone: "+91 98450 22001", status: "Active" },
+      { id: "NUR02", name: "Staff Nurse John", dept: "Cardiology", shift: "Morning", phone: "+91 98450 22002", status: "Active" },
+      { id: "NUR03", name: "Staff Nurse Sarah", dept: "Pediatrics", shift: "Afternoon", phone: "+91 98450 22003", status: "Active" },
+      { id: "NUR04", name: "Staff Nurse Robert", dept: "Emergency Medicine", shift: "Night", phone: "+91 98450 22004", status: "Active" },
+      { id: "NUR05", name: "Staff Nurse Jessica", dept: "Gynecology & Obs", shift: "Morning", phone: "+91 98450 22005", status: "Active" },
+      { id: "NUR06", name: "Staff Nurse David", dept: "General Surgery", shift: "Afternoon", phone: "+91 98450 22006", status: "Active" },
+      { id: "NUR07", name: "Staff Nurse Karen", dept: "Neurology", shift: "Morning", phone: "+91 98450 22007", status: "Active" },
+      { id: "NUR08", name: "Staff Nurse James", dept: "Oncology", shift: "Night", phone: "+91 98450 22008", status: "Active" },
+      { id: "NUR09", name: "Staff Nurse Emily", dept: "Gastroenterology", shift: "Afternoon", phone: "+91 98450 22009", status: "Active" },
+      { id: "NUR10", name: "Staff Nurse Michael", dept: "Daycare", shift: "Morning", phone: "+91 98450 22010", status: "Active" }
+    ];
+    const depts = [
+      "General Medicine", "Pediatrics", "Cardiology", "Orthopedics", "Gynecology & Obs",
+      "Emergency Medicine", "Neurology", "Oncology", "Dermatology", "Gastroenterology", "Daycare", "General Wards"
+    ];
+    const shifts = ["Morning", "Afternoon", "Night"];
+    const nurseFirstNames = ["Aisha", "Bindu", "Carol", "Deepa", "Elsa", "Fiona", "Gauri", "Hina", "Indu", "Jaya", "Kiran", "Lata", "Meera", "Nisha", "Omana", "Pooja", "Ritu", "Seema", "Tina", "Uma"];
+    const nurseLastNames = ["Sharma", "Nair", "Iyer", "Kumar", "Singh", "Patel", "Reddy", "Pillai", "Sen", "Roy"];
+    
+    for (let i = 0; i < 60; i++) {
+      const firstName = nurseFirstNames[i % nurseFirstNames.length];
+      const lastName = nurseLastNames[(i + 3) % nurseLastNames.length];
+      const name = `Staff Nurse ${firstName} ${lastName}`;
+      baseNurses.push({
+        id: `NUR${11 + i}`,
+        name: name,
+        dept: depts[i % depts.length],
+        shift: shifts[i % shifts.length],
+        phone: `+91 98450 22${100 + i}`,
+        status: "Active"
+      });
+    }
+    return baseNurses;
+  })(),
+  staff: (function() {
+    const baseStaff = [
+      { id: "STF01", name: "Ph. Satish Kumar", role: "Pharmacist", dept: "Pharmacy", shift: "Morning", phone: "+91 98450 33001" },
+      { id: "STF02", name: "Ph. Anita Rao", role: "Pharmacist", dept: "Pharmacy", shift: "Afternoon", phone: "+91 98450 33002" },
+      { id: "STF03", name: "Tech Amit Verma", role: "Lab Technician", dept: "Laboratory", shift: "Morning", phone: "+91 98450 33003" },
+      { id: "STF04", name: "Tech Preeti Reddy", role: "Lab Technician", dept: "Laboratory", shift: "Afternoon", phone: "+91 98450 33004" },
+      { id: "STF05", name: "Clerk Anand", role: "Billing Clerk", dept: "Billing", shift: "Morning", phone: "+91 98450 33005" },
+      { id: "STF06", name: "Clerk Sunita", role: "Billing Clerk", dept: "Billing", shift: "Afternoon", phone: "+91 98450 33006" },
+      { id: "STF07", name: "Rec. Ravi", role: "Receptionist", dept: "Front Desk", shift: "Morning", phone: "+91 98450 33007" },
+      { id: "STF08", name: "Rec. Priya", role: "Receptionist", dept: "Front Desk", shift: "Afternoon", phone: "+91 98450 33008" },
+      { id: "STF09", name: "Clerk Shalini", role: "Admission Assistant", dept: "Admission Desk", shift: "Morning", phone: "+91 98450 33009" },
+      { id: "STF10", name: "Clerk Ajay", role: "Admission Assistant", dept: "Admission Desk", shift: "Afternoon", phone: "+91 98450 33010" }
+    ];
+    const nonClinicalRoles = [
+      { role: "Billing Clerk", dept: "Billing" },
+      { role: "Receptionist", dept: "Front Desk" },
+      { role: "Admission Assistant", dept: "Admission Desk" },
+      { role: "Pharmacist", dept: "Pharmacy" },
+      { role: "Lab Technician", dept: "Laboratory" },
+      { role: "Radiology Tech", dept: "Radiology" },
+      { role: "OT Assistant", dept: "Operation Theatre" },
+      { role: "IT Support", dept: "IT Administration" }
+    ];
+    const shifts = ["Morning", "Afternoon", "Night", "General"];
+    const staffFirstNames = ["Amit", "Rohan", "Sanjay", "Vikram", "Ketan", "Rahul", "Sameer", "Vijay", "Anand", "Rajesh", "Priya", "Sunita", "Anjali", "Kavita", "Ritu", "Sita", "Geeta", "Babita", "Mamta", "Rekha"];
+    const staffLastNames = ["Verma", "Reddy", "Sharma", "Nair", "Iyer", "Kumar", "Singh", "Patel", "Sen", "Roy"];
+    
+    for (let i = 0; i < 30; i++) {
+      const roleObj = nonClinicalRoles[i % nonClinicalRoles.length];
+      const firstName = staffFirstNames[i % staffFirstNames.length];
+      const lastName = staffLastNames[(i + 7) % staffLastNames.length];
+      const prefix = roleObj.role.includes("Pharmacist") ? "Ph." : (roleObj.role.includes("Technician") || roleObj.role.includes("Tech") ? "Tech" : "Clerk");
+      const name = `${prefix} ${firstName} ${lastName}`;
+      baseStaff.push({
+        id: `STF${11 + i}`,
+        name: name,
+        role: roleObj.role,
+        dept: roleObj.dept,
+        shift: shifts[i % shifts.length],
+        phone: `+91 98450 33${100 + i}`,
+        status: "Active"
+      });
+    }
+    return baseStaff;
+  })(),
+  doctors: JSON.parse(localStorage.getItem('saronil_doctors')) || DOCTORS_DATABASE,
 
   // 2. Wards & Beds configuration
   wards: {
-    "GENERAL-WARD-M": { name: "General Ward (Male)", beds: ["GW(M)-409", "GW(M)-410", "GW(M)-411", "GW(M)-412", "GW(M)-413"], price: 1500 },
-    "GENERAL-WARD-F": { name: "General Ward (Female)", beds: ["GW(F)-414", "GW(F)-415", "GW(F)-416", "GW(F)-417", "GW(F)-418"], price: 1500 },
-    "SEMI-PRIVATE": { name: "Semi-Private Ward", beds: ["SP-301", "SP-302", "SP-303", "SP-304", "SP-305"], price: 3000 },
-    "PRIVATE": { name: "Private Room", beds: ["PVT-201", "PVT-202", "PVT-203", "PVT-204", "PVT-205"], price: 6000 },
-    "DELUXE": { name: "Deluxe Suite", beds: ["DELUXE-401", "DELUXE-402", "DELUXE-403", "DELUXE-404"], price: 12000 },
-    "CCU": { name: "Critical Care Unit", beds: ["CCU-BED-01", "CCU-BED-02", "CCU-BED-03", "CCU-BED-04", "CCU-BED-05"], price: 10000 },
-    "ICCU": { name: "Intensive Cardiac Care Unit", beds: ["ICCU-BED-01", "ICCU-BED-02", "ICCU-BED-03", "ICCU-BED-04"], price: 12000 },
-    "EMERGENCY": { name: "Emergency Ward", beds: ["EMG-01", "EMG-02", "EMG-03", "EMG-04", "EMG-05"], price: 2500 },
-    "DAYCARE": { name: "Daycare Unit", beds: ["DC-B1", "DC-B2", "DC-B3", "DC-B4", "DC-B5", "DC-B6", "DC-B7", "DC-B8", "DC-B9", "DC-B10"], price: 1500 }
+    "GENERAL-WARD-M": {
+      name: "General Ward (Male)",
+      beds: [
+        "GWM-101-B1", "GWM-101-B2", "GWM-101-B3", "GWM-101-B4", "GWM-101-B5", "GWM-101-B6", "GWM-101-B7", "GWM-101-B8",
+        "GWM-102-B1", "GWM-102-B2", "GWM-102-B3", "GWM-102-B4", "GWM-102-B5", "GWM-102-B6", "GWM-102-B7", "GWM-102-B8"
+      ],
+      price: 1200
+    },
+    "GENERAL-WARD-F": {
+      name: "General Ward (Female)",
+      beds: [
+        "GWF-103-B1", "GWF-103-B2", "GWF-103-B3", "GWF-103-B4", "GWF-103-B5", "GWF-103-B6", "GWF-103-B7", "GWF-103-B8",
+        "GWF-104-B1", "GWF-104-B2", "GWF-104-B3", "GWF-104-B4", "GWF-104-B5", "GWF-104-B6", "GWF-104-B7", "GWF-104-B8"
+      ],
+      price: 1200
+    },
+    "SEMI-PRIVATE": {
+      name: "Semi-Private Ward",
+      beds: [
+        "SP-201-A", "SP-201-B", "SP-202-A", "SP-202-B", "SP-203-A", "SP-203-B",
+        "SP-204-A", "SP-204-B", "SP-205-A", "SP-205-B", "SP-206-A", "SP-206-B"
+      ],
+      price: 2800
+    },
+    "PRIVATE": {
+      name: "Private Room",
+      beds: [
+        "PVT-301", "PVT-302", "PVT-303", "PVT-304", "PVT-305", "PVT-306", "PVT-307", "PVT-308", "PVT-309", "PVT-310"
+      ],
+      price: 5500
+    },
+    "DELUXE": {
+      name: "Deluxe Suite",
+      beds: ["DLX-401", "DLX-402", "DLX-403", "DLX-404"],
+      price: 11000
+    },
+    "HDU": {
+      name: "High Dependency Unit (HDU)",
+      beds: ["HDU-B1", "HDU-B2", "HDU-B3", "HDU-B4", "HDU-B5", "HDU-B6", "HDU-B7", "HDU-B8"],
+      price: 6500
+    },
+    "ICU": {
+      name: "ICU / Critical Care Unit",
+      beds: ["ICU-B1", "ICU-B2", "ICU-B3", "ICU-B4", "ICU-B5", "ICU-B6", "ICU-B7", "ICU-B8"],
+      price: 10000
+    },
+    "CCU": {
+      name: "Critical Care Unit",
+      beds: ["CCU-B1", "CCU-B2", "CCU-B3", "CCU-B4", "CCU-B5", "CCU-B6"],
+      price: 11000
+    },
+    "ICCU": {
+      name: "Intensive Cardiac Care Unit",
+      beds: ["ICCU-B1", "ICCU-B2", "ICCU-B3", "ICCU-B4", "ICCU-B5", "ICCU-B6"],
+      price: 12000
+    },
+    "EMERGENCY": {
+      name: "Emergency Ward",
+      beds: [
+        "ER-1-B1", "ER-1-B2", "ER-1-B3", "ER-1-B4", "ER-1-B5", "ER-1-B6",
+        "ER-2-BAY1", "ER-2-BAY2", "ER-2-BAY3", "ER-2-BAY4", "ER-2-BAY5", "ER-2-BAY6"
+      ],
+      price: 3500
+    },
+    "DAYCARE": {
+      name: "Daycare Unit",
+      beds: [
+        "DC-BED-1", "DC-BED-2", "DC-BED-3", "DC-BED-4", "DC-BED-5", "DC-BED-6",
+        "DC-CHAIR-1", "DC-CHAIR-2", "DC-CHAIR-3", "DC-CHAIR-4", "DC-CHAIR-5", "DC-CHAIR-6"
+      ],
+      price: 1800
+    }
   },
 
   // Bed status allocations (populated on startup or dynamically modified)
@@ -114,7 +520,8 @@ const state = {
 
   // 10. Inventory Levels
   inventory: {
-    pharmacy: [
+    pharmacy: generate2000Medicines(),
+    _old_pharmacy: [
       {
         code: "PH-001",
         name: "Dolo 650",
@@ -630,12 +1037,12 @@ const state = {
         route: "Oral",
         manufacturer: "Indoco Remedies Ltd",
         packSize: "Strip of 10",
-        stock: 1500,
+        stock: 0,
         minStock: 250,
         price: 35,
         expiry: "2027-12-01",
         category: "Cough & Cold",
-        locations: { "Main Pharmacy": 1000, "Emergency Pharmacy": 200, "IPD Pharmacy": 300, "OT Pharmacy": 0, "Satellite Pharmacy": 0 },
+        locations: { "Main Pharmacy": 0, "Emergency Pharmacy": 0, "IPD Pharmacy": 0, "OT Pharmacy": 0, "Satellite Pharmacy": 0 },
         pregnancyCategory: "C",
         lactationSafety: "Caution",
         kidneySafety: "Use with caution in moderate to severe renal impairment.",
@@ -729,10 +1136,45 @@ const state = {
 // relative offset the seeds compute stays inside the mandated range and no
 // record drifts into the future as real-world time advances.
 // --------------------------------------------------------------------------
-window._HIS_ANCHOR = '2026-07-05';
+window._HIS_ANCHOR = new Date().toISOString().slice(0, 10);
 function _hisBase() { return new Date(window._HIS_ANCHOR + 'T00:00:00'); }
 
 window._HIS_TODAY = window._HIS_ANCHOR; // YYYY-MM-DD
+
+// Monkeypatch toLocaleDateString for DD MM YYYY formatting globally
+const originalToLocaleDateString = Date.prototype.toLocaleDateString;
+Date.prototype.toLocaleDateString = function(locales, options) {
+  if (locales === 'en-CA') {
+    return originalToLocaleDateString.call(this, locales, options);
+  }
+  const dd = String(this.getDate()).padStart(2, '0');
+  const mm = String(this.getMonth() + 1).padStart(2, '0');
+  const yyyy = this.getFullYear();
+  return `${dd} ${mm} ${yyyy}`;
+};
+
+// Global formatting helper
+window.formatDateToDDMMYYYY = function(dateStr) {
+  if (!dateStr) return '';
+  if (/^\d{2} \d{2} \d{4}$/.test(dateStr)) return dateStr;
+  
+  const cleanStr = dateStr.split('T')[0];
+  const parts = cleanStr.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[2]} ${parts[1]} ${parts[0]}`;
+    } else if (parts[2].length === 4) {
+      return `${parts[0]} ${parts[1]} ${parts[2]}`;
+    }
+  }
+  
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd} ${mm} ${yyyy}`;
+};
 
 window._HIS_TODAY_PRETTY = (function() {
   return _hisBase().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -747,7 +1189,7 @@ window._HIS_DATE = function(daysAgo) {
 window._HIS_PRETTY = function(daysAgo, timeStr) {
   const d = _hisBase();
   d.setDate(d.getDate() - (daysAgo || 0));
-  const pretty = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const pretty = d.toLocaleDateString();
   return timeStr ? `${pretty} · ${timeStr}` : pretty;
 };
 
@@ -756,15 +1198,59 @@ window._HIS_PRETTY = function(daysAgo, timeStr) {
 // --------------------------------------------------------------------------
 function seedState() {
   const storedPatients = localStorage.getItem('saronil_patients');
+  
+  // Self-healing migration for new ward configuration
+  if (storedPatients && storedPatients.includes('GW(M)-409')) {
+    localStorage.removeItem('saronil_patients');
+    localStorage.removeItem('saronil_bedsStatus');
+    localStorage.removeItem('saronil_admissions');
+    localStorage.removeItem('saronil_daycare_admissions');
+    localStorage.removeItem('saronil_bedAuditLogs');
+    localStorage.removeItem('saronil_billing');
+    window.location.reload();
+    return;
+  }
+
   const storedDoctors = localStorage.getItem('saronil_doctors');
   const storedNurses = localStorage.getItem('saronil_nurses');
   const storedStaff = localStorage.getItem('saronil_staff');
+  
+  // Self-healing migration for new staff dataset (100 various staff members added)
+  if (storedDoctors && JSON.parse(storedDoctors).length < 30) {
+    localStorage.removeItem('saronil_doctors');
+    localStorage.removeItem('saronil_nurses');
+    localStorage.removeItem('saronil_staff');
+    localStorage.removeItem('saronil_staffList');
+    window.location.reload();
+    return;
+  }
   
   if (storedPatients && storedDoctors && storedNurses && storedStaff) {
     state.patients = JSON.parse(storedPatients);
     state.doctors = JSON.parse(storedDoctors);
     state.nurses = JSON.parse(storedNurses);
     state.staff = JSON.parse(storedStaff);
+    
+    // Align patients data for active consultant and today's date
+    let updatedPatients = false;
+    state.patients.forEach(p => {
+      if (p.type === 'OPD' && (p.uhid === 'SH-2026-04862' || p.uhid === 'SH-2026-04864' || p.uhid === 'SH-2026-04868')) {
+        if (p.primaryConsultant !== 'Dr. Amit Verma') {
+          p.primaryConsultant = 'Dr. Amit Verma';
+          updatedPatients = true;
+        }
+        const timePart = p.admitted && p.admitted.includes(' · ') ? p.admitted.split(' · ')[1] : '09:15';
+        const todayPretty = window._HIS_TODAY_PRETTY || new Date().toLocaleDateString();
+        const expectedAdmitted = `${todayPretty} · ${timePart}`;
+        if (p.admitted !== expectedAdmitted) {
+          p.admitted = expectedAdmitted;
+          updatedPatients = true;
+        }
+      }
+    });
+    if (updatedPatients) {
+      localStorage.setItem('saronil_patients', JSON.stringify(state.patients));
+    }
     
     state.appointments = JSON.parse(localStorage.getItem('saronil_appointments')) || [];
     state.admissions = JSON.parse(localStorage.getItem('saronil_admissions')) || [];
@@ -773,7 +1259,113 @@ function seedState() {
     state.labOrders = JSON.parse(localStorage.getItem('saronil_labOrders')) || [];
     state.radOrders = JSON.parse(localStorage.getItem('saronil_radOrders')) || [];
     state.bedsStatus = JSON.parse(localStorage.getItem('saronil_bedsStatus')) || {};
+    state.bedAuditLogs = JSON.parse(localStorage.getItem('saronil_bedAuditLogs')) || [];
+    if (state.bedAuditLogs.length === 0) {
+      state.bedAuditLogs = [
+        {
+          timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
+          patientId: "SH-2026-04821",
+          encounterId: "ENC-10041",
+          bedId: "GW(M)-410",
+          wardKey: "GENERAL-WARD-M",
+          prevStatus: "Available",
+          newStatus: "Occupied",
+          action: "Allocation",
+          user: "ATD Coordinator",
+          role: "ATD Executive",
+          reason: "New Admission Intake",
+          remarks: "Admitted Rajesh Kumar to general bed GW(M)-410"
+        },
+        {
+          timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+          patientId: "SH-2026-04850",
+          encounterId: "ENC-10022",
+          bedId: "GW(M)-409",
+          wardKey: "GENERAL-WARD-M",
+          prevStatus: "Occupied",
+          newStatus: "Dirty",
+          action: "Release",
+          user: "ATD Coordinator",
+          role: "ATD Executive",
+          reason: "Discharge checkout",
+          remarks: "Bed GW(M)-409 released post-discharge of Rajan Pillai"
+        },
+        {
+          timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
+          patientId: null,
+          encounterId: null,
+          bedId: "PVT-201",
+          wardKey: "PRIVATE",
+          prevStatus: "Dirty",
+          newStatus: "Cleaning",
+          action: "Status Correction",
+          user: "Nursing Supervisor",
+          role: "Nurse Lead",
+          reason: "Housekeeping trigger",
+          remarks: "Began daily isolation clean protocol"
+        },
+        {
+          timestamp: new Date(Date.now() - 300 * 60000).toISOString(),
+          patientId: null,
+          encounterId: null,
+          bedId: "DELUXE-401",
+          wardKey: "DELUXE",
+          prevStatus: "Available",
+          newStatus: "Blocked",
+          action: "Status Correction",
+          user: "Administrator",
+          role: "MS Admin",
+          reason: "AC maintenance repair",
+          remarks: "Bed DELUXE-401 blocked for AC servicing"
+        }
+      ];
+      localStorage.setItem('saronil_bedAuditLogs', JSON.stringify(state.bedAuditLogs));
+    }
+    state.bedActivityLogs = JSON.parse(localStorage.getItem('saronil_bedActivityLogs')) || [];
+    if (state.bedActivityLogs.length === 0) {
+      seedBedActivityLogs();
+    }
     state.daycareAdmissions = JSON.parse(localStorage.getItem('saronil_daycare_admissions')) || [];
+    
+    state.reportCatalog = JSON.parse(localStorage.getItem('saronil_report_catalog'));
+    state.reportAuditLogs = JSON.parse(localStorage.getItem('saronil_report_audit_logs'));
+    state.fieldExposures = JSON.parse(localStorage.getItem('saronil_field_exposures'));
+    state.reportSchedules = JSON.parse(localStorage.getItem('saronil_report_schedules'));
+    state.customReportTemplates = JSON.parse(localStorage.getItem('saronil_custom_templates'));
+    state.reportArchive = JSON.parse(localStorage.getItem('saronil_report_archive'));
+    
+    if (!state.reportCatalog || !state.reportAuditLogs || !state.fieldExposures || !state.reportSchedules || !state.customReportTemplates || !state.reportArchive) {
+      seedReports();
+    }
+
+    state.outstandingBills = JSON.parse(localStorage.getItem('saronil_outstandingBills')) || [];
+    state.followUpLogs = JSON.parse(localStorage.getItem('saronil_followUpLogs')) || [];
+    state.writeOffRecords = JSON.parse(localStorage.getItem('saronil_writeOffRecords')) || [];
+    state.suspenseReceipts = JSON.parse(localStorage.getItem('saronil_suspenseReceipts')) || [];
+    state.matchAttemptLogs = JSON.parse(localStorage.getItem('saronil_matchAttemptLogs')) || [];
+    state.bulkAllocations = JSON.parse(localStorage.getItem('saronil_bulkAllocations')) || [];
+    state.gstRateConfigs = JSON.parse(localStorage.getItem('saronil_gstRateConfigs')) || [];
+    state.gstInvoiceSeries = JSON.parse(localStorage.getItem('saronil_gstInvoiceSeries')) || [];
+    state.gstinMaster = JSON.parse(localStorage.getItem('saronil_gstinMaster')) || [];
+    state.nonBillingRevenue = JSON.parse(localStorage.getItem('saronil_nonBillingRevenue')) || [];
+    state.vendorInvoices = JSON.parse(localStorage.getItem('saronil_vendorInvoices')) || [];
+    state.gstNotices = JSON.parse(localStorage.getItem('saronil_gstNotices')) || [];
+    state.returnFilings = JSON.parse(localStorage.getItem('saronil_returnFilings')) || [];
+    state.complianceCalendar = JSON.parse(localStorage.getItem('saronil_complianceCalendar')) || [];
+    state.pantryInventory = JSON.parse(localStorage.getItem('saronil_pantryInventory')) || [];
+    state.pantryProcurement = JSON.parse(localStorage.getItem('saronil_pantryProcurement')) || null;
+    state.cafeteriaBills = JSON.parse(localStorage.getItem('saronil_cafeteriaBills')) || [];
+    state.foodSafetyLogs = JSON.parse(localStorage.getItem('saronil_foodSafetyLogs')) || null;
+    state.consumptionRecords = JSON.parse(localStorage.getItem('saronil_consumptionRecords')) || [];
+    state.pantryLocations = JSON.parse(localStorage.getItem('saronil_pantryLocations')) || [];
+    state.inventoryMovementLog = JSON.parse(localStorage.getItem('saronil_inventoryMovementLog')) || [];
+    state.pantryWIPBatches = JSON.parse(localStorage.getItem('saronil_pantryWIPBatches')) || [];
+    state.kitchenFloorStock = JSON.parse(localStorage.getItem('saronil_kitchenFloorStock')) || [];
+    state.kitchenEquipmentAssets = JSON.parse(localStorage.getItem('saronil_kitchenEquipmentAssets')) || [];
+    state.kitchenConsumableStock = JSON.parse(localStorage.getItem('saronil_kitchenConsumableStock')) || [];
+    state.wardPantryStock = JSON.parse(localStorage.getItem('saronil_wardPantryStock')) || [];
+    state.mealDeliveryLog = JSON.parse(localStorage.getItem('saronil_mealDeliveryLog')) || [];
+    state.pantryDishes = JSON.parse(localStorage.getItem('saronil_pantryDishes')) || [];
     
     console.log(`Synchronized database loaded from localStorage: ${state.patients.length} patients, ${state.doctors.length} doctors, ${state.nurses.length} nurses, ${state.staff.length} staff.`);
     return;
@@ -972,7 +1564,7 @@ function seedState() {
     {
       uhid: "SH-2026-04862", name: "Rohan Verma", age: 28, gender: "Male",
       type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
-      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      primaryConsultant: "Dr. Amit Verma", department: "General Medicine",
       payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
       alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 09:15 AM",
       vitals: { bp: "118/75", hr: 70, temp: 98.2, spo2: 99, weight: 68, bmi: 22.0, pain: 0, rr: 14 },
@@ -998,7 +1590,7 @@ function seedState() {
     {
       uhid: "SH-2026-04864", name: "Kiran Patel", age: 31, gender: "Female",
       type: "OPD", ward: "OPD Room 2", bed: "—", los: 1,
-      primaryConsultant: "Dr. Priya Nair", department: "Gynecology & Obs",
+      primaryConsultant: "Dr. Amit Verma", department: "Gynecology & Obs",
       payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
       alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 09:45 AM",
       vitals: { bp: "110/70", hr: 74, temp: 98.6, spo2: 99, weight: 55, bmi: 21.0, pain: 0, rr: 14 },
@@ -1050,7 +1642,7 @@ function seedState() {
     {
       uhid: "SH-2026-04868", name: "Asha Rao", age: 50, gender: "Female",
       type: "OPD", ward: "OPD Room 1", bed: "—", los: 1,
-      primaryConsultant: "Dr. Srinivasan", department: "General Medicine",
+      primaryConsultant: "Dr. Amit Verma", department: "General Medicine",
       payer: "Cash Tariff", payerType: "Cash", preAuthStatus: "—",
       alerts: [], newsScore: 0, status: "Checked In", lastActivity: "Registered · 10:45 AM",
       vitals: { bp: "130/85", hr: 75, temp: 98.4, spo2: 98, weight: 65, bmi: 24.3, pain: 0, rr: 16 },
@@ -1146,21 +1738,21 @@ function seedState() {
 
   // Seed canonical bed mappings for all 25 patients
   var _staticBedMap = {
-    'SH-2026-04821': { bed: 'GW(M)-409',   wardKey: 'GENERAL-WARD-M', wardName: 'General Ward (Male)' },
-    'SH-2026-04803': { bed: 'PVT-201',     wardKey: 'PRIVATE',         wardName: 'Private Room' },
-    'SH-2026-04799': { bed: 'CCU-BED-01',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
-    'SH-2026-04788': { bed: 'CCU-BED-02',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
-    'SH-2026-04810': { bed: 'GW(F)-414',   wardKey: 'GENERAL-WARD-F',  wardName: 'General Ward (Female)' },
-    'SH-2026-04790': { bed: 'CCU-BED-03',  wardKey: 'CCU',             wardName: 'Critical Care Unit' },
-    'SH-2026-04831': { bed: 'SP-301',      wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
-    'SH-2026-04768': { bed: 'SP-302',      wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
-    'SH-2026-04798': { bed: 'ICCU-BED-01', wardKey: 'ICCU',            wardName: 'Intensive Cardiac Care Unit' },
-    'SH-2026-04850': { bed: 'GW(M)-410',   wardKey: 'GENERAL-WARD-M',  wardName: 'General Ward (Male)' },
-    'SH-2026-04822': { bed: 'DC-B1',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
-    'SH-2026-04812': { bed: 'DC-B2',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
-    'SH-2026-04801': { bed: 'DC-B3',       wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
-    'SH-2026-04755': { bed: 'EMG-01',      wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' },
-    'SH-2026-04870': { bed: 'EMG-02',      wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' }
+    'SH-2026-04821': { bed: 'GWM-101-B1',  wardKey: 'GENERAL-WARD-M', wardName: 'General Ward (Male)' },
+    'SH-2026-04803': { bed: 'PVT-301',     wardKey: 'PRIVATE',         wardName: 'Private Room' },
+    'SH-2026-04799': { bed: 'CCU-B1',      wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04788': { bed: 'CCU-B2',      wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04810': { bed: 'GWF-103-B1',  wardKey: 'GENERAL-WARD-F',  wardName: 'General Ward (Female)' },
+    'SH-2026-04790': { bed: 'CCU-B3',      wardKey: 'CCU',             wardName: 'Critical Care Unit' },
+    'SH-2026-04831': { bed: 'SP-201-A',    wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
+    'SH-2026-04768': { bed: 'SP-201-B',    wardKey: 'SEMI-PRIVATE',    wardName: 'Semi-Private Ward' },
+    'SH-2026-04798': { bed: 'ICCU-B1',     wardKey: 'ICCU',            wardName: 'Intensive Cardiac Care Unit' },
+    'SH-2026-04850': { bed: 'GWM-101-B2',  wardKey: 'GENERAL-WARD-M',  wardName: 'General Ward (Male)' },
+    'SH-2026-04822': { bed: 'DC-BED-1',    wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04812': { bed: 'DC-BED-2',    wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04801': { bed: 'DC-BED-3',    wardKey: 'DAYCARE',         wardName: 'Daycare Unit' },
+    'SH-2026-04755': { bed: 'ER-1-B1',     wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' },
+    'SH-2026-04870': { bed: 'ER-1-B2',     wardKey: 'EMERGENCY',       wardName: 'Emergency Ward' }
   };
 
   state.patients.forEach(function(p, idx) {
@@ -1290,7 +1882,452 @@ function seedState() {
   localStorage.setItem('saronil_nurses', JSON.stringify(state.nurses));
   localStorage.setItem('saronil_staff', JSON.stringify(state.staff));
 
+  // Seed reports and MIS datasets
+  seedReports();
+  seedBillingGapModules();
+
   console.log(`Synchronized database seeded successfully: ${state.patients.length} patients, ${state.doctors.length} doctors, ${state.nurses.length} nurses, ${state.staff.length} staff.`);
+
+  function seedReports() {
+    if (!state.reportCatalog || state.reportCatalog.length === 0) {
+      state.reportCatalog = [
+        {
+          report_id: "REP001",
+          name: "Billing & Revenue Summary",
+          category: "Financial/Revenue Cycle",
+          source_module: "billing",
+          default_filters: "date_range",
+          output_formats: ["CSV", "PDF"],
+          frequency_type: "on-demand",
+          is_statutory: false
+        },
+        {
+          report_id: "REP002",
+          name: "GST Returns GSTR-1 File",
+          category: "Regulatory & Statutory Compliance",
+          source_module: "billing",
+          default_filters: "date_range",
+          output_formats: ["CSV"],
+          frequency_type: "scheduled",
+          is_statutory: true
+        },
+        {
+          report_id: "REP009",
+          name: "IPD Ward Bed Occupancy",
+          category: "Operational/Patient Flow",
+          source_module: "patients",
+          default_filters: "date_range",
+          output_formats: ["CSV", "PDF"],
+          frequency_type: "on-demand",
+          is_statutory: false
+        },
+        {
+          report_id: "REP021",
+          name: "NDPS Narcotic Register",
+          category: "Regulatory & Statutory Compliance",
+          source_module: "Pharmacy",
+          default_filters: "date_range",
+          output_formats: ["CSV"],
+          frequency_type: "scheduled",
+          is_statutory: true
+        }
+      ];
+      localStorage.setItem('saronil_report_catalog', JSON.stringify(state.reportCatalog));
+    }
+    if (!state.reportAuditLogs || state.reportAuditLogs.length === 0) {
+      state.reportAuditLogs = [
+        {
+          generated_at: new Date().toISOString(),
+          generated_by: "Dr. Amit Verma (Super Admin)",
+          report_name: "Billing & Revenue Summary",
+          output_format: "CSV"
+        },
+        {
+          generated_at: new Date().toISOString(),
+          generated_by: "Naveen Trivedi (Finance)",
+          report_name: "GST Returns GSTR-1 File",
+          output_format: "CSV"
+        }
+      ];
+      localStorage.setItem('saronil_report_audit_logs', JSON.stringify(state.reportAuditLogs));
+    }
+    if (!state.fieldExposures || state.fieldExposures.length === 0) {
+      state.fieldExposures = [
+        { module_name: "billing", field_name: "invoiceNo", sensitivity_level: "Low", exposed: true },
+        { module_name: "billing", field_name: "uhid", sensitivity_level: "Medium", exposed: true },
+        { module_name: "billing", field_name: "patientName", sensitivity_level: "Medium", exposed: true },
+        { module_name: "billing", field_name: "totalAmount", sensitivity_level: "Medium", exposed: true },
+        { module_name: "billing", field_name: "gstPaid", sensitivity_level: "Low", exposed: true },
+        { module_name: "billing", field_name: "discount", sensitivity_level: "Low", exposed: true },
+        { module_name: "patients", field_name: "name", sensitivity_level: "Medium", exposed: true },
+        { module_name: "patients", field_name: "mobile", sensitivity_level: "High", exposed: true },
+        { module_name: "patients", field_name: "allergies", sensitivity_level: "High", exposed: true },
+        { module_name: "patients", field_name: "bloodGroup", sensitivity_level: "Medium", exposed: true },
+        { module_name: "appointments", field_name: "id", sensitivity_level: "Low", exposed: true },
+        { module_name: "appointments", field_name: "doctorName", sensitivity_level: "Low", exposed: true },
+        { module_name: "appointments", field_name: "status", sensitivity_level: "Low", exposed: true }
+      ];
+      localStorage.setItem('saronil_field_exposures', JSON.stringify(state.fieldExposures));
+    }
+    if (!state.reportSchedules || state.reportSchedules.length === 0) {
+      state.reportSchedules = [
+        {
+          schedule_id: "SCH001",
+          report_id: "REP002",
+          report_name: "GST Returns GSTR-1 File",
+          frequency: "Monthly",
+          recipients: "accounts@saronil.com",
+          status: "Active",
+          last_run: "04 Jul 2026 · 08:00 PM"
+        }
+      ];
+      localStorage.setItem('saronil_report_schedules', JSON.stringify(state.reportSchedules));
+    }
+    if (!state.customReportTemplates) {
+      state.customReportTemplates = [];
+      localStorage.setItem('saronil_custom_templates', JSON.stringify(state.customReportTemplates));
+    }
+    if (!state.reportArchive || state.reportArchive.length === 0) {
+      state.reportArchive = [
+        {
+          archive_id: "ARC001",
+          name: "Billing & Revenue Summary",
+          filters_applied: "Date Range: 2026-06-01 to 2026-06-30",
+          generated_by: "Naveen Trivedi (Finance)",
+          generated_at: new Date().toISOString(),
+          record_count: 145,
+          output_format: "CSV"
+        },
+        {
+          archive_id: "ARC002",
+          name: "GST Returns GSTR-1 File",
+          filters_applied: "Month: June 2026",
+          generated_by: "Naveen Trivedi (Finance)",
+          generated_at: new Date().toISOString(),
+          record_count: 145,
+          output_format: "CSV"
+        }
+      ];
+      localStorage.setItem('saronil_report_archive', JSON.stringify(state.reportArchive));
+    }
+  }
+
+  function seedBillingGapModules() {
+    if (!localStorage.getItem('saronil_outstandingBills') || !localStorage.getItem('saronil_suspenseReceipts')) {
+      state.outstandingBills = [
+        { bill_id: "INV-8021", UHID: "SH-2026-04821", patient_name: "Rajesh Kumar", admission_type: "IPD", bill_amount: 42500, amount_received: 30000, balance_due: 12500, bill_date: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0], payer_type: "Insurance", reason_code: "TPA pending", aging_days: 5, status: "Unpaid", assigned_executive: "Executive Ankit" },
+        { bill_id: "INV-8022", UHID: "SH-2026-04799", patient_name: "Mohammed Iqbal", admission_type: "IPD", bill_amount: 78000, amount_received: 50000, balance_due: 28000, bill_date: new Date(Date.now() - 12 * 86400000).toISOString().split('T')[0], payer_type: "Insurance", reason_code: "disputed line item", aging_days: 12, status: "Unpaid", assigned_executive: "Executive Sonia" },
+        { bill_id: "INV-8023", UHID: "SH-2026-04790", patient_name: "Vikram Singh", admission_type: "IPD", bill_amount: 82000, amount_received: 10000, balance_due: 72000, bill_date: new Date(Date.now() - 22 * 86400000).toISOString().split('T')[0], payer_type: "Self Pay", reason_code: "cashless authorization pending", aging_days: 22, status: "Unpaid", assigned_executive: "Executive Ankit" },
+        { bill_id: "INV-8024", UHID: "SH-2026-04812", patient_name: "Sunita Sharma", admission_type: "IPD", bill_amount: 35000, amount_received: 5000, balance_due: 30000, bill_date: new Date(Date.now() - 45 * 86400000).toISOString().split('T')[0], payer_type: "Self Pay", reason_code: "DAMA/absconded", aging_days: 45, status: "Unpaid", assigned_executive: "Executive Sonia" },
+        { bill_id: "INV-8025", UHID: "SH-2026-04822", patient_name: "Ramesh Gupta", admission_type: "IPD", bill_amount: 95000, amount_received: 15000, balance_due: 80000, bill_date: new Date(Date.now() - 75 * 86400000).toISOString().split('T')[0], payer_type: "Self Pay", reason_code: "awaiting relative", aging_days: 75, status: "Unpaid", assigned_executive: "Executive Ankit" }
+      ];
+      state.followUpLogs = [
+        { log_id: "LOG-001", bill_id: "INV-8021", executive_id: "Executive Ankit", contact_channel: "Call", contact_date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0], notes: "Spoke to relative. They will check with TPA coordinator.", next_action_date: new Date(Date.now() + 1 * 86400000).toISOString().split('T')[0] },
+        { log_id: "LOG-002", bill_id: "INV-8024", executive_id: "Executive Sonia", contact_channel: "SMS", contact_date: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0], notes: "Sent payment reminder SMS. No response.", next_action_date: new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0] }
+      ];
+      state.writeOffRecords = [];
+      state.suspenseReceipts = [
+        { receipt_id: "REC-SUS-001", amount: 80000, receipt_date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0], payment_mode: "NEFT", payer_name: "Astra Healthcare", UTR_reference: "UTR882910X", source_account: "XXXXXXXX9021", match_status: "suggested", matched_bill_id: "INV-8025" },
+        { receipt_id: "REC-SUS-002", amount: 12500, receipt_date: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0], payment_mode: "UPI", payer_name: "Rajesh Kumar", UTR_reference: "UTR992310Y", source_account: "XXXXXXXX1102", match_status: "suggested", matched_bill_id: "INV-8021" },
+        { receipt_id: "REC-SUS-003", amount: 150000, receipt_date: new Date(Date.now() - 10 * 86400000).toISOString().split('T')[0], payment_mode: "RTGS", payer_name: "SBI Insurer Account", UTR_reference: "UTR002931Z", source_account: "XXXXXXXX4430", match_status: "unmatched", matched_bill_id: null },
+        { receipt_id: "REC-SUS-004", amount: 5000, receipt_date: new Date(Date.now() - 12 * 86400000).toISOString().split('T')[0], payment_mode: "NEFT", payer_name: "Anonymous Patient Payer", UTR_reference: "UTR112030A", source_account: "XXXXXXXX8891", match_status: "unmatched", matched_bill_id: null },
+        { receipt_id: "REC-SUS-005", amount: 112000, receipt_date: new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0], payment_mode: "NEFT", payer_name: "Star Health TPA Settlement", UTR_reference: "UTR882190B", source_account: "XXXXXXXX5500", match_status: "unmatched", matched_bill_id: null }
+      ];
+      state.matchAttemptLogs = [];
+      state.bulkAllocations = [];
+      state.gstRateConfigs = [
+        { room_category: "GENERAL-WARD-M", is_icu_type: false, daily_tariff: 1500, tax_trigger_threshold: 5000 },
+        { room_category: "GENERAL-WARD-F", is_icu_type: false, daily_tariff: 1500, tax_trigger_threshold: 5000 },
+        { room_category: "SEMI-PRIVATE", is_icu_type: false, daily_tariff: 3000, tax_trigger_threshold: 5000 },
+        { room_category: "PRIVATE", is_icu_type: false, daily_tariff: 6000, tax_trigger_threshold: 5000 },
+        { room_category: "DELUXE", is_icu_type: false, daily_tariff: 8000, tax_trigger_threshold: 5000 },
+        { room_category: "ICU", is_icu_type: true, daily_tariff: 12000, tax_trigger_threshold: 5000 }
+      ];
+      state.gstInvoiceSeries = [
+        { gst_invoice_id: "GST-INV-2026-0001", bill_id: "INV-8021", buyer_gstin: "29STARH1234F1Z9", invoice_series: "GST-INV-2026-0001", invoice_date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0] },
+        { gst_invoice_id: "GST-INV-2026-0002", bill_id: "INV-8024", buyer_gstin: null, invoice_series: "GST-INV-2026-0002", invoice_date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0] }
+      ];
+
+      state.gstinMaster = [
+        { gstin: "29AAAAA0000A1Z5", name: "Saronil Super Specialty Hospital (KA)", location: "Bengaluru, Karnataka", threshold: 20000000 },
+        { gstin: "29BBBBB1111B1Z6", name: "FertiCare IVF Center (KA)", location: "Bengaluru, Karnataka", threshold: 20000000 }
+      ];
+      state.nonBillingRevenue = [
+        { entry_id: "NBR-001", period: "2026-07", revenue_type: "Hospital Cafeteria Lease", amount: 150000, tax_classification: "Taxable (18% GST)", cgst: 13500, sgst: 13500, igst: 0, gstin: "29AAAAA0000A1Z5", date: "2026-07-01" },
+        { entry_id: "NBR-002", period: "2026-07", revenue_type: "Visitor Parking Collection", amount: 85000, tax_classification: "Taxable (18% GST)", cgst: 7650, sgst: 7650, igst: 0, gstin: "29AAAAA0000A1Z5", date: "2026-07-03" },
+        { entry_id: "NBR-003", period: "2026-07", revenue_type: "External Diagnostic Referrals", amount: 120000, tax_classification: "Exempt (0% GST)", cgst: 0, sgst: 0, igst: 0, gstin: "29AAAAA0000A1Z5", date: "2026-07-05" },
+        { entry_id: "NBR-004", period: "2026-07", revenue_type: "Scrap & Waste Sale", amount: 35000, tax_classification: "Taxable (18% GST)", cgst: 3150, sgst: 3150, igst: 0, gstin: "29AAAAA0000A1Z5", date: "2026-07-10" },
+        { entry_id: "NBR-005", period: "2026-07", revenue_type: "Staff Quarters Rent", amount: 90000, tax_classification: "Exempt (0% GST)", cgst: 0, sgst: 0, igst: 0, gstin: "29AAAAA0000A1Z5", date: "2026-07-12" },
+        { entry_id: "NBR-006", period: "2026-07", revenue_type: "Surgical Equipment Rental", amount: 200000, tax_classification: "Taxable (12% GST)", cgst: 12000, sgst: 12000, igst: 0, gstin: "29BBBBB1111B1Z6", date: "2026-07-04" }
+      ];
+      state.vendorInvoices = [
+        { invoice_id: "VND-001", vendor_gstin: "29MNO1234A1Z0", vendor_name: "Apex Pharma Distributors", invoice_number: "INV-9921", invoice_date: "2026-07-02", taxable_value: 300000, tax_amount: 36000, hsn_sac: "3004", itc_eligibility_status: "Common Credit - Rule 42/43", rcm_applicable: false, match_status: "matched" },
+        { invoice_id: "VND-002", vendor_gstin: "29XYZ5678B1Z1", vendor_name: "Star Health Insurance Ltd", invoice_number: "INS-00291", invoice_date: "2026-07-04", taxable_value: 120000, tax_amount: 21600, hsn_sac: "9971", itc_eligibility_status: "Ineligible - Sec 17(5) Blocked", rcm_applicable: false, match_status: "matched", notes: "Employee Health Insurance (Non-statutory)" },
+        { invoice_id: "VND-003", vendor_gstin: "29AAA4455C1Z2", vendor_name: "Metropolis Logistics & GTA", invoice_number: "GTA-88219", invoice_date: "2026-07-05", taxable_value: 50000, tax_amount: 2500, hsn_sac: "9965", itc_eligibility_status: "Common Credit - Rule 42/43", rcm_applicable: true, match_status: "matched", notes: "Reverse Charge - Goods Transport Agency" },
+        { invoice_id: "VND-004", vendor_gstin: "29BBB9900D1Z3", vendor_name: "MediClean Waste Sol.", invoice_number: "MCW-77218", invoice_date: "2026-07-08", taxable_value: 80000, tax_amount: 14400, hsn_sac: "9994", itc_eligibility_status: "Eligible", rcm_applicable: false, match_status: "matched" },
+        { invoice_id: "VND-005", vendor_gstin: "29CCC8877E1Z4", vendor_name: "CaterCare Catering Services", invoice_number: "CAT-3341", invoice_date: "2026-07-10", taxable_value: 45000, tax_amount: 8100, hsn_sac: "9963", itc_eligibility_status: "Ineligible - Sec 17(5) Blocked", rcm_applicable: false, match_status: "matched", notes: "Visitor Cafe/Staff lunches - Blocked under Sec 17(5)(b)(i)" },
+        { invoice_id: "VND-006", vendor_gstin: "29DDD6655F1Z5", vendor_name: "Astra Motors Ltd", invoice_number: "AST-2219", invoice_date: "2026-07-12", taxable_value: 1500000, tax_amount: 270000, hsn_sac: "8703", itc_eligibility_status: "Ineligible - Sec 17(5) Blocked", rcm_applicable: false, match_status: "matched", notes: "Director's luxury sedan - Blocked under Sec 17(5)(a)" },
+        { invoice_id: "VND-007", vendor_gstin: "29DDD6655F1Z5", vendor_name: "Astra Motors Ltd", invoice_number: "AST-2220", invoice_date: "2026-07-13", taxable_value: 2800000, tax_amount: 336000, hsn_sac: "8702", itc_eligibility_status: "Eligible", rcm_applicable: false, match_status: "matched", notes: "ICU Patient Ambulance (Exempted from 17(5) block)" },
+        { invoice_id: "VND-008", vendor_gstin: "29ERR1111A1Z9", vendor_name: "Error-prone Equipment Supplier", invoice_number: "ERR-0019", invoice_date: "2026-07-15", taxable_value: 100000, tax_amount: 18000, hsn_sac: "9018", itc_eligibility_status: "Eligible", rcm_applicable: false, match_status: "mismatched", discrepancy: "Invoice value matches but vendor has not filed GSTR-1 / missing in GSTR-2B" }
+      ];
+      state.gstNotices = [
+        { notice_id: "GST-2026-N01", notice_type: "ASMT-10 (Scrutiny of Returns)", received_date: "2026-06-18", response_deadline: "2026-07-18", assigned_to: "Kavita Iyer (Head of Accounts)", status: "Pending Response", description: "Discrepancy in GSTR-3B vs GSTR-2A input tax credit claims for FY 2025-26." },
+        { notice_id: "GST-2026-N02", notice_type: "DRC-01 (Summary of Show Cause Notice)", received_date: "2026-05-10", response_deadline: "2026-06-10", assigned_to: "Kavita Iyer (Head of Accounts)", status: "Replied (Awaiting Order)", description: "Tax demand on canteen services credit apportionment under Rule 42. Written response filed on 2026-06-08." }
+      ];
+      state.returnFilings = [
+        { return_id: "RET-2026-06-1", return_type: "GSTR-1", period: "2026-06", gstin: "29AAAAA0000A1Z5", status: "filed", filed_by: "Kavita Iyer", filed_date: "2026-07-10", ARN: "AR29072600291A", signoff_log: "Approved & Signed off by Kavita Iyer (Head of Accounts) on 2026-07-10 10:45 AM" },
+        { return_id: "RET-2026-06-2", return_type: "GSTR-3B", period: "2026-06", gstin: "29AAAAA0000A1Z5", status: "filed", filed_by: "Kavita Iyer", filed_date: "2026-07-12", ARN: "AR29072600350B", signoff_log: "Approved & Signed off by Kavita Iyer (Head of Accounts) on 2026-07-12 02:15 PM" },
+        { return_id: "RET-2026-07-1", return_type: "GSTR-1", period: "2026-07", gstin: "29AAAAA0000A1Z5", status: "draft", filed_by: "", filed_date: "", ARN: "", signoff_log: "" },
+        { return_id: "RET-2026-07-2", return_type: "GSTR-3B", period: "2026-07", gstin: "29AAAAA0000A1Z5", status: "draft", filed_by: "", filed_date: "", ARN: "", signoff_log: "" }
+      ];
+      state.complianceCalendar = [
+        { entry_id: "CAL-001", period: "2026-07", return_type: "GSTR-1", due_date: "2026-08-11", status: "Upcoming", details: "Outward supply invoice upload" },
+        { entry_id: "CAL-002", period: "2026-07", return_type: "GSTR-3B", due_date: "2026-08-20", status: "Upcoming", details: "Monthly tax consolidation, input offsets, and cash payment challan" },
+        { entry_id: "CAL-003", period: "FY 2025-26", return_type: "GSTR-9", due_date: "2026-12-31", status: "Upcoming", details: "Annual GST return consolidation" },
+        { entry_id: "CAL-004", period: "FY 2025-26", return_type: "GSTR-9C", due_date: "2026-12-31", status: "Upcoming", details: "Annual Reconciliation Statement (Statutory audit certified)" }
+      ];
+
+      state.pantryLocations = [
+        { code: "LOC-DRY-A", name: "Dry Store A", type: "Store Room", temp_category: "Ambient", department: "Dietary", capacity: "500 kg", status: "Active" },
+        { code: "LOC-DRY-B", name: "Dry Store B", type: "Store Room", temp_category: "Ambient", department: "Dietary", capacity: "300 kg", status: "Active" },
+        { code: "LOC-COLD-1", name: "Cold Storage 1", type: "Cold Storage", temp_category: "Refrigerated", department: "Dietary", capacity: "200 L", status: "Active" },
+        { code: "LOC-COLD-2", name: "Cold Storage 2", type: "Cold Storage", temp_category: "Refrigerated", department: "Dietary", capacity: "200 L", status: "Active" },
+        { code: "LOC-FREEZE-1", name: "Deep Freezer 1", type: "Deep Freezer", temp_category: "Frozen", department: "Dietary", capacity: "150 L", status: "Active" },
+        { code: "LOC-PHARM-1", name: "Pharmacy Counter A", type: "Pharmacy Counter", temp_category: "Ambient", department: "Pharmacy", capacity: "100 kg", status: "Active" }
+      ];
+
+      state.pantryInventory = [
+        { item_id: "INV-001", name: "Basmati Rice", category: "dry", batch_lot_no: "BATCH-R-01", current_stock: 120, unit: "kg", storage_location_id: "LOC-DRY-A", expiry_date: "2026-09-10", reorder_level: 50, pricing: { standard: 85, subsidized: 50, free: 0 } },
+        { item_id: "INV-001-B2", name: "Basmati Rice", category: "dry", batch_lot_no: "BATCH-R-02", current_stock: 80, unit: "kg", storage_location_id: "LOC-DRY-A", expiry_date: "2026-11-20", reorder_level: 50, pricing: { standard: 85, subsidized: 50, free: 0 } },
+        { item_id: "INV-002", name: "Fresh Milk", category: "dairy", batch_lot_no: "BATCH-M-01", current_stock: 45, unit: "L", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-13", reorder_level: 30, pricing: { standard: 60, subsidized: 35, free: 0 } },
+        { item_id: "INV-002-B2", name: "Fresh Milk", category: "dairy", batch_lot_no: "BATCH-M-02", current_stock: 60, unit: "L", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-15", reorder_level: 30, pricing: { standard: 60, subsidized: 35, free: 0 } },
+        { item_id: "INV-003", name: "Toned Curd", category: "dairy", batch_lot_no: "BATCH-C-01", current_stock: 15, unit: "kg", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-12", reorder_level: 20, pricing: { standard: 80, subsidized: 45, free: 0 } },
+        { item_id: "INV-004", name: "Chicken Breast", category: "protein", batch_lot_no: "BATCH-CH-01", current_stock: 10, unit: "kg", storage_location_id: "LOC-COLD-2", expiry_date: "2026-07-12", reorder_level: 15, pricing: { standard: 220, subsidized: 130, free: 0 } },
+        { item_id: "INV-004-B2", name: "Chicken Breast", category: "protein", batch_lot_no: "BATCH-CH-02", current_stock: 25, unit: "kg", storage_location_id: "LOC-COLD-2", expiry_date: "2026-07-16", reorder_level: 15, pricing: { standard: 220, subsidized: 130, free: 0 } },
+        { item_id: "INV-005", name: "Whole Wheat Flour", category: "dry", batch_lot_no: "BATCH-W-01", current_stock: 90, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2026-12-05", reorder_level: 40, pricing: { standard: 45, subsidized: 25, free: 0 } },
+        { item_id: "INV-006", name: "Sona Masuri Rice", category: "dry", batch_lot_no: "BATCH-SM-01", current_stock: 150, unit: "kg", storage_location_id: "LOC-DRY-A", expiry_date: "2026-10-15", reorder_level: 60, pricing: { standard: 65, subsidized: 40, free: 0 } },
+        { item_id: "INV-007", name: "Toor Dal", category: "dry", batch_lot_no: "BATCH-TD-01", current_stock: 55, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2026-09-30", reorder_level: 25, pricing: { standard: 140, subsidized: 90, free: 0 } },
+        { item_id: "INV-008", name: "Moong Dal", category: "dry", batch_lot_no: "BATCH-MD-01", current_stock: 40, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2026-10-01", reorder_level: 20, pricing: { standard: 130, subsidized: 85, free: 0 } },
+        { item_id: "INV-009", name: "Paneer / Cottage Cheese", category: "dairy", batch_lot_no: "BATCH-PN-01", current_stock: 22, unit: "kg", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-14", reorder_level: 10, pricing: { standard: 350, subsidized: 200, free: 0 } },
+        { item_id: "INV-010", name: "Eggs", category: "protein", batch_lot_no: "BATCH-EG-01", current_stock: 12, unit: "tray", storage_location_id: "LOC-COLD-2", expiry_date: "2026-07-20", reorder_level: 5, pricing: { standard: 180, subsidized: 100, free: 0 } },
+        { item_id: "INV-011", name: "Fresh Rohu Fish", category: "protein", batch_lot_no: "BATCH-RF-01", current_stock: 8, unit: "kg", storage_location_id: "LOC-FREEZE-1", expiry_date: "2026-07-18", reorder_level: 10, pricing: { standard: 280, subsidized: 180, free: 0 } },
+        { item_id: "INV-012", name: "Refined Sunflower Oil", category: "grocery", batch_lot_no: "BATCH-OIL-01", current_stock: 85, unit: "L", storage_location_id: "LOC-DRY-A", expiry_date: "2027-01-10", reorder_level: 30, pricing: { standard: 120, subsidized: 80, free: 0 } },
+        { item_id: "INV-013", name: "Sugar", category: "grocery", batch_lot_no: "BATCH-SUG-01", current_stock: 65, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2027-03-15", reorder_level: 25, pricing: { standard: 48, subsidized: 30, free: 0 } },
+        { item_id: "INV-014", name: "Iodized Salt", category: "grocery", batch_lot_no: "BATCH-SLT-01", current_stock: 30, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2028-06-01", reorder_level: 10, pricing: { standard: 25, subsidized: 15, free: 0 } },
+        { item_id: "INV-015", name: "Turmeric / Haldi Powder", category: "grocery", batch_lot_no: "BATCH-HLD-01", current_stock: 15, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2027-05-10", reorder_level: 5, pricing: { standard: 160, subsidized: 100, free: 0 } },
+        { item_id: "INV-016", name: "Whey Protein Isolate", category: "clinical", batch_lot_no: "BATCH-WPI-01", current_stock: 25, unit: "box", storage_location_id: "LOC-DRY-A", expiry_date: "2027-06-30", reorder_level: 8, pricing: { standard: 2800, subsidized: 1800, free: 0 } },
+        { item_id: "INV-017", name: "Enteral Formula", category: "clinical", batch_lot_no: "BATCH-ENT-01", current_stock: 30, unit: "tin", storage_location_id: "LOC-DRY-A", expiry_date: "2027-04-12", reorder_level: 10, pricing: { standard: 850, subsidized: 500, free: 0 } },
+        { item_id: "INV-018", name: "Ragi Flour / Finger Millet", category: "clinical", batch_lot_no: "BATCH-RGI-01", current_stock: 40, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2026-11-05", reorder_level: 15, pricing: { standard: 75, subsidized: 45, free: 0 } },
+        { item_id: "INV-019", name: "Diabetic Sweetener", category: "clinical", batch_lot_no: "BATCH-SWT-01", current_stock: 12, unit: "packet", storage_location_id: "LOC-DRY-B", expiry_date: "2027-02-28", reorder_level: 4, pricing: { standard: 140, subsidized: 90, free: 0 } },
+        { item_id: "INV-020", name: "Fresh Spinach / Palak", category: "vegetable", batch_lot_no: "BATCH-VEG-01", current_stock: 15, unit: "kg", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-14", reorder_level: 10, pricing: { standard: 40, subsidized: 25, free: 0 } },
+        { item_id: "INV-021", name: "Fresh Tomatoes", category: "vegetable", batch_lot_no: "BATCH-VEG-02", current_stock: 20, unit: "kg", storage_location_id: "LOC-COLD-1", expiry_date: "2026-07-14", reorder_level: 12, pricing: { standard: 50, subsidized: 30, free: 0 } },
+        { item_id: "INV-022", name: "Fresh Potatoes", category: "vegetable", batch_lot_no: "BATCH-VEG-03", current_stock: 50, unit: "kg", storage_location_id: "LOC-DRY-B", expiry_date: "2026-08-15", reorder_level: 20, pricing: { standard: 30, subsidized: 20, free: 0 } }
+      ];
+
+      state.inventoryMovementLog = [
+        { log_id: "IML-001", timestamp: "2026-07-10 10:15 AM", item_name: "Fresh Milk", batch_lot_no: "BATCH-M-01", quantity: 100, unit: "L", from_location: "Supplier (Mother Dairy)", to_location: "LOC-COLD-1", type: "Stock Receipt", user: "Meena S.", department: "Dietary", reason: "Standard contract purchase delivery receipt", reference: "GRN-KIT-001" },
+        { log_id: "IML-002", timestamp: "2026-07-11 08:30 AM", item_name: "Basmati Rice", batch_lot_no: "BATCH-R-01", quantity: 15, unit: "kg", from_location: "LOC-DRY-A", to_location: "Kitchen Production (Hot Kitchen)", type: "Stock Issue", user: "Meena S.", department: "Dietary", reason: "Breakfast Veg Thali preparation", reference: "IS-2407-018" }
+      ];
+
+      state.pantryProcurement = {
+        purchaseOrders: [
+          { po_id: "PO-KIT-001", vendor_id: "VND-FOOD-01", category: "dairy", item_list: "Fresh Milk × 100L", quantity: 100, contracted_rate: 60, order_date: "2026-07-08", expected_delivery_date: "2026-07-10", status: "delivered", auto_generated: false },
+          { po_id: "PO-KIT-002", vendor_id: "VND-FOOD-02", category: "dry", item_list: "Basmati Rice × 200kg", quantity: 200, contracted_rate: 85, order_date: "2026-07-09", expected_delivery_date: "2026-07-13", status: "ordered", auto_generated: false }
+        ],
+        vendorMaster: [
+          { vendor_id: "VND-FOOD-01", name: "Mother Dairy", category: "dairy", rate_contract_ref: "CON-F-001", contract_validity: "2026-12-31", rateTable: { "Fresh Milk": 60, "Toned Curd": 80 } },
+          { vendor_id: "VND-FOOD-02", name: "Reliance Retail", category: "dry", rate_contract_ref: "CON-F-002", contract_validity: "2026-10-31", rateTable: { "Basmati Rice": 85, "Whole Wheat Flour": 45 } }
+        ],
+        grnEntries: [
+          { grn_id: "GRN-KIT-001", po_id: "PO-KIT-001", item_id: "INV-002", quantity_received: 100, quality_check_status: "pass", temperature_check: "3.2°C", rejection_reason: null, received_by: "Meena S.", received_at: "2026-07-10 09:30 AM" }
+        ]
+      };
+
+      state.cafeteriaBills = [
+        { bill_id: "POS-001", payer_type: "visitor", staff_id: null, amount: 150, subsidy_applied: 0, payment_mode: "cash", cashier_id: "KIT04", timestamp: "2026-07-11 11:30 AM" },
+        { bill_id: "POS-002", payer_type: "staff", staff_id: "KIT01", amount: 100, subsidy_applied: 50, payment_mode: "payroll deduction", cashier_id: "KIT04", timestamp: "2026-07-11 12:15 PM" }
+      ];
+
+      state.foodSafetyLogs = {
+        fssaiLicense: { license_no: "FSSAI-12345678901234", expiry_date: "2026-09-30", renewal_status: "Active" },
+        hygieneAudits: [
+          { audit_id: "AUD-F-001", date: "2026-06-15", checklist_result: "Pass (92/100)", next_due_date: "2026-07-15", remarks: "Minor sanitation issue resolved." }
+        ],
+        haccpTemps: [
+          { log_id: "HC-001", storage_unit: "Cold Storage 1", temperature: 3.5, logged_at: "2026-07-11 08:00 AM", breach_flag: false, status: "OK" },
+          { log_id: "HC-002", storage_unit: "Cold Storage 2", temperature: 6.2, logged_at: "2026-07-11 10:00 AM", breach_flag: true, status: "Breach", corrective_action: null }
+        ],
+        otherRecords: {
+          pestControl: { lastDate: "2026-06-10", nextDate: "2026-07-10", status: "Done" },
+          waterPotability: { lastDate: "2026-05-15", result: "Safe", status: "Done" },
+          fireSafety: { lastDate: "2026-04-10", status: "Done" }
+        }
+      };
+
+      state.consumptionRecords = [
+        { record_id: "CON-001", date: "2026-07-10", meal_slot: "Lunch", item_id: "INV-001", expected_qty: 40, actual_issued_qty: 42, variance: 5, reviewed_by: "Ananya R." },
+        { record_id: "CON-002", date: "2026-07-10", meal_slot: "Dinner", item_id: "INV-001", expected_qty: 35, actual_issued_qty: 39, variance: 11.4, reviewed_by: null }
+      ];
+
+      state.pantryWIPBatches = [
+        { batch_id: "WIP-001", item_name: "Marinated Chicken", prepared_by: "Chef Ravi", prepared_at: "2026-07-11 10:00 AM", quantity: 15, unit: "kg", use_by_window: "2026-07-12 10:00 AM", status: "Active", source_movement_id: "IML-003" },
+        { batch_id: "WIP-002", item_name: "Chopped Salad base", prepared_by: "Sunita K.", prepared_at: "2026-07-11 08:00 AM", quantity: 10, unit: "kg", use_by_window: "2026-07-11 08:00 PM", status: "Expired", source_movement_id: "IML-004" }
+      ];
+
+      state.kitchenFloorStock = [
+        { record_id: "KFS-001", item_id: "INV-001", shift: "Morning", date: "2026-07-11", opening_stock: 10, issued_qty: 30, consumed_qty: 35, closing_stock: 5, variance: 0, reviewed_by: "Floor Supervisor Rajesh" }
+      ];
+
+      state.kitchenEquipmentAssets = [
+        { asset_id: "EQ-001", asset_type: "equipment", name: "Commercial Oven A", location: "Hot Kitchen Floor", install_or_refill_date: "2025-05-10", last_check_date: "2026-05-10", next_check_due: "2026-08-10", status: "Active" },
+        { asset_id: "EQ-002", asset_type: "equipment", name: "Dishwasher Unit B", location: "Cleaning Zone", install_or_refill_date: "2025-08-15", last_check_date: "2026-02-15", next_check_due: "2026-05-15", status: "Overdue Maintenance" },
+        { asset_id: "EQ-003", asset_type: "lpg_cylinder", name: "LPG Gas Cylinder 1", location: "Gas Bank Room A", install_or_refill_date: "2026-06-01", last_check_date: "2026-06-01", next_check_due: "2026-07-01", status: "Active" },
+        { asset_id: "EQ-004", asset_type: "lpg_cylinder", name: "LPG Gas Cylinder 2 (Backup)", location: "Gas Bank Room A", install_or_refill_date: "2026-05-01", last_check_date: "2026-05-01", next_check_due: "2026-06-01", status: "Active (Overdue Safety Check)" }
+      ];
+
+      state.kitchenConsumableStock = [
+        { item_id: "CON-001", category: "crockery", total_count_or_stock: 150, in_use_or_reorder_level: 120, lost_broken_count: 5, last_audit_date: "2026-07-05" },
+        { item_id: "CON-002", category: "cutlery", total_count_or_stock: 300, in_use_or_reorder_level: 250, lost_broken_count: 12, last_audit_date: "2026-07-05" },
+        { item_id: "CON-003", category: "trolleys", total_count_or_stock: 15, in_use_or_reorder_level: 12, lost_broken_count: 0, last_audit_date: "2026-07-05" }
+      ];
+
+      state.wardPantryStock = [
+        { item_id: "INV-002", ward: "GW(M)", current_stock: 10, par_level: 20 },
+        { item_id: "INV-002", ward: "GW(F)", current_stock: 15, par_level: 20 }
+      ];
+
+      state.mealDeliveryLog = [
+        { log_id: "MDL-001", uhid: "SH-2026-04821", ward_bed: "GW(M)-409", meal_slot: "Breakfast", dispatched_by: "Chef Ravi", dispatched_at: "2026-07-11 07:45 AM", delivery_confirmed_by: "Nurse Priya", delivered_at: "2026-07-11 07:55 AM", wastage_qty: 0, wastage_reason: "" }
+      ];
+
+      state.pantryDishes = [
+        // Patient therapeutic diets
+        { dish_id: "DISH-P01", name: "High Protein Veg Thali", segment: "patient", price: { standard: 150, subsidized: 0, free: 0 }, tax_rate: 0, diet_type: "High Protein", allergens: ["dairy", "gluten"], nutritional: { calories: 650, protein: "32g", carbs: "80g", fat: "14g" }, bom: [{ item_id: "INV-001", qty: 100 }, { item_id: "INV-009", qty: 80 }, { item_id: "INV-020", qty: 50 }] },
+        { dish_id: "DISH-P02", name: "Low-Sodium Renal Khichdi", segment: "patient", price: { standard: 100, subsidized: 0, free: 0 }, tax_rate: 0, diet_type: "Renal", allergens: ["none"], nutritional: { calories: 350, protein: "12g", carbs: "65g", fat: "4g" }, bom: [{ item_id: "INV-001", qty: 80 }, { item_id: "INV-008", qty: 40 }] },
+        { dish_id: "DISH-P03", name: "Diabetic Ragi Porridge", segment: "patient", price: { standard: 90, subsidized: 0, free: 0 }, tax_rate: 0, diet_type: "Diabetic", allergens: ["none"], nutritional: { calories: 280, protein: "8g", carbs: "55g", fat: "3g" }, bom: [{ item_id: "INV-018", qty: 60 }, { item_id: "INV-019", qty: 5 }] },
+        { dish_id: "DISH-P04", name: "Soft Clear Liquid Diet", segment: "patient", price: { standard: 70, subsidized: 0, free: 0 }, tax_rate: 0, diet_type: "Liquid", allergens: ["none"], nutritional: { calories: 120, protein: "2g", carbs: "28g", fat: "0g" }, bom: [{ item_id: "INV-013", qty: 10 }] },
+
+        // Cafeteria items - Customer segment
+        { dish_id: "DISH-C01", name: "Veg Lunch Thali", segment: "cafeteria_customer", price: { standard: 120, subsidized: 60, free: 0 }, tax_rate: 18, diet_type: "Regular", allergens: ["gluten", "dairy"], nutritional: { calories: 750, protein: "18g", carbs: "110g", fat: "22g" }, bom: [{ item_id: "INV-001", qty: 120 }, { item_id: "INV-005", qty: 80 }] },
+        { dish_id: "DISH-C02", name: "Non-Veg Lunch Thali", segment: "cafeteria_customer", price: { standard: 150, subsidized: 80, free: 0 }, tax_rate: 18, diet_type: "Regular", allergens: ["gluten", "egg"], nutritional: { calories: 850, protein: "42g", carbs: "110g", fat: "28g" }, bom: [{ item_id: "INV-001", qty: 120 }, { item_id: "INV-004", qty: 150 }] },
+        { dish_id: "DISH-C03", name: "South Indian Breakfast", segment: "cafeteria_customer", price: { standard: 60, subsidized: 30, free: 0 }, tax_rate: 12, diet_type: "Regular", allergens: ["none"], nutritional: { calories: 420, protein: "9g", carbs: "72g", fat: "10g" }, bom: [{ item_id: "INV-001", qty: 60 }] },
+        { dish_id: "DISH-C04", name: "Tea / Filter Coffee", segment: "cafeteria_customer", price: { standard: 20, subsidized: 10, free: 0 }, tax_rate: 5, diet_type: "Regular", allergens: ["dairy"], nutritional: { calories: 90, protein: "3g", carbs: "12g", fat: "3g" }, bom: [{ item_id: "INV-002", qty: 150 }] },
+        { dish_id: "DISH-C05", name: "Fresh Fruit Juice", segment: "cafeteria_customer", price: { standard: 50, subsidized: 25, free: 0 }, tax_rate: 12, diet_type: "Regular", allergens: ["none"], nutritional: { calories: 150, protein: "1g", carbs: "35g", fat: "0g" }, bom: [] },
+
+        // Cafeteria items - Staff segment
+        { dish_id: "DISH-S01", name: "Staff Special Meals", segment: "cafeteria_staff", price: { standard: 100, subsidized: 80, free: 0 }, tax_rate: 18, diet_type: "Regular", allergens: ["gluten", "dairy"], nutritional: { calories: 720, protein: "16g", carbs: "105g", fat: "20g" }, bom: [{ item_id: "INV-001", qty: 100 }, { item_id: "INV-005", qty: 60 }] },
+        { dish_id: "DISH-S02", name: "Staff Egg / Veg Sandwich", segment: "cafeteria_staff", price: { standard: 50, subsidized: 40, free: 0 }, tax_rate: 12, diet_type: "Regular", allergens: ["gluten", "egg", "dairy"], nutritional: { calories: 380, protein: "14g", carbs: "42g", fat: "12g" }, bom: [{ item_id: "INV-005", qty: 60 }, { item_id: "INV-010", qty: 1 }] },
+        { dish_id: "DISH-S03", name: "Staff Tea / Coffee", segment: "cafeteria_staff", price: { standard: 15, subsidized: 10, free: 0 }, tax_rate: 5, diet_type: "Regular", allergens: ["dairy"], nutritional: { calories: 80, protein: "2.5g", carbs: "10g", fat: "2.5g" }, bom: [{ item_id: "INV-002", qty: 120 }] },
+        { dish_id: "DISH-S04", name: "Staff Breakfast Tray", segment: "cafeteria_staff", price: { standard: 60, subsidized: 45, free: 0 }, tax_rate: 12, diet_type: "Regular", allergens: ["gluten", "dairy"], nutritional: { calories: 480, protein: "11g", carbs: "78g", fat: "12g" }, bom: [{ item_id: "INV-001", qty: 60 }] }
+      ];
+
+      localStorage.setItem('saronil_outstandingBills', JSON.stringify(state.outstandingBills));
+      localStorage.setItem('saronil_followUpLogs', JSON.stringify(state.followUpLogs));
+      localStorage.setItem('saronil_writeOffRecords', JSON.stringify(state.writeOffRecords));
+      localStorage.setItem('saronil_suspenseReceipts', JSON.stringify(state.suspenseReceipts));
+      localStorage.setItem('saronil_matchAttemptLogs', JSON.stringify(state.matchAttemptLogs));
+      localStorage.setItem('saronil_bulkAllocations', JSON.stringify(state.bulkAllocations));
+      localStorage.setItem('saronil_gstRateConfigs', JSON.stringify(state.gstRateConfigs));
+      localStorage.setItem('saronil_gstInvoiceSeries', JSON.stringify(state.gstInvoiceSeries));
+      localStorage.setItem('saronil_gstinMaster', JSON.stringify(state.gstinMaster));
+      localStorage.setItem('saronil_nonBillingRevenue', JSON.stringify(state.nonBillingRevenue));
+      localStorage.setItem('saronil_vendorInvoices', JSON.stringify(state.vendorInvoices));
+      localStorage.setItem('saronil_gstNotices', JSON.stringify(state.gstNotices));
+      localStorage.setItem('saronil_returnFilings', JSON.stringify(state.returnFilings));
+      localStorage.setItem('saronil_complianceCalendar', JSON.stringify(state.complianceCalendar));
+      localStorage.setItem('saronil_pantryInventory', JSON.stringify(state.pantryInventory));
+      localStorage.setItem('saronil_pantryProcurement', JSON.stringify(state.pantryProcurement));
+      localStorage.setItem('saronil_cafeteriaBills', JSON.stringify(state.cafeteriaBills));
+      localStorage.setItem('saronil_foodSafetyLogs', JSON.stringify(state.foodSafetyLogs));
+      localStorage.setItem('saronil_consumptionRecords', JSON.stringify(state.consumptionRecords));
+      localStorage.setItem('saronil_pantryLocations', JSON.stringify(state.pantryLocations));
+      localStorage.setItem('saronil_inventoryMovementLog', JSON.stringify(state.inventoryMovementLog));
+      localStorage.setItem('saronil_pantryWIPBatches', JSON.stringify(state.pantryWIPBatches));
+      localStorage.setItem('saronil_kitchenFloorStock', JSON.stringify(state.kitchenFloorStock));
+      localStorage.setItem('saronil_kitchenEquipmentAssets', JSON.stringify(state.kitchenEquipmentAssets));
+      localStorage.setItem('saronil_kitchenConsumableStock', JSON.stringify(state.kitchenConsumableStock));
+      localStorage.setItem('saronil_wardPantryStock', JSON.stringify(state.wardPantryStock));
+      localStorage.setItem('saronil_mealDeliveryLog', JSON.stringify(state.mealDeliveryLog));
+      localStorage.setItem('saronil_pantryDishes', JSON.stringify(state.pantryDishes));
+    } else {
+      state.outstandingBills = JSON.parse(localStorage.getItem('saronil_outstandingBills')) || [];
+      state.followUpLogs = JSON.parse(localStorage.getItem('saronil_followUpLogs')) || [];
+      state.writeOffRecords = JSON.parse(localStorage.getItem('saronil_writeOffRecords')) || [];
+      state.suspenseReceipts = JSON.parse(localStorage.getItem('saronil_suspenseReceipts')) || [];
+      state.matchAttemptLogs = JSON.parse(localStorage.getItem('saronil_matchAttemptLogs')) || [];
+      state.bulkAllocations = JSON.parse(localStorage.getItem('saronil_bulkAllocations')) || [];
+      state.gstRateConfigs = JSON.parse(localStorage.getItem('saronil_gstRateConfigs')) || [];
+      state.gstInvoiceSeries = JSON.parse(localStorage.getItem('saronil_gstInvoiceSeries')) || [];
+      state.gstinMaster = JSON.parse(localStorage.getItem('saronil_gstinMaster')) || [];
+      state.nonBillingRevenue = JSON.parse(localStorage.getItem('saronil_nonBillingRevenue')) || [];
+      state.vendorInvoices = JSON.parse(localStorage.getItem('saronil_vendorInvoices')) || [];
+      state.gstNotices = JSON.parse(localStorage.getItem('saronil_gstNotices')) || [];
+      state.returnFilings = JSON.parse(localStorage.getItem('saronil_returnFilings')) || [];
+      state.complianceCalendar = JSON.parse(localStorage.getItem('saronil_complianceCalendar')) || [];
+      state.pantryInventory = JSON.parse(localStorage.getItem('saronil_pantryInventory')) || [];
+      state.pantryProcurement = JSON.parse(localStorage.getItem('saronil_pantryProcurement')) || null;
+      state.cafeteriaBills = JSON.parse(localStorage.getItem('saronil_cafeteriaBills')) || [];
+      state.foodSafetyLogs = JSON.parse(localStorage.getItem('saronil_foodSafetyLogs')) || null;
+      state.consumptionRecords = JSON.parse(localStorage.getItem('saronil_consumptionRecords')) || [];
+      state.pantryLocations = JSON.parse(localStorage.getItem('saronil_pantryLocations')) || [];
+      state.inventoryMovementLog = JSON.parse(localStorage.getItem('saronil_inventoryMovementLog')) || [];
+      state.pantryWIPBatches = JSON.parse(localStorage.getItem('saronil_pantryWIPBatches')) || [];
+      state.kitchenFloorStock = JSON.parse(localStorage.getItem('saronil_kitchenFloorStock')) || [];
+      state.kitchenEquipmentAssets = JSON.parse(localStorage.getItem('saronil_kitchenEquipmentAssets')) || [];
+      state.kitchenConsumableStock = JSON.parse(localStorage.getItem('saronil_kitchenConsumableStock')) || [];
+      state.wardPantryStock = JSON.parse(localStorage.getItem('saronil_wardPantryStock')) || [];
+      state.mealDeliveryLog = JSON.parse(localStorage.getItem('saronil_mealDeliveryLog')) || [];
+      state.pantryDishes = JSON.parse(localStorage.getItem('saronil_pantryDishes')) || [];
+    }
+  }
+
+  state.syncOutstandingBills = function() {
+    if (!state.outstandingBills) state.outstandingBills = [];
+    state.billing.forEach(b => {
+      let balance = b.amount - b.paid;
+      if (balance > 0) {
+        let ext = state.outstandingBills.find(o => o.bill_id === b.id);
+        if (!ext) {
+          let datePart = new Date(b.date);
+          let today = new Date();
+          let diffTime = Math.abs(today - datePart);
+          let agingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 0;
+          
+          let reason = "awaiting relative";
+          if (b.paymentCategory === 'Insurance') reason = "TPA pending";
+          else if (b.paymentCategory === 'CGHS' || b.paymentCategory === 'ECHS') reason = "corporate credit period";
+          
+          state.outstandingBills.push({
+            bill_id: b.id,
+            UHID: b.uhid,
+            patient_name: b.patientName || "Patient",
+            admission_type: b.visitType || 'IPD',
+            bill_amount: b.amount,
+            amount_received: b.paid,
+            balance_due: balance,
+            bill_date: b.date,
+            payer_type: b.paymentCategory || "Self Pay",
+            reason_code: reason,
+            aging_days: agingDays,
+            status: 'Unpaid',
+            assigned_executive: 'Executive Ankit'
+          });
+        } else {
+          ext.bill_amount = b.amount;
+          ext.amount_received = b.paid;
+          ext.balance_due = balance;
+          let datePart = new Date(ext.bill_date);
+          let today = new Date();
+          let diffTime = Math.abs(today - datePart);
+          ext.aging_days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 0;
+          if (ext.balance_due <= 0) {
+            ext.status = 'Closed';
+          }
+        }
+      }
+    });
+    localStorage.setItem('saronil_outstandingBills', JSON.stringify(state.outstandingBills));
+  };
 }
 
 // Expose globally
@@ -1888,6 +2925,7 @@ state.logBedMovement = function({
     reason,
     remarks
   });
+  localStorage.setItem('saronil_bedAuditLogs', JSON.stringify(state.bedAuditLogs));
 };
 
 state.triggerHousekeepingRequest = function(bedId, wardKey, notes) {
@@ -2000,85 +3038,357 @@ state.completeHousekeepingTasks = function(bedId) {
   const nowMs = Date.now();
   const timeA = new Date(nowMs - 2 * 60 * 60 * 1000).toISOString(); // 2 hours stay
   const timeB = new Date(nowMs - (10 * 60 + 15) * 60 * 1000).toISOString(); // 10h 15m stay
-  const timeC = new Date(nowMs - (12 * 60 + 5) * 60 * 1000).toISOString(); // 12h 5m stay (breached)
+  const timeC = new Date(nowMs - (12 * 60 + 15) * 60 * 1000).toISOString(); // 12h 15m stay (breached)
 
   state.daycareAdmissions.push({
+    admissionId: "DC-ADM-4822",
+    uhid: dcPatients[0].uhid,
     patient: dcPatients[0],
     bedId: "DC-B1",
-    ward: "Daycare Ward",
+    ward: "DAYCARE",
     bedNo: "DC-B1",
     consultantName: "Dr. Amit Verma",
     procedureName: "Chemotherapy Infusion",
     admissionType: "Daycare",
     admissionTimestamp: timeA,
-    status: "Registered",
-    historyLogs: [{ timestamp: timeA, action: "Daycare Bed Allocated & Registered" }],
-    tasks: [
-      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
-      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: false },
-      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: false }
+    status: "Booked",
+    payerType: "TPA Cashless",
+    tpaName: "Star Health",
+    preauthStatus: "Approved",
+    preauthAmount: 8000,
+    sedationRequired: "No",
+    npoRequiredHours: 0,
+    abha_id: "14-8002-9876-1234",
+    abha_consent_captured: true,
+    consents: [{ consent_id: "CON-4822-01", admission_id: "DC-ADM-4822", type: "procedure", signed_by: "Reception Desk", timestamp: timeA }],
+    vitalsLogs: [],
+    medicationLogs: [],
+    labRequests: [],
+    pharmacyOrders: [
+      { orderId: "PO-4822-01", drugName: "Inj. Ondansetron 4mg", dose: "4mg", route: "IV", frequency: "STAT", quantity: 2, status: "Pending", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 1.5 * 3600000).toISOString() }
+    ],
+    dischargeSummary: { instructions: '', prescription: '', doctorName: '', followUpDate: '' },
+    advanceCollected: 0,
+    isBilled: false,
+    isEscalated: false,
+    adverseEventLogs: [],
+    escalationLogs: [],
+    consumablesLogs: [],
+    siteChecks: [],
+    historyLogs: [{ timestamp: timeA, action: "Daycare Slot Booked" }, { timestamp: timeA, action: "Consent Captured (Procedure)" }, { timestamp: timeA, action: "ABHA ID linked with patient consent" }]
+  });
+
+  state.daycareAdmissions.push({
+    admissionId: "DC-ADM-4812",
+    uhid: dcPatients[1].uhid,
+    patient: dcPatients[1],
+    bedId: "DC-B2",
+    ward: "DAYCARE",
+    bedNo: "DC-B2",
+    consultantName: "Dr. Priya Nair",
+    procedureName: "Cataract Surgery",
+    admissionType: "Daycare",
+    admissionTimestamp: timeB,
+    status: "Under Treatment",
+    payerType: "TPA Cashless",
+    tpaName: "HDFC ERGO",
+    preauthStatus: "Approved",
+    preauthAmount: 15000,
+    sedationRequired: "Yes",
+    npoRequiredHours: 6,
+    abha_id: null,
+    abha_consent_captured: false,
+    consents: [
+      { consent_id: "CON-4812-01", admission_id: "DC-ADM-4812", type: "procedure", signed_by: "Reception Desk", timestamp: timeB },
+      { consent_id: "CON-4812-02", admission_id: "DC-ADM-4812", type: "anesthesia", signed_by: "Reception Desk", timestamp: timeB }
+    ],
+    vitalsLogs: [
+      { timestamp: new Date(nowMs - 9.5 * 3600000).toISOString(), BP: "125/82", pulse: 75, SpO2: 98, temp: "98.6", RespRate: 16, checkedBy: "Staff Nurse Bindu" },
+      { timestamp: new Date(nowMs - 9 * 3600000).toISOString(), BP: "123/80", pulse: 74, SpO2: 98, temp: "98.5", RespRate: 16, checkedBy: "Staff Nurse Bindu" },
+      { timestamp: new Date(nowMs - 8.5 * 3600000).toISOString(), BP: "122/80", pulse: 73, SpO2: 99, temp: "98.4", RespRate: 16, checkedBy: "Staff Nurse Bindu" },
+      { timestamp: new Date(nowMs - 8 * 3600000).toISOString(), BP: "121/78", pulse: 72, SpO2: 98, temp: "98.4", RespRate: 15, checkedBy: "Staff Nurse Bindu" }
+    ],
+    medicationLogs: [],
+    labRequests: [],
+    pharmacyOrders: [
+      { orderId: "PO-4812-01", drugName: "Inj. Midazolam 2mg", dose: "2mg", route: "IV", frequency: "STAT", quantity: 1, status: "Dispensed", batchNo: "BT-88211", expiry: "2026-12", unitCost: 85, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 9 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 8.8 * 3600000).toISOString() },
+      { orderId: "PO-4812-02", drugName: "Inj. Ondansetron 4mg", dose: "4mg", route: "IV", frequency: "OD", quantity: 2, status: "Dispensed", batchNo: "BT-77490", expiry: "2027-03", unitCost: 42, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 8.5 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 8.2 * 3600000).toISOString() }
+    ],
+    dischargeSummary: { instructions: '', prescription: '', doctorName: '', followUpDate: '' },
+    advanceCollected: 0,
+    isBilled: false,
+    isEscalated: false,
+    ordersSigned: true,
+    preTreatmentChecklist: {
+      admissionId: "DC-ADM-4812",
+      identity_confirmed: true,
+      npo_status: true,
+      consent_verified: true,
+      allergy_check_result: true,
+      baseline_vitals_ref: { BP: '124/80', pulse: 74, SpO2: 98, temp: '98.6', RespRate: 16 },
+      checked_by: 'Staff Nurse Bindu',
+      timestamp: timeB
+    },
+    treatmentSession: {
+      session_id: 'TS-DC-ADM-4812',
+      admission_id: 'DC-ADM-4812',
+      treatment_start_timestamp: timeB,
+      treatment_type: 'Cataract Surgery',
+      ordered_by: 'Dr. Priya Nair',
+      initiated_by: 'Staff Nurse Bindu'
+    },
+    adverseEventLogs: [],
+    escalationLogs: [],
+    consumablesLogs: [
+      { item: 'IV Cannula 20G', qty: 1, loggedBy: 'Staff Nurse Bindu', timestamp: new Date(nowMs - 9 * 3600000).toISOString() },
+      { item: 'Normal Saline 500ml', qty: 1, loggedBy: 'Staff Nurse Bindu', timestamp: new Date(nowMs - 9 * 3600000).toISOString() }
+    ],
+    siteChecks: [],
+    historyLogs: [
+      { timestamp: timeB, action: "Daycare Slot Booked" },
+      { timestamp: timeB, action: "Pre-Treatment Verification Checked" },
+      { timestamp: timeB, action: "Treatment Initiated" }
     ]
   });
 
   state.daycareAdmissions.push({
-    patient: dcPatients[1],
-    bedId: "DC-B2",
-    ward: "Daycare Ward",
-    bedNo: "DC-B2",
-    consultantName: "Dr. Neha Sharma",
-    procedureName: "Cataract Surgery",
-    admissionType: "Daycare",
-    admissionTimestamp: timeB,
-    status: "Tasks Updated",
-    historyLogs: [
-      { timestamp: timeB, action: "Daycare Bed Allocated & Registered" },
-      { timestamp: timeB, action: "Pre-Procedure Checklist Submitted & Locked" }
-    ],
-    tasks: [
-      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
-      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: true },
-      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: true }
-    ],
-    checklist: {
-      bp: "130/80", pulse: 72, spo2: 98, temp: "98.6", weight: 60, fasting: "Yes", fastingHours: 8, consent: "Yes", allergyFlag: "No"
-    }
-  });
-
-  state.daycareAdmissions.push({
+    admissionId: "DC-ADM-4801",
+    uhid: dcPatients[2].uhid,
     patient: dcPatients[2],
     bedId: "DC-B3",
-    ward: "Daycare Ward",
+    ward: "DAYCARE",
     bedNo: "DC-B3",
-    consultantName: "Dr. Rajesh Patel",
+    consultantName: "Dr. Srinivasan",
     procedureName: "Laparoscopic Hernia Repair",
     admissionType: "Daycare",
     admissionTimestamp: timeC,
-    status: "Post-op Monitored",
-    historyLogs: [
-      { timestamp: timeC, action: "Daycare Bed Allocated & Registered" },
-      { timestamp: timeC, action: "Pre-Procedure Checklist Submitted & Locked" },
-      { timestamp: timeC, action: "Post-op Recovery Logs Submitted & Saved" }
+    status: "Observation",
+    payerType: "Cash",
+    tpaName: "Self Pay",
+    preauthStatus: null,
+    preauthAmount: 0,
+    sedationRequired: "Yes",
+    npoRequiredHours: 8,
+    abha_id: null,
+    abha_consent_captured: false,
+    consents: [
+      { consent_id: "CON-4801-01", admission_id: "DC-ADM-4801", type: "procedure", signed_by: "Reception Desk", timestamp: timeC },
+      { consent_id: "CON-4801-02", admission_id: "DC-ADM-4801", type: "anesthesia", signed_by: "Reception Desk", timestamp: timeC }
     ],
-    tasks: [
-      { id: "vitals-1", name: "Take Pre-Op Vitals (BP, pulse, SpO2, Temp)", completed: true },
-      { id: "meds-1", name: "Verify Medication Dose and Frequency", completed: true },
-      { id: "postcheck-1", name: "Post-procedure Site Assessment", completed: true }
+    vitalsLogs: [
+      { timestamp: new Date(nowMs - 11.5 * 3600000).toISOString(), BP: "128/84", pulse: 76, SpO2: 97, temp: "98.7", RespRate: 18, checkedBy: "Sister In-charge Latha" },
+      { timestamp: new Date(nowMs - 11 * 3600000).toISOString(), BP: "126/82", pulse: 75, SpO2: 98, temp: "98.6", RespRate: 17, checkedBy: "Sister In-charge Latha" },
+      { timestamp: new Date(nowMs - 10.5 * 3600000).toISOString(), BP: "125/80", pulse: 74, SpO2: 98, temp: "98.6", RespRate: 16, checkedBy: "Sister In-charge Latha" },
+      { timestamp: new Date(nowMs - 10 * 3600000).toISOString(), BP: "124/80", pulse: 73, SpO2: 98, temp: "98.4", RespRate: 16, checkedBy: "Sister In-charge Latha" }
     ],
-    checklist: {
-      bp: "120/80", pulse: 68, spo2: 99, temp: "98.4", weight: 78, fasting: "Yes", fastingHours: 12, consent: "Yes", allergyFlag: "No"
+    medicationLogs: [],
+    labRequests: [],
+    pharmacyOrders: [
+      { orderId: "PO-4801-01", drugName: "Inj. Tramadol 50mg", dose: "50mg", route: "IM", frequency: "SOS", quantity: 2, status: "Dispensed", batchNo: "BT-55821", expiry: "2026-11", unitCost: 38, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 8 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 7.8 * 3600000).toISOString() },
+      { orderId: "PO-4801-02", drugName: "Tab. Paracetamol 500mg", dose: "500mg", route: "Oral", frequency: "TDS", quantity: 6, status: "Dispensed", batchNo: "BT-33011", expiry: "2027-06", unitCost: 5, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 4 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 3.8 * 3600000).toISOString() }
+    ],
+    dischargeSummary: { instructions: '', prescription: '', doctorName: '', followUpDate: '' },
+    advanceCollected: 5000,
+    isBilled: false,
+    isEscalated: false,
+    ordersSigned: true,
+    preTreatmentChecklist: {
+      admissionId: "DC-ADM-4801",
+      identity_confirmed: true,
+      npo_status: true,
+      consent_verified: true,
+      allergy_check_result: true,
+      baseline_vitals_ref: { BP: '130/85', pulse: 78, SpO2: 97, temp: '98.8', RespRate: 18 },
+      checked_by: 'Sister In-charge Latha',
+      timestamp: timeC
     },
-    postopCheck: {
-      bp: "118/78", pulse: 70, spo2: 98, temp: "98.2", condition: "Stable", notes: "Post-op recovery uneventful. Complaining of mild surgical site pain."
-    }
+    treatmentSession: {
+      session_id: 'TS-DC-ADM-4801',
+      admission_id: 'DC-ADM-4801',
+      treatment_start_timestamp: timeC,
+      treatment_type: 'Laparoscopic Hernia Repair',
+      ordered_by: 'Dr. Srinivasan',
+      initiated_by: 'Sister In-charge Latha'
+    },
+    endOfTreatmentAssessment: {
+      activity: 2,
+      respiration: 2,
+      circulation: 2,
+      consciousness: 2,
+      o2_saturation: 2,
+      total_score: 10,
+      recovery_signs_confirmed: true,
+      assessed_by: "Sister In-charge Latha",
+      timestamp: new Date(nowMs - 2 * 3600000).toISOString()
+    },
+    adverseEventLogs: [],
+    escalationLogs: [],
+    consumablesLogs: [
+      { item: 'IV Cannula 18G', qty: 1, loggedBy: 'Sister In-charge Latha', timestamp: timeC },
+      { item: 'Ringer Lactate 500ml', qty: 2, loggedBy: 'Sister In-charge Latha', timestamp: timeC },
+      { item: 'Surgical Drape Pack', qty: 1, loggedBy: 'Sister In-charge Latha', timestamp: timeC }
+    ],
+    siteChecks: [],
+    historyLogs: [
+      { timestamp: timeC, action: "Daycare Slot Booked" },
+      { timestamp: timeC, action: "Pre-Treatment Verification Checked" },
+      { timestamp: timeC, action: "Treatment Initiated" },
+      { timestamp: new Date(nowMs - 2 * 3600000).toISOString(), action: "End-of-Treatment Assessment Logged" }
+    ]
   });
+
+  // 4th admission: DC-B4 — Ready for Discharge — CGHS Scheme — Invoice settled pending claim
+  const timeD = new Date(nowMs - 9 * 60 * 60 * 1000).toISOString(); // 9hr stay
+  const dcPatient4 = state.patients.find(p => p.uhid === "SH-2026-03801") || { uhid: "SH-2026-03801", name: "Rajeev Shankar", age: 58, gender: "Male", mobile: "9876500321", address: "B-14, Defence Colony, Delhi", nokName: "Sunita Shankar", nokMobile: "9876500322", allergies: [], type: "Daycare" };
+  if (!state.patients.find(p => p.uhid === "SH-2026-03801")) state.patients.push(dcPatient4);
+
+  state.daycareAdmissions.push({
+    admissionId: "DC-ADM-4790",
+    uhid: dcPatient4.uhid,
+    patient: dcPatient4,
+    bedId: "DC-B4",
+    ward: "DAYCARE",
+    bedNo: "DC-B4",
+    consultantName: "Dr. Mohan Reddy",
+    procedureName: "Endoscopy Scope Evaluation",
+    admissionType: "Daycare",
+    admissionTimestamp: timeD,
+    status: "Ready for Discharge",
+    payerType: "TPA Cashless",
+    tpaName: "CGHS",
+    preauthStatus: "Approved",
+    preauthAmount: 4500,
+    sedationRequired: "Yes",
+    npoRequiredHours: 6,
+    abha_id: "23-5501-8822-9910",
+    abha_consent_captured: true,
+    consents: [
+      { consent_id: "CON-4790-01", admission_id: "DC-ADM-4790", type: "procedure", signed_by: "Reception Desk", timestamp: timeD },
+      { consent_id: "CON-4790-02", admission_id: "DC-ADM-4790", type: "anesthesia", signed_by: "Reception Desk", timestamp: timeD }
+    ],
+    vitalsLogs: [
+      { timestamp: new Date(nowMs - 8.5 * 3600000).toISOString(), BP: "130/86", pulse: 78, SpO2: 96, temp: "98.8", RespRate: 18, checkedBy: "Staff Nurse Rekha" },
+      { timestamp: new Date(nowMs - 8 * 3600000).toISOString(), BP: "128/84", pulse: 76, SpO2: 97, temp: "98.6", RespRate: 17, checkedBy: "Staff Nurse Rekha" },
+      { timestamp: new Date(nowMs - 4 * 3600000).toISOString(), BP: "126/82", pulse: 74, SpO2: 98, temp: "98.4", RespRate: 16, checkedBy: "Staff Nurse Rekha" }
+    ],
+    medicationLogs: [],
+    labRequests: [
+      { testName: "Pre-procedure CBC", status: "Completed", result: "Hb 12.4 g/dL, WBC 7800/mm³ — Normal", timestamp: new Date(nowMs - 9 * 3600000).toISOString() }
+    ],
+    pharmacyOrders: [
+      { orderId: "PO-4790-01", drugName: "Inj. Midazolam 2mg", dose: "2mg", route: "IV", frequency: "STAT", quantity: 1, status: "Dispensed", batchNo: "BT-21099", expiry: "2026-10", unitCost: 85, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 8.8 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 8.5 * 3600000).toISOString() },
+      { orderId: "PO-4790-02", drugName: "Inj. Propofol 200mg", dose: "200mg", route: "IV", frequency: "STAT", quantity: 1, status: "Dispensed", batchNo: "BT-19982", expiry: "2026-12", unitCost: 320, dispensedBy: "Pharmacist", requestedBy: "Daycare Nurse", requestedAt: new Date(nowMs - 8.7 * 3600000).toISOString(), dispensedAt: new Date(nowMs - 8.4 * 3600000).toISOString() }
+    ],
+    consumablesLogs: [
+      { item: 'IV Cannula 20G', qty: 1, loggedBy: 'Staff Nurse Rekha', timestamp: timeD },
+      { item: 'Endoscopy Scope Cover', qty: 1, loggedBy: 'Staff Nurse Rekha', timestamp: timeD }
+    ],
+    dischargeSummary: { instructions: 'Soft diet for 48 hours. Avoid NSAIDs. Follow up in 7 days.', prescription: 'Tab. Pantoprazole 40mg OD x 14 days', doctorName: 'Dr. Mohan Reddy', followUpDate: new Date(nowMs + 7 * 24 * 3600000).toISOString().split('T')[0] },
+    advanceCollected: 2000,
+    isBilled: true,
+    invoiceSummary: { grossTotal: 4930, nonTaxableAmount: 4500, taxableAmount: 502, gstAmount: 77, netPayable: 0, settledAt: new Date(nowMs - 1 * 3600000).toISOString() },
+    isEscalated: false,
+    ordersSigned: true,
+    preTreatmentChecklist: {
+      admissionId: "DC-ADM-4790",
+      identity_confirmed: true,
+      npo_status: true,
+      consent_verified: true,
+      allergy_check_result: true,
+      baseline_vitals_ref: { BP: '132/86', pulse: 80, SpO2: 96, temp: '98.8', RespRate: 18 },
+      checked_by: 'Staff Nurse Rekha',
+      timestamp: timeD
+    },
+    treatmentSession: {
+      session_id: 'TS-DC-ADM-4790',
+      admission_id: 'DC-ADM-4790',
+      treatment_start_timestamp: timeD,
+      treatment_type: 'Endoscopy Scope Evaluation',
+      ordered_by: 'Dr. Mohan Reddy',
+      initiated_by: 'Staff Nurse Rekha'
+    },
+    endOfTreatmentAssessment: {
+      activity: 2, respiration: 2, circulation: 2, consciousness: 2, o2_saturation: 2, total_score: 10,
+      recovery_signs_confirmed: true,
+      assessed_by: "Staff Nurse Rekha",
+      doctor_review_notes: "Patient fully recovered. No complications. Fit for discharge.",
+      timestamp: new Date(nowMs - 1.5 * 3600000).toISOString()
+    },
+    adverseEventLogs: [],
+    escalationLogs: [],
+    siteChecks: [],
+    historyLogs: [
+      { timestamp: timeD, action: "Daycare Slot Booked" },
+      { timestamp: timeD, action: "ABHA ID 23-5501-8822-9910 linked (Consent captured)" },
+      { timestamp: timeD, action: "Pre-Treatment Verification Checked" },
+      { timestamp: timeD, action: "Treatment Initiated" },
+      { timestamp: new Date(nowMs - 2 * 3600000).toISOString(), action: "End-of-Treatment Assessment Logged (Aldrete 10/10)" },
+      { timestamp: new Date(nowMs - 1.5 * 3600000).toISOString(), action: "Doctor Final Discharge Review Signed" },
+      { timestamp: new Date(nowMs - 1 * 3600000).toISOString(), action: "Invoice Settled (CGHS Package Rate). Claim submitted." }
+    ]
+  });
+
+  // Seed CGHS claim in claim tracker
+  if (!state.daycareClaimTracking) state.daycareClaimTracking = [];
+  state.daycareClaimTracking.push({
+    claim_id: "CLM-DC-890421",
+    admission_id: "DC-ADM-4790",
+    invoice_id: "INV-DC-ADM-4790",
+    payer_name: "CGHS",
+    patientName: dcPatient4.name,
+    uhid: dcPatient4.uhid,
+    status: "Pending",
+    invoice_amount: 4930,
+    submitted_at: new Date(nowMs - 1 * 3600000).toISOString(),
+    settled_at: null
+  });
+
+  // Seed NDPS register with one historical entry from the Hernia Repair case
+  if (!state.daycareNDPSRegister) state.daycareNDPSRegister = [];
+  state.daycareNDPSRegister.push({
+    entry_id: "NDPS-4801-01",
+    admission_id: "DC-ADM-4801",
+    drug_name: "Inj. Tramadol 50mg",
+    quantity: 2,
+    batch_no: "BT-55821",
+    expiry: "2026-11",
+    dispensed_by: "Pharmacist Ramesh Kumar",
+    patient_name: dcPatients[2].name,
+    patient_uhid: dcPatients[2].uhid,
+    doctor_id: "Dr. Srinivasan",
+    timestamp: new Date(nowMs - 7.8 * 3600000).toISOString()
+  });
+
+  // Seed rich audit trail for all 4 admissions
+  if (!state.daycareAuditLogs) state.daycareAuditLogs = [];
+  const auditBase = [
+    { timestamp: timeA, uhid: dcPatients[0].uhid, patientName: dcPatients[0].name, action: "Intake Booked", role: "Reception", previousStatus: null, newStatus: "Booked", category: "clinical", details: "Booked DC-B1 for Chemotherapy Infusion. Payer: Star Health." },
+    { timestamp: timeA, uhid: dcPatients[0].uhid, patientName: dcPatients[0].name, action: "Consent Captured", role: "Reception", category: "clinical", details: "Procedure consent obtained. ABHA ID 14-8002-9876-1234 linked with patient consent." },
+    { timestamp: timeB, uhid: dcPatients[1].uhid, patientName: dcPatients[1].name, action: "Intake Booked", role: "Reception", previousStatus: null, newStatus: "Booked", category: "clinical", details: "Booked DC-B2 for Cataract Surgery. Payer: HDFC ERGO." },
+    { timestamp: timeB, uhid: dcPatients[1].uhid, patientName: dcPatients[1].name, action: "Consent Captured", role: "Reception", category: "clinical", details: "Procedure consent + Anesthesia consent obtained." },
+    { timestamp: timeB, uhid: dcPatients[1].uhid, patientName: dcPatients[1].name, action: "Pre-Treatment Verification Completed", role: "Daycare Nurse", previousStatus: "Admitted", newStatus: "Under Treatment", category: "clinical", details: "All pre-treatment checks passed. Treatment initiated." },
+    { timestamp: new Date(nowMs - 8.8 * 3600000).toISOString(), uhid: dcPatients[1].uhid, patientName: dcPatients[1].name, action: "Drug Dispensed", role: "Pharmacist", category: "pharmacy", details: "Inj. Midazolam 2mg x1 | Batch: BT-88211 | Exp: 2026-12 | Cost: ₹85" },
+    { timestamp: timeC, uhid: dcPatients[2].uhid, patientName: dcPatients[2].name, action: "Intake Booked", role: "Reception", previousStatus: null, newStatus: "Booked", category: "clinical", details: "Booked DC-B3 for Laparoscopic Hernia Repair. Payer: Self Pay." },
+    { timestamp: timeC, uhid: dcPatients[2].uhid, patientName: dcPatients[2].name, action: "Pre-Treatment Verification Completed", role: "Daycare Nurse", previousStatus: "Admitted", newStatus: "Under Treatment", category: "clinical", details: "All checks passed. Hernia repair initiated." },
+    { timestamp: new Date(nowMs - 7.8 * 3600000).toISOString(), uhid: dcPatients[2].uhid, patientName: dcPatients[2].name, action: "Drug Dispensed", role: "Pharmacist", category: "pharmacy", details: "Inj. Tramadol 50mg x2 | Batch: BT-55821 | Exp: 2026-11 | Cost: ₹76" },
+    { timestamp: new Date(nowMs - 7.8 * 3600000).toISOString(), uhid: dcPatients[2].uhid, patientName: dcPatients[2].name, action: "NDPS Register Entry", role: "Pharmacist", category: "ndps", details: "NDPS/Sch-H1 drug Inj. Tramadol 50mg dispensed. Batch: BT-55821. Cross-ref Admission: DC-ADM-4801." },
+    { timestamp: timeD, uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Intake Booked", role: "Reception", previousStatus: null, newStatus: "Booked", category: "clinical", details: "Booked DC-B4 for Endoscopy Scope Evaluation. Payer: CGHS." },
+    { timestamp: timeD, uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Consent Captured", role: "Reception", category: "clinical", details: "Procedure consent + Anesthesia consent. ABHA ID 23-5501-8822-9910 linked." },
+    { timestamp: new Date(nowMs - 8.5 * 3600000).toISOString(), uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Drug Dispensed", role: "Pharmacist", category: "pharmacy", details: "Inj. Midazolam 2mg x1 | Batch: BT-21099 | Exp: 2026-10 | Cost: ₹85" },
+    { timestamp: new Date(nowMs - 1.5 * 3600000).toISOString(), uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Discharge Readiness Approved", role: "Daycare Physician", previousStatus: "Observation", newStatus: "Ready for Discharge", category: "clinical", details: "Doctor signed off fit for discharge. Aldrete 10/10." },
+    { timestamp: new Date(nowMs - 1 * 3600000).toISOString(), uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Invoice Settled", role: "Billing Desk", previousStatus: "Ready for Discharge", newStatus: "Ready for Discharge", category: "billing", details: "Gross: ₹4930 | CGHS Package: ₹4500 | Pharmacy+GST: ₹502 | Net Payable: ₹0" },
+    { timestamp: new Date(nowMs - 1 * 3600000).toISOString(), uhid: dcPatient4.uhid, patientName: dcPatient4.name, action: "Cashless Claim Submitted", role: "Billing Desk", category: "billing", details: "Claim CLM-DC-890421 submitted to CGHS for ₹4930. Discharge NOT blocked on settlement." }
+  ];
+  auditBase.forEach(e => state.daycareAuditLogs.push(e));
 
   // Assign these beds as Occupied in state.bedsStatus
   state.bedsStatus["DC-B1"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[0].uhid, notes: "Chemotherapy Infusion" };
   state.bedsStatus["DC-B2"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[1].uhid, notes: "Cataract Surgery" };
   state.bedsStatus["DC-B3"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatients[2].uhid, notes: "Laparoscopic Hernia Repair" };
+  state.bedsStatus["DC-B4"] = { wardKey: "DAYCARE", status: "Occupied", patientUhid: dcPatient4.uhid, notes: "Endoscopy (Ready for Discharge)" };
 
-  // Set DC-B4 to DC-B10 as Available
-  for (let i = 4; i <= 10; i++) {
+  // Set DC-B5 to DC-B10 as Available
+  for (let i = 5; i <= 10; i++) {
     state.bedsStatus[`DC-B${i}`] = { wardKey: "DAYCARE", status: "Available", patientUhid: null, notes: "" };
   }
 
@@ -2330,6 +3640,7 @@ state.completeHousekeepingTasks = function(bedId) {
   localStorage.setItem('saronil_hk_audit_logs', JSON.stringify(state.hkAuditLogs));
   localStorage.setItem('saronil_housekeeping_tasks', JSON.stringify(state.housekeepingTasks));
   localStorage.setItem('saronil_bedsStatus', JSON.stringify(state.bedsStatus));
+  seedBedActivityLogs();
   localStorage.setItem('saronil_laundry_linen_stock', JSON.stringify(state.laundryLinenStock));
   localStorage.setItem('saronil_laundry_batches', JSON.stringify(state.laundryBatches));
   localStorage.setItem('saronil_cssd_inventory', JSON.stringify(state.cssdInventory));
@@ -2368,5 +3679,101 @@ window.logPatientTimeline = function(uhid, event) {
   });
   // Persist immediately so timeline survives page refresh
   try { localStorage.setItem('saronil_patients', JSON.stringify(st.patients)); } catch(e) {}
+};
+
+function seedBedActivityLogs() {
+  state.bedActivityLogs = [
+    {
+      timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+      bedId: "GW(M)-409",
+      wardKey: "GENERAL-WARD-M",
+      activityType: "RELEASE",
+      patientName: "Rajan Pillai",
+      patientUhid: "SH-2026-04850",
+      performedBy: "ATD Coordinator",
+      details: "Bed GW(M)-409 vacated after discharge checkout of Rajan Pillai."
+    },
+    {
+      timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
+      bedId: "GW(M)-409",
+      wardKey: "GENERAL-WARD-M",
+      activityType: "STATUS_CHANGE",
+      patientName: "N/A",
+      patientUhid: "",
+      performedBy: "Nursing Supervisor",
+      details: "Bed GW(M)-409 status updated to Dirty. Housekeeping notified."
+    },
+    {
+      timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
+      bedId: "SP-301",
+      wardKey: "SEMI-PRIVATE",
+      activityType: "RELEASE",
+      patientName: "Deepak Verma",
+      patientUhid: "SH-2026-04755",
+      performedBy: "ATD Coordinator",
+      details: "Bed SP-301 vacated after discharge checkout of Deepak Verma."
+    },
+    {
+      timestamp: new Date(Date.now() - 3 * 3600000).toISOString(),
+      bedId: "PVT-201",
+      wardKey: "PRIVATE",
+      activityType: "STATUS_CHANGE",
+      patientName: "N/A",
+      patientUhid: "",
+      performedBy: "Nursing Supervisor",
+      details: "Bed PVT-201 status updated to Cleaning (Isolation clean in progress)."
+    },
+    {
+      timestamp: new Date(Date.now() - 5 * 3600000).toISOString(),
+      bedId: "DELUXE-401",
+      wardKey: "DELUXE",
+      activityType: "STATUS_CHANGE",
+      patientName: "N/A",
+      patientUhid: "",
+      performedBy: "Administrator",
+      details: "Bed DELUXE-401 blocked for AC servicing maintenance."
+    },
+    {
+      timestamp: new Date(Date.now() - 10 * 3600000).toISOString(),
+      bedId: "GW(M)-410",
+      wardKey: "GENERAL-WARD-M",
+      activityType: "ALLOCATION",
+      patientName: "Rajesh Kumar",
+      patientUhid: "SH-2026-04821",
+      performedBy: "ATD Coordinator",
+      details: "Allocated general bed GW(M)-410 to Rajesh Kumar on admission."
+    }
+  ];
+  localStorage.setItem('saronil_bedActivityLogs', JSON.stringify(state.bedActivityLogs));
+}
+
+state.logBedActivity = function(bedId, wardKey, activityType, patientUhid, details) {
+  state.bedActivityLogs = state.bedActivityLogs || [];
+  
+  var patName = 'N/A';
+  if (patientUhid) {
+    var p = (state.patients || []).find(pt => pt.uhid === patientUhid);
+    if (p) patName = p.name;
+  }
+  
+  var userRole = window._ipdActiveRole || state.activeUserRole || 'ATD Coordinator';
+  
+  state.bedActivityLogs.unshift({
+    timestamp: new Date().toISOString(),
+    bedId: bedId,
+    wardKey: wardKey,
+    activityType: activityType,
+    patientName: patName,
+    patientUhid: patientUhid || '',
+    performedBy: userRole,
+    details: details
+  });
+  
+  // Cap at 100 entries to prevent localstorage bloat
+  if (state.bedActivityLogs.length > 100) {
+    state.bedActivityLogs = state.bedActivityLogs.slice(0, 100);
+  }
+  
+  localStorage.setItem('saronil_bedActivityLogs', JSON.stringify(state.bedActivityLogs));
 };
 

@@ -408,8 +408,8 @@
     }
   };
 
-  window.logTripIncident = function(tripId) {
-    var reason = prompt("Describe the ambulance trip incident / delay reason:");
+  window.logTripIncident = async function(tripId) {
+    var reason = await customPrompt("Describe the ambulance trip incident / delay reason:");
     if (reason) {
       var t = window.state.ambulanceTrips.find(tr => tr.id === tripId);
       if (t) {
@@ -735,8 +735,8 @@
     renderAmbulanceDashboard(document.getElementById('main-content'));
   };
 
-  window.sendUnitToMaintenance = function (id) {
-    const reason = prompt("Enter Maintenance / Service reason field details:");
+  window.sendUnitToMaintenance = async function (id) {
+    const reason = await customPrompt("Enter Maintenance / Service reason field details:");
     if (reason) {
       var amb = window.state.ambulances.find(a => a.id === id);
       if (amb) {

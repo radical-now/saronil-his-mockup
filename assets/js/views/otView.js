@@ -361,159 +361,7 @@ function renderOTModule(container) {
   const activeTab = localStorage.getItem('saronil_ot_tab') || o.activeTab;
 
   const styles = `
-    <style>
-      :root {
-        --ot-green: #059669;    --ot-green-light: #d1fae5;
-        --ot-blue: #0C3E91;     --ot-blue-light: #dbeafe;
-        --ot-amber: #d97706;    --ot-amber-light: #fef3c7;
-        --ot-red: #dc2626;      --ot-red-light: #fee2e2;
-        --ot-purple: #7c3aed;   --ot-purple-light: #ede9fe;
-        --ot-slate: #475569;    --ot-slate-light: #f1f5f9;
-      }
-      .ot-container {
-        font-family: 'Outfit', sans-serif;
-        color: var(--text-primary);
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-      .ot-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 1rem;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .ot-tab-bar {
-        display: flex;
-        gap: 4px;
-        background: var(--bg-surface-elevated);
-        border: 1px solid var(--border-color);
-        padding: 4px;
-        border-radius: 8px;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      .ot-tab-btn {
-        background: transparent;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .ot-tab-btn.active {
-        background: var(--primary);
-        color: white;
-      }
-      .alert-strip {
-        background: var(--ot-red-light);
-        border: 1px solid var(--ot-red);
-        border-radius: 8px;
-        padding: 12px 16px;
-        color: #991b1b;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        text-align: left;
-      }
-      .alert-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8rem;
-        font-weight: 600;
-        border-bottom: 1px dashed rgba(220, 38, 38, 0.2);
-        padding-bottom: 6px;
-      }
-      .alert-item:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-      }
-      .ot-summary-strip {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 10px 16px;
-        font-size: 0.78rem;
-        font-weight: 700;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .ot-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 8px;
-        border-radius: 12px;
-      }
-      .ot-indicator.green { background: var(--ot-green-light); color: var(--ot-green); }
-      .ot-indicator.red { background: var(--ot-red-light); color: var(--ot-red); }
-      .ot-indicator.amber { background: var(--ot-amber-light); color: var(--ot-amber); }
-      .ot-indicator.orange { background: var(--ot-amber-light); color: var(--ot-amber); }
-      .ot-indicator.grey { background: var(--ot-slate-light); color: var(--ot-slate); }
-      
-      .status-badge {
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-        text-transform: uppercase;
-      }
-      .status-badge.in-ot { background: var(--ot-green-light); color: var(--ot-green); animation: pulse-green 1.5s infinite; }
-      .status-badge.blocked { background: var(--ot-red-light); color: var(--ot-red); }
-      .status-badge.ready { background: var(--ot-blue-light); color: var(--ot-blue); }
-      .status-badge.scheduled { background: var(--ot-slate-light); color: var(--ot-slate); }
-      .status-badge.done { background: var(--ot-slate-light); color: var(--ot-slate); }
-      .status-badge.cancelled { background: var(--ot-red-light); color: var(--ot-red); text-decoration: line-through; }
-      .status-badge.delayed { background: var(--ot-amber-light); color: var(--ot-amber); }
-      
-      @keyframes pulse-green {
-        0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
-        70% { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
-      }
-      .section-card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        text-align: left;
-      }
-      .section-title {
-        font-size: 0.95rem;
-        font-weight: 800;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 6px;
-        margin-bottom: 12px;
-        color: var(--primary);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      .form-grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-      }
-    </style>
+    
   `;
 
   // Filter visible tabs based on role switcher context
@@ -785,7 +633,7 @@ window.viewCaseDetails = function(id) {
   renderOTModule(document.getElementById('main-content'));
 };
 
-window.handleRowKebab = function(caseId, action) {
+window.handleRowKebab = async function(caseId, action) {
   const c = window.state.ot.scheduledCases.find(cs => cs.id === caseId);
   if (!c) return;
 
@@ -814,7 +662,7 @@ window.handleRowKebab = function(caseId, action) {
   } else if (action === 'cancel') {
     window.openCancelCaseModal(caseId);
   } else if (action === 'swap') {
-    const target = prompt("Enter target OT (OT-1, OT-2, OT-3, OT-4):", c.ot);
+    const target = await customPrompt("Enter target OT (OT-1, OT-2, OT-3, OT-4):", c.ot);
     if (target) {
       c.ot = target;
       showToast(`Case swapped to ${target}.`);
@@ -1054,6 +902,21 @@ window.addCaseToSchedule = function() {
     return;
   }
 
+  // Surgeon credentialing / OT privilege gate check
+  const surgeonName = surgeon.trim();
+  const list = window.state.staffList || [];
+  const matchedSurgeon = list.find(s => s.name.toLowerCase().includes(surgeonName.toLowerCase()));
+  if (matchedSurgeon) {
+    if (matchedSurgeon.credentialStatus === 'Expired' || matchedSurgeon.status === 'Suspended') {
+      alert(`🚫 Scheduling Blocked: Surgeon ${matchedSurgeon.name} has an expired council registration or is suspended.`);
+      return;
+    }
+    if (matchedSurgeon.otPrivileges === false) {
+      alert(`🚫 Scheduling Blocked: Surgeon ${matchedSurgeon.name} does not hold valid OT privileges.`);
+      return;
+    }
+  }
+
   const newCase = {
     id: "OT-CASE-" + (window.state.ot.scheduledCases.length + 1).toString().padStart(3, '0'),
     time: time,
@@ -1092,11 +955,11 @@ window.addCaseToSchedule = function() {
   renderOTModule(document.getElementById('main-content'));
 };
 
-window.openEmergencyCaseModal = function() {
-  const patientName = prompt("Enter Emergency Patient Name:", "Raman Nair");
+window.openEmergencyCaseModal = async function() {
+  const patientName = await customPrompt("Enter Emergency Patient Name:", "Raman Nair");
   if (!patientName) return;
 
-  if (confirm(`🚨 EMERGENCY CASE INTRUSION WARNING!\n\nAdding this emergency case will delay subsequent scheduled surgeries on the selected theatre. Notify patient families and proceed?`)) {
+  if (await customConfirm(`🚨 EMERGENCY CASE INTRUSION WARNING!\n\nAdding this emergency case will delay subsequent scheduled surgeries on the selected theatre. Notify patient families and proceed?`)) {
     const newCase = {
       id: "OT-CASE-EMG-" + (window.state.ot.scheduledCases.length + 1),
       time: "10:30",
@@ -1135,11 +998,11 @@ window.openEmergencyCaseModal = function() {
   }
 };
 
-window.openCancelCaseModal = function(caseId) {
+window.openCancelCaseModal = async function(caseId) {
   const c = window.state.ot.scheduledCases.find(cs => cs.id === caseId);
   if (!c) return;
 
-  const reason = prompt("Enter mandatory Cancellation Reason:\n(Patient unfit | Refused | Equipment failure | Surgeon unavailable | CSSD failure):", "Patient unfit (pre-op)");
+  const reason = await customPrompt("Enter mandatory Cancellation Reason:\n(Patient unfit | Refused | Equipment failure | Surgeon unavailable | CSSD failure):", "Patient unfit (pre-op)");
   if (reason) {
     c.status = 'Cancelled';
     c.cancellationReason = reason;

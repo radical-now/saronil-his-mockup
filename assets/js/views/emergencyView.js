@@ -3329,6 +3329,9 @@
       pat.ward = window.state.wards[wardKey]?.name || 'Ward';
       pat.bed = bedId;
       pat.primaryConsultant = doc;
+      pat.dischargeStatus = 'Not Initiated';
+      pat.dischargeOrder = null;
+      pat.dischargeClearances = null;
 
       window.state.emergencyPatients = window.state.emergencyPatients.filter(p => p.uhid !== uhid);
       localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));

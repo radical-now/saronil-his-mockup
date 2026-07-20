@@ -40,6 +40,9 @@ window.setDistractionFreeMode = function(active) {
 };
 
 window.views.emr = function(container, subAnchor, params) {
+  if (typeof window.syncOpdQueueWithAppointments === 'function') {
+    window.syncOpdQueueWithAppointments();
+  }
   emrContainer = container;
   
   if (params && params.start) {
@@ -47,28 +50,77 @@ window.views.emr = function(container, subAnchor, params) {
     delete params.start;
   }
 
-  if (params && params.uhid) {
-    if (!window.activeConsultationStarted) {
-      window.router.navigate(`patients?uhid=${params.uhid}`);
-      return;
-    }
-  }
-  
   if (window.activeEmrTab === undefined) window.activeEmrTab = 'queue';
-  
-  // Resolve active doctor from sidebar selection
-  const selectedDoc = (window.state && window.state.activeDoctor) ? window.state.activeDoctor : 'Dr. Amit Verma';
   
   if (window.emrSearchQuery === undefined) window.emrSearchQuery = '';
   
-  window.setDistractionFreeMode(!!window.activeConsultationStarted);
+  window.setDistractionFreeMode(true);
   
   let activeUhid = params.uhid;
   
-  // Calculate patient list counts and filter active list strictly for the selected doctor
-  let queuePatients = state.patients.filter(p => p.type === 'OPD' && (p.status === 'Checked In' || p.status === 'Registered') && p.primaryConsultant === selectedDoc);
-  let completedPatients = state.patients.filter(p => p.type === 'OPD' && p.status === 'Completed' && p.primaryConsultant === selectedDoc);
-  let cancelledPatients = state.patients.filter(p => p.type === 'OPD' && (p.status === 'Cancelled' || p.status === 'No Show') && p.primaryConsultant === selectedDoc);
+  // ── SOURCE OF TRUTH: state.appointments for today (same as OPD Queue) ──────
+  const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10);
+  const rawAppointments = (window.state && window.state.appointments) ? window.state.appointments : [];
+  const todaysAppointments = rawAppointments.filter(a => a.date === systemToday);
+
+  // Helper: enrich an appointment into a full patient object
+  function enrichPatientFromAppt(appt) {
+    const full = state.patients.find(p => p.uhid === appt.uhid);
+    if (full) {
+      full.status = appt.status;
+      full.primaryConsultant = appt.doctorName;
+      full.department = appt.spec || appt.deptName;
+      return full;
+    }
+    // Fallback patient object
+    return {
+      uhid: appt.uhid,
+      name: appt.patientName,
+      type: 'OPD',
+      status: appt.status,
+      primaryConsultant: appt.doctorName,
+      department: appt.spec || appt.deptName || 'General Medicine',
+      gender: '—',
+      age: '—',
+      ward: 'OPD',
+      bed: '—',
+      mobile: appt.mobile || '—',
+      bloodGroup: '—',
+      allergies: 'None',
+      payer: 'Self Pay',
+      payerType: 'Cash',
+      preAuthStatus: '—',
+      alerts: [],
+      flags: [],
+      vitals: { bp: '—', hr: '—', temp: '—', spo2: '—', weight: '—', bmi: '—', pain: 0, rr: '—' },
+      clinicalData: { complaint: '—', hpi: '—', examination: '—', diagnosis: '—', treatmentPlan: '—', carePlan: '—' },
+      history: { pastConditions: 'None', surgeries: 'None', familyHistory: 'None' },
+      prescriptions: [],
+      admitted: appt.time || '—',
+      opNumber: appt.id || '—',
+      ipNumber: '—',
+      newsScore: 0,
+      vitalsOverdue: false,
+      labsUnreviewed: false,
+      dischargeClearances: { clinical: false, billing: false, summaryReady: false }
+    };
+  }
+
+  // Active EMR Queue: Arrived, Waiting, In Consultation, Checked In
+  let queuePatients = todaysAppointments
+    .filter(a => a.status === 'Arrived' || a.status === 'Waiting' || a.status === 'In Consultation' || a.status === 'Checked In')
+    .filter(a => !(window.isActiveIPD ? window.isActiveIPD(a.uhid) : false)) // exclude active IPD patients
+    .map(enrichPatientFromAppt);
+
+  // Completed
+  let completedPatients = todaysAppointments
+    .filter(a => a.status === 'Completed')
+    .map(enrichPatientFromAppt);
+
+  // Cancelled or No Show
+  let cancelledPatients = todaysAppointments
+    .filter(a => a.status === 'Cancelled' || a.status === 'No Show')
+    .map(enrichPatientFromAppt);
 
   let currentTabPatients = [];
   if (window.activeEmrTab === 'queue') {
@@ -94,14 +146,32 @@ window.views.emr = function(container, subAnchor, params) {
     activeUhid = currentTabPatients[0].uhid;
   }
   
-  const activePatient = state.patients.find(p => p.uhid === activeUhid) || currentTabPatients[0];
+  const activePatient = currentTabPatients.find(p => p.uhid === activeUhid) || currentTabPatients[0];
   
   renderEMR(container, activePatient, currentTabPatients, queuePatients.length, completedPatients.length, cancelledPatients.length);
 };
 
 // Sidebar Helper Handlers
 window.sidebarSwitchDoctor = function(docName) {
+  if (window.state) {
+    window.state.activeDoctor = docName;
+  }
   window.activeEmrDoctorFilter = docName;
+  
+  // Keep the main layout sidebar selector in sync if present
+  const sidebarSelect = document.getElementById('sidebar-doctor-select');
+  if (sidebarSelect && window.state) {
+    const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...window.state.doctors];
+    const matchedDoc = docs.find(d => d.name === docName);
+    if (matchedDoc) {
+      sidebarSelect.value = matchedDoc.id;
+      localStorage.setItem('saronil_active_doctor_id', matchedDoc.id);
+      if (typeof window.updateDynamicSidebarUser === 'function') {
+        window.updateDynamicSidebarUser('doctor');
+      }
+    }
+  }
+  
   router.handleRouting();
 };
 
@@ -126,12 +196,36 @@ window.setEmrPatientStatus = function(uhid, status) {
   const patient = state.patients.find(p => p.uhid === uhid);
   if (patient) {
     patient.status = status;
+    
+    // Sync appointments
+    if (state.appointments) {
+      const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10);
+      const appt = state.appointments.find(a => a.uhid === uhid && a.date === systemToday);
+      if (appt) {
+        let apptStatus = status;
+        if (status === 'Checked In') apptStatus = 'Arrived';
+        appt.status = apptStatus;
+        localStorage.setItem('saronil_appointments', JSON.stringify(state.appointments));
+      }
+    }
+
+    // Sync opdQueue
+    if (state.opdQueue) {
+      const q = state.opdQueue.find(x => x.uhid === uhid);
+      if (q) {
+        let qStatus = status;
+        if (status === 'Checked In') qStatus = 'Waiting';
+        q.status = qStatus;
+        localStorage.setItem('saronil_opdQueue', JSON.stringify(state.opdQueue));
+      }
+    }
+
     router.handleRouting();
   }
 };
 
 window.switchEmrQueueTab = window.sidebarSwitchTab;
-window.switchEmrDoctorFilter = window.sidebarSwitchDoctor;
+window.switchEmrDoctorFilter = function() {};
 
 // Global ⌘ K / Ctrl K focus hotkey
 if (!window.hasEmrKeyListeners) {
@@ -240,6 +334,7 @@ window.printCompletedPrescription = function(uhid) {
 };
 
 function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, completedCount = 0, cancelledCount = 0) {
+  const selectedDoc = (window.state && window.state.activeDoctor) ? window.state.activeDoctor : 'Dr. Amit Verma';
   const hasActiveSepsisAlert = patient ? state.alerts.some(a => a.uhid === patient.uhid && a.status === 'Active' && a.details.includes('Sepsis')) : false;
 
   // Define modules option list
@@ -348,74 +443,22 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
 
   // Render main layout structure
   container.innerHTML = `
-    <style>
-      .emr-sidebar-tab-btn {
-        background: transparent;
-        border: none;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.8rem;
-        font-weight: 500;
-        cursor: pointer;
-        color: var(--text-secondary);
-        border-bottom: 2px solid transparent;
-        transition: all 0.2s ease;
-      }
-      .emr-sidebar-tab-btn.active {
-        color: #2563eb !important;
-        border-bottom-color: #2563eb !important;
-        font-weight: 600 !important;
-      }
-      .emr-patient-card-item {
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid var(--border-color);
-        cursor: pointer;
-        transition: background-color 0.2s;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-      .emr-patient-card-item:hover {
-        background-color: var(--bg-surface-elevated);
-      }
-      .emr-patient-card-item.selected {
-        background-color: #eff6ff !important;
-        border-left: 4px solid #2563eb;
-      }
-      .emr-dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.25rem;
-      }
-      @media (max-width: 1200px) {
-        .emr-dashboard-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .emr-dash-card {
-        background: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-      .emr-dash-card h4 {
-        margin: 0 0 0.25rem 0;
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-    </style>
+    
 
-    <div class="emr-workspace" style="display: flex; flex: 1; min-height: 0; height: 100%; margin: ${window.activeConsultationStarted ? '0' : '-1.5rem'}; overflow: hidden; background: var(--bg-body, #f3f4f6);">
+    <div class="emr-workspace" style="display: flex; flex: 1; min-height: 0; height: 100%; margin: 0; overflow: hidden; background: var(--bg-body, #f3f4f6);">
       <!-- LEFT SIDEBAR PATIENT QUEUE -->
       <aside style="width: 300px; border-right: 1px solid var(--border-color); background: var(--bg-surface); display: ${window.activeConsultationStarted ? 'none' : 'flex'}; flex-direction: column; flex-shrink: 0; height: 100%;">
-        
+        <!-- Sidebar Header with Exit -->
+        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.75rem; justify-content: flex-start; background: var(--bg-surface-elevated, #f8fafc);">
+          <button class="btn btn-secondary" onclick="window.showConsultationExitModal()" style="font-size: 0.7rem; padding: 3px 8px; font-weight: 600; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; color: #475569; display: flex; align-items: center; gap: 3px;">
+            &larr; Exit
+          </button>
+          <div style="display: flex; flex-direction: column; text-align: left;">
+            <span style="font-weight: 800; font-size: 0.75rem; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2;">OPD Consultation</span>
+            <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; margin-top: 1px;">Doctor: ${state.activeUser ? state.activeUser.name : 'Dr. Abhishek Kumar'}</span>
+          </div>
+        </div>
+
         <!-- Search -->
         <div style="padding: 0.5rem 1rem; position: relative;">
           <span style="position: absolute; left: 24px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--text-muted);">🔍</span>
@@ -486,16 +529,13 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
                   <span><strong>ABHA ID:</strong> ${patient.abhaId || '—'}</span>
                   <span><strong>Blood Group:</strong> ${patient.bloodGroup || '—'}</span>
                   <span><strong>Payer:</strong> ${patient.payer || 'Direct'}</span>
+                  <span><strong>Doctor:</strong> ${state.activeUser ? state.activeUser.name : 'Dr. Abhishek Kumar'}</span>
                 </div>
               </div>
             </div>
             
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-              ${patient.type !== 'OPD' ? `
-                <button class="btn btn-secondary" onclick="window.showStockRequestOverlay({dept: (patient.bed && patient.bed.includes('GW')) ? 'General Ward' : 'ICU'})" style="font-weight: 600; padding: 0.4rem 0.8rem; background: #1d4ed8; color: #fff; border: 1px solid rgba(255,255,255,0.25);">📦 Request Stock</button>
-              ` : ''}
               ${window.activeConsultationStarted ? `
-                <button class="btn btn-secondary" onclick="window.showConsultationExitModal('emr?uhid=${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">← Back to Dashboard</button>
                 <button class="btn btn-secondary" onclick="window.previewConsultation('${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">👁️ Preview</button>
                 <button class="btn btn-secondary" onclick="window.printConsultation('${patient.uhid}')" style="font-weight: 600; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);">🖨️ Print</button>
                 ${window.state?.activeUserRole === 'Doctor' ? `
@@ -1092,6 +1132,13 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
         <!-- Drawer content is populated dynamically -->
       </div>
     </div>
+
+    ${window.activeConsultationStarted ? `
+      <!-- Floating Exit Button completely separate from the page content -->
+      <button class="btn btn-danger" onclick="window.showConsultationExitModal('emr?uhid=${patient.uhid}')" style="position: fixed; top: 16px; right: 24px; z-index: 100000; font-weight: 700; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 6px; padding: 10px 18px; border: 1px solid rgba(0,0,0,0.15); background: #dc2626; color: #fff; cursor: pointer; font-size: 0.85rem; transition: background 0.2s, transform 0.2s; font-family: 'Inter', sans-serif;" onmouseover="this.style.transform='scale(1.03)'; this.style.background='#b91c1c';" onmouseout="this.style.transform='scale(1)'; this.style.background='#dc2626';">
+        &larr; Exit Room
+      </button>
+    ` : ''}
   `;
 
   // Focus restore for live search
@@ -1509,6 +1556,9 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
   };
 
   window.getAlternativeMedicines = function(medName) {
+    if (medName === "Febrex Plus") {
+      return ["Sinarest", "Cheston Cold", "Colgin Plus"];
+    }
     if (!window.medicationCatalog) return [];
     const currentMed = window.medicationCatalog.find(m => m.brandName === medName);
     if (!currentMed) return [];
@@ -2312,7 +2362,28 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
     });
 
     patient.status = 'Completed';
+    
+    // Also update corresponding appointment to Completed
+    if (state.appointments) {
+      const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10);
+      const appt = state.appointments.find(a => a.uhid === patient.uhid && a.date === systemToday);
+      if (appt) {
+        appt.status = 'Completed';
+        localStorage.setItem('saronil_appointments', JSON.stringify(state.appointments));
+      }
+    }
+
+    // Also update corresponding opdQueue entry to Completed
+    if (state.opdQueue) {
+      const q = state.opdQueue.find(x => x.uhid === patient.uhid);
+      if (q) {
+        q.status = 'Completed';
+        localStorage.setItem('saronil_opdQueue', JSON.stringify(state.opdQueue));
+      }
+    }
+
     if (ac.ancData) patient.ancData = ac.ancData;
+    localStorage.setItem('saronil_patients', JSON.stringify(state.patients));
 
     // Close modal and reset consultation
     const modal = document.getElementById('finish-consultation-modal');
@@ -2362,7 +2433,7 @@ function renderEMR(container, patient, currentTabPatients = [], queueCount = 0, 
 
 
 // Vitals logger
-window.logNewVitals = function(uhid) {
+window.logNewVitals = async function(uhid) {
   const patient = state.patients.find(p => p.uhid === uhid);
   if (patient) {
     const temp = document.getElementById('vit-temp').value;
@@ -2437,7 +2508,7 @@ window.logNewVitals = function(uhid) {
       showSepsisWarningModal(patient, vitalsCheck.score, vitalsCheck.reasons, vitalsCheck.message);
     } else {
       alert('Vitals updated successfully.');
-      if (confirm("Last IV NS 500ml used. Request more?")) {
+      if (await customConfirm("Last IV NS 500ml used. Request more?")) {
         window.showStockRequestOverlay({
           dept: patient.bed && patient.bed.includes('GW') ? 'General Ward' : 'ICU',
           urgency: 'Urgent',
@@ -2634,7 +2705,7 @@ function showClinicalWarningModal(patient, drug, severity, message, onOverride) 
     <div class="modal-box" style="max-width: 900px; border: 2px solid ${severity === 'Hard Stop' ? 'var(--color-danger)' : 'var(--color-warning)'}; border-radius: var(--radius-md); box-shadow: var(--shadow-lg);">
       <div class="modal-header" style="background-color: ${severity === 'Hard Stop' ? 'var(--color-danger-bg)' : 'var(--color-warning-bg)'}; color: ${severity === 'Hard Stop' ? 'var(--color-danger)' : '#b45309'}; border-bottom: 1px solid var(--border-color); padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
         <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ JCI Clinical Safety Warning</h4>
-        <span class="modal-close" style="cursor: pointer; font-size: 1.5rem; line-height: 1;" onclick="closeClinicalWarningModal()">&times;</span>
+        <span class="modal-close" style="cursor: pointer; font-size: 1.5rem; line-height: 1;" onclick="window.closeClinicalWarningModal()">&times;</span>
       </div>
       <div class="modal-body" style="padding: 1.5rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 1.25rem;">
         <div style="background-color: var(--color-warning-bg); color: #b45309; padding: 0.75rem; border-radius: 6px; font-weight: bold; text-align: center; border: 1px solid rgba(245, 158, 11, 0.2);">
@@ -2655,7 +2726,7 @@ function showClinicalWarningModal(patient, drug, severity, message, onOverride) 
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <button class="btn btn-secondary" onclick="closeClinicalWarningModal()">Cancel Prescription</button>
+          <button class="btn btn-secondary" onclick="window.closeClinicalWarningModal()">Cancel Prescription</button>
           <button class="btn btn-primary" onclick="window.tempClinicalOverride()">Acknowledge & Force Prescribe</button>
         </div>
       </div>
@@ -2687,7 +2758,7 @@ function showSepsisWarningModal(patient, score, reasons, message) {
     <div class="modal-box" style="max-width: 900px; border: 2px solid var(--color-danger); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);">
       <div class="modal-header" style="background-color: var(--color-danger-bg); color: var(--color-danger); border-bottom: 1px solid var(--border-color); padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
         <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">🚨 Sepsis Safety Alert (NEWS2 Score: ${score})</h4>
-        <span class="modal-close" style="cursor: pointer; font-size: 1.5rem; line-height: 1;" onclick="closeSepsisWarningModal()">&times;</span>
+        <span class="modal-close" style="cursor: pointer; font-size: 1.5rem; line-height: 1;" onclick="window.closeSepsisWarningModal()">&times;</span>
       </div>
       <div class="modal-body" style="padding: 1.5rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 1.25rem;">
         <div style="background-color: var(--color-danger-bg); color: var(--color-danger); padding: 0.75rem; border-radius: 6px; font-weight: bold; text-align: center; border: 1px solid rgba(239, 68, 68, 0.2);">
@@ -2710,7 +2781,7 @@ function showSepsisWarningModal(patient, score, reasons, message) {
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <button class="btn btn-secondary" onclick="closeSepsisWarningModal(); router.navigate('emr?uhid=${patient.uhid}');">Acknowledge & Close</button>
+          <button class="btn btn-secondary" onclick="window.closeSepsisWarningModal(); router.navigate('emr?uhid=${patient.uhid}');">Acknowledge & Close</button>
         </div>
       </div>
     </div>
@@ -2855,14 +2926,21 @@ window.renderAlternativeDrawer = function(selectedDrug, selectedGeneric, patient
     dosageForm = drugObj.dosageForm;
   }
 
-  let alternatives = state.inventory.pharmacy.filter(item => {
-    const matchesGeneric = item.genericName.toLowerCase() === genericName.toLowerCase();
-    const matchesSpecs = (!strength || item.strength === strength) &&
-                         (!route || item.route === route) &&
-                         (!dosageForm || item.dosageForm === dosageForm);
-    const isDifferent = !drugObj || item.code !== drugObj.code;
-    return matchesGeneric && matchesSpecs && isDifferent;
-  });
+  let alternatives = [];
+  if (drugObj && drugObj.brandName === 'Febrex Plus') {
+    alternatives = state.inventory.pharmacy.filter(item => 
+      ["Sinarest", "Cheston Cold", "Colgin Plus"].includes(item.brandName)
+    );
+  } else {
+    alternatives = state.inventory.pharmacy.filter(item => {
+      const matchesGeneric = item.genericName.toLowerCase() === genericName.toLowerCase();
+      const matchesSpecs = (!strength || item.strength === strength) &&
+                           (!route || item.route === route) &&
+                           (!dosageForm || item.dosageForm === dosageForm);
+      const isDifferent = !drugObj || item.code !== drugObj.code;
+      return matchesGeneric && matchesSpecs && isDifferent;
+    });
+  }
 
   alternatives.sort((a, b) => {
     if (a.stock !== b.stock) {
@@ -3132,6 +3210,78 @@ window.closeInventoryOverrideModal = function() {
   }
 };
 
+window.showAlternativesForFebrexEMR = function(patientUhid) {
+  const alts = state.inventory.pharmacy.filter(item => 
+    ["Sinarest", "Cheston Cold", "Colgin Plus"].includes(item.brandName)
+  );
+  const listContainer = document.getElementById('rx-autocomplete-list');
+  if (!listContainer) return;
+  
+  let html = `
+    <div style="padding: 0.4rem 0.5rem; background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #bae6fd;">
+      Alternatives for Febrex Plus:
+    </div>
+  `;
+  alts.forEach(item => {
+    html += `
+      <div class="autocomplete-item" onclick="window.selectDrugFromAutocomplete('${item.code}', '${patientUhid}')">
+        <div class="autocomplete-item-row">
+          <span class="autocomplete-brand-name">${item.brandName}</span>
+          <span class="stock-badge-indicator instock">🟢 In Stock (${item.stock})</span>
+        </div>
+        <div class="autocomplete-meta-line" style="display: flex; justify-content: space-between;">
+          <span>Gen: ${item.genericName} (${item.strength}) - ${item.dosageForm}</span>
+          <span>₹${item.price} / ${item.packSize || '10s'}</span>
+        </div>
+      </div>
+    `;
+  });
+  listContainer.innerHTML = html;
+  listContainer.style.display = 'block';
+};
+
+window.showAlternativesForGenericEMR = function(genericName, brandName, patientUhid) {
+  const alts = state.inventory.pharmacy.filter(item => 
+    item.brandName.toLowerCase() !== brandName.toLowerCase() &&
+    item.genericName.toLowerCase() === genericName.toLowerCase() &&
+    item.stock > 0
+  );
+  const listContainer = document.getElementById('rx-autocomplete-list');
+  if (!listContainer) return;
+  
+  if (alts.length === 0) {
+    listContainer.innerHTML = `
+      <div style="padding: 0.4rem 0.5rem; background: #fee2e2; color: #991b1b; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #fca5a5;">
+        No in-stock alternatives found for ${brandName}.
+      </div>
+    `;
+    listContainer.style.display = 'block';
+    return;
+  }
+
+  let html = `
+    <div style="padding: 0.4rem 0.5rem; background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #bae6fd;">
+      Alternatives for ${brandName}:
+    </div>
+  `;
+  alts.forEach(item => {
+    html += `
+      <div class="autocomplete-item" onclick="window.selectDrugFromAutocomplete('${item.code}', '${patientUhid}')">
+        <div class="autocomplete-item-row">
+          <span class="autocomplete-brand-name">${item.brandName}</span>
+          <span class="stock-badge-indicator instock">🟢 In Stock (${item.stock})</span>
+        </div>
+        <div class="autocomplete-meta-line" style="display: flex; justify-content: space-between;">
+          <span>Gen: ${item.genericName} (${item.strength}) - ${item.dosageForm}</span>
+          <span>₹${item.price} / ${item.packSize || '10s'}</span>
+        </div>
+      </div>
+    `;
+  });
+  listContainer.innerHTML = html;
+  listContainer.style.display = 'block';
+};
+
 function bindAutocompleteEvents(patient) {
   const input = document.getElementById('rx-search-input');
   const listContainer = document.getElementById('rx-autocomplete-list');
@@ -3185,11 +3335,29 @@ function bindAutocompleteEvents(patient) {
           expiryWarning = `<span style="color: var(--color-danger); font-weight: 600; margin-left: 0.5rem;">⚠️ Near Expiry</span>`;
         }
 
+        const isOOS = item.stock === 0;
+        let stockBadgeHTML = `<span class="stock-badge-indicator ${stockClass}">${stockDot} ${stockText}</span>`;
+        if (isOOS) {
+          if (item.brandName.toLowerCase() === 'febrex plus') {
+            stockBadgeHTML = `
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+                <span class="stock-badge-indicator ${stockClass}">${stockDot} ${stockText}</span>
+                <button onclick="event.stopPropagation(); window.showAlternativesForFebrexEMR('${patient.uhid}')" style="background: #e0f2fe; color: #0369a1; border: 1px solid #0284c7; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; font-weight: 700; cursor: pointer;">See Alternative</button>
+              </div>`;
+          } else {
+            stockBadgeHTML = `
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+                <span class="stock-badge-indicator ${stockClass}">${stockDot} ${stockText}</span>
+                <button onclick="event.stopPropagation(); window.showAlternativesForGenericEMR('${item.genericName.replace(/'/g, "\\'")}', '${item.brandName.replace(/'/g, "\\'")}', '${patient.uhid}')" style="background: #f3f4f6; color: #374151; border: 1px solid #9ca3af; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; font-weight: 700; cursor: pointer;">See Alternative</button>
+              </div>`;
+          }
+        }
+
         html += `
           <div class="autocomplete-item" onclick="window.selectDrugFromAutocomplete('${item.code}', '${patient.uhid}')">
             <div class="autocomplete-item-row">
               <span class="autocomplete-brand-name">${item.brandName} ${expiryWarning}</span>
-              <span class="stock-badge-indicator ${stockClass}">${stockDot} ${stockText}</span>
+              ${stockBadgeHTML}
             </div>
             <div class="autocomplete-meta-line" style="display: flex; justify-content: space-between;">
               <span>Gen: ${item.genericName} (${item.strength}) - ${item.dosageForm}</span>
@@ -3301,55 +3469,85 @@ window.updateAncField = function(field, value) {
 };
 
 window.showConsultationExitModal = function(targetHash) {
-  const patient = window.activeConsultation ? state.patients.find(p => p.uhid === window.activeConsultation.uhid) : null;
-  const hasUnsavedChanges = window.checkUnsavedChanges(patient);
-
   let modal = document.getElementById('consultation-exit-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'consultation-exit-modal';
-    modal.className = 'modal-overlay';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);z-index:10000;display:flex;align-items:center;justify-content:center;';
     document.body.appendChild(modal);
   }
 
   modal.innerHTML = `
-    <div class="modal-box" style="max-width: 500px; border-radius: 8px; box-shadow: var(--shadow-lg); overflow: hidden;">
-      <div class="modal-header" style="background-color: var(--color-warning-bg, #fffbeb); color: #b45309; border-bottom: 1px solid var(--border-color); padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-        <h4 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">⚠️ Leave Consultation?</h4>
-        <span class="modal-close" style="cursor: pointer; font-size: 1.5rem; line-height: 1;" onclick="window.closeConsultationExitModal()">&times;</span>
+    <div style="background:#fff; border-radius:12px; max-width:480px; width:90%; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); overflow:hidden; font-family: 'Inter', sans-serif;" onclick="event.stopPropagation()">
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:1.25rem 1.5rem; border-bottom:1px solid #f1f5f9;">
+        <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:#1e293b;">Confirm Exit</h3>
+        <button onclick="window.closeConsultationExitModal()" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 1.5rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 1rem;">
-        <p style="color: var(--text-primary); margin: 0; line-height: 1.5;">
-          You are currently in an active consultation session for <strong>${patient ? patient.name : 'the patient'}</strong>. Leaving will interrupt the distraction-free workspace.
-        </p>
-        
-        ${hasUnsavedChanges ? `
-          <div style="background-color: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 6px; border: 1px solid #fca5a5; font-size: 0.8rem; line-height: 1.4;">
-            <strong>Warning:</strong> You have unsaved clinical updates (e.g. symptoms, findings, prescriptions, or instructions). Exiting without saving will permanently discard these changes.
-          </div>
-        ` : `
-          <div style="background-color: var(--bg-surface-elevated); color: var(--text-secondary); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; line-height: 1.4;">
-            No unsaved changes detected.
-          </div>
-        `}
 
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-          <button class="btn btn-primary" onclick="window.confirmPauseConsultation('${patient ? patient.uhid : ''}')" style="background-color: #d97706; border: none; font-weight: 600; width: 100%; padding: 0.6rem; color: #fff;">
-            ⏸️ Pause Consultation (Save Temp State)
+      <!-- Body -->
+      <div style="padding:2rem 1.5rem 1.75rem; text-align:center;">
+        <!-- Door Icon -->
+        <div style="font-size:3rem; margin-bottom:1.5rem; display:flex; justify-content:center; align-items:center;">🚪</div>
+        
+        <!-- Messages -->
+        <div style="margin-bottom:2rem;">
+          <p style="margin:0 0 0.5rem 0; font-size:0.95rem; font-weight:600; color:#0f172a; line-height:1.4;">
+            Are you sure you want to exit the Consultation Room?
+          </p>
+          <p style="margin:0; font-size:0.85rem; color:#64748b; line-height:1.5;">
+            Any unsaved session notes or assessments in this workspace will be closed.
+          </p>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex; justify-content:center; gap:0.75rem;">
+          <button onclick="window.closeConsultationExitModal()" style="padding:0.6rem 1.25rem; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#334155; font-weight:600; font-size:0.85rem; cursor:pointer; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+            Stay in Room
           </button>
-          <button class="btn btn-danger" onclick="window.confirmExitConsultation('${targetHash}', ${hasUnsavedChanges})" style="background-color: var(--color-danger); border: none; font-weight: 600; width: 100%; padding: 0.6rem; color: #fff;">
-            🚪 Exit & Abandon Changes
-          </button>
-          <button class="btn btn-secondary" onclick="window.closeConsultationExitModal()" style="font-weight: 600; width: 100%; padding: 0.6rem;">
-            Cancel (Keep Working)
+          <button onclick="window.confirmExitRoom('${targetHash}')" style="padding:0.6rem 1.25rem; border-radius:8px; border:none; background:#dc2626; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; transition: background 0.15s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+            Yes, Exit Room
           </button>
         </div>
       </div>
     </div>
   `;
 
-  modal.classList.add('active');
   modal.style.display = 'flex';
+};
+
+window.confirmExitRoom = function(targetHash) {
+  const patient = window.activeConsultation ? state.patients.find(p => p.uhid === window.activeConsultation.uhid) : null;
+  if (patient && patient.status !== 'Completed' && patient.status !== 'Paused') {
+    patient.status = 'Checked In';
+  }
+  window.activeConsultationStarted = false;
+  if (typeof window.setDistractionFreeMode === 'function') {
+    window.setDistractionFreeMode(false);
+  }
+  window.closeConsultationExitModal();
+  
+  if (targetHash) {
+    if (window.router) {
+      window.router.navigate(targetHash);
+    } else {
+      window.location.hash = targetHash;
+    }
+  } else {
+    const persona = localStorage.getItem('saronil_active_persona') || 'doctor';
+    if (window.router) {
+      window.router.navigate('dashboard-' + persona);
+    } else {
+      window.location.hash = 'dashboard-' + persona;
+    }
+  }
+};
+
+window.closeConsultationExitModal = function() {
+  const modal = document.getElementById('consultation-exit-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
 };
 
 window.confirmPauseConsultation = function(uhid) {

@@ -231,80 +231,26 @@
 
     // Set base view structure with global styles injected
     const styles = `
-      <style>
-        .priority-emergency { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-        .priority-senior { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
-        .priority-pregnant { background-color: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8; }
-        .priority-disability { background-color: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
-        .priority-regular { background-color: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; }
-        
-        .bed-cell {
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-surface);
-          border-radius: 6px;
-          padding: 8px;
-          transition: all 0.2s ease-in-out;
-          font-size: 0.72rem;
-          min-height: 94px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          position: relative;
-        }
-        .bed-cell:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          transform: translateY(-2px);
-        }
-        .bed-status-vacant { border-left: 4px solid #10B981; }
-        .bed-status-occupied { border-left: 4px solid #3B82F6; }
-        .bed-status-critical { border-left: 4px solid #EF4444; }
-        .bed-status-reserved { border-left: 4px solid #F59E0B; }
-        .bed-status-blocked { border-left: 4px solid #6B7280; }
-        .bed-status-isolation { border-left: 4px solid #8B5CF6; }
-        
-        .alert-row {
-          padding: 10px;
-          border-radius: 6px;
-          border-left: 4px solid transparent;
-          font-size: 0.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .alert-red { background-color: #FEF2F2; border-left-color: #EF4444; color: #991B1B; border: 1px solid #FEE2E2; }
-        .alert-amber { background-color: #FFFBEB; border-left-color: #F59E0B; color: #92400E; border: 1px solid #FEF3C7; }
-        .alert-blue { background-color: #EFF6FF; border-left-color: #3B82F6; color: #1E40AF; border: 1px solid #DBEAFE; }
-        .alert-orange { background-color: #FFFAF0; border-left-color: #ED8936; color: #C05621; border: 1px solid #FEEBC8; }
-
-        .wizard-step {
-          display: none;
-        }
-        .wizard-step.active {
-          display: block;
-        }
-        .step-indicator {
-          flex: 1;
-          text-align: center;
-          padding: 8px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: var(--text-muted);
-          border-bottom: 2px solid var(--border-color);
-          transition: all 0.2s;
-        }
-        .step-indicator.active {
-          color: var(--primary);
-          border-bottom-color: var(--primary);
-        }
-        .step-indicator.completed {
-          color: #10B981;
-          border-bottom-color: #10B981;
-        }
-      </style>
+      
     `;
 
     container.innerHTML = styles + `
       <div style="padding: 12px 0;">
+        <!-- SECTION 1.5: DUTY STATUS BAR (MOVED TO TOP) -->
+        <div class="duty-bar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; background: white;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div class="toggle-group">
+              <button class="toggle-btn ${window.state.admissionDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('admission', 'On Duty')">On Duty</button>
+              <button class="toggle-btn ${window.state.admissionDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('admission', 'Off Duty')">Off Duty</button>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">
+              Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">08:00 AM - 04:00 PM</strong>
+            </div>
+          </div>
+          <!-- Right side Handover CTA -->
+          <button class="btn btn-primary btn-sm" onclick="window.initiateHandover('admission')" style="font-size: 0.75rem; font-weight: 700; height: 28px; background-color: var(--color-warning); border-color: var(--color-warning); color: #fff;">Start Handover</button>
+        </div>
+
         <!-- SECTION 1 — PAGE HEADER -->
         <div style="margin-top: 4px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
@@ -325,77 +271,133 @@
         </div>
 
         <!-- SECTION 2 — KPI STAT CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <div class="admin-kpi-scroll-row">
           <!-- Card 1: Today's Admissions -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Today's Admissions</div>
-              <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">${ipdAdmissionsCount + emergencyAdmissionsCount + opdAdmissionsCount}</div>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Today's Admissions</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono mt-1">IPD ${ipdAdmissionsCount} | Day ${opdAdmissionsCount} | ER ${emergencyAdmissionsCount}</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${ipdAdmissionsCount + emergencyAdmissionsCount + opdAdmissionsCount}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">IPD ${ipdAdmissionsCount} | Day ${opdAdmissionsCount} | ER ${emergencyAdmissionsCount}</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Stable Load
+              </span>
+            </div>
           </div>
 
           <!-- Card 2: Pending Admissions -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Pending Admissions</div>
-              <div class="text-xl font-bold tracking-tight text-amber-600 mt-1">${window.state.waitingBedAllotment.length}</div>
+          <div class="admin-kpi-card ${window.state.waitingBedAllotment.length > 0 ? 'status-warning' : 'status-normal'}" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Pending Admissions</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-medium mt-1">Advised in OPD/EMR</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${window.state.waitingBedAllotment.length}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Advised in OPD/EMR</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: ${window.state.waitingBedAllotment.length > 0 ? 'var(--color-warning)' : 'var(--color-success)'}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ${window.state.waitingBedAllotment.length > 0 ? '▼ Attention Req.' : '▲ None Pending'}
+              </span>
+            </div>
           </div>
 
           <!-- Card 3: Available Beds -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Available Beds</div>
-              <div class="text-xl font-bold tracking-tight text-emerald-600 mt-1">${vacantBedsCount} / ${totalBedsCount}</div>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Available Beds</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono mt-1">G:${generalBeds} | S:${semiPvtBeds} | P:${privateBeds} | I:${icuBeds}</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${vacantBedsCount} / ${totalBedsCount}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">G:${generalBeds} | S:${semiPvtBeds} | P:${privateBeds} | I:${icuBeds}</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Ward Capacity OK
+              </span>
+            </div>
           </div>
 
           <!-- Card 4: Discharges Today -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Discharges Today</div>
-              <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">${totalDisToday}</div>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Discharges Today</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono mt-1">Comp ${compDis} | Pending Clear ${pendDis}</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${totalDisToday}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Comp ${compDis} | Pending Clear ${pendDis}</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Active Process
+              </span>
+            </div>
           </div>
 
           <!-- Card 5: Emergency/Casualty -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Casualty Arrivals</div>
-              <div class="text-xl font-bold tracking-tight text-red-600 mt-1">3</div>
+          <div class="admin-kpi-card status-critical" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Casualty Arrivals</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono mt-1">MLC 2 | Non-MLC 1</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">3</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">MLC 2 | Non-MLC 1</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-danger); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▼ Critical Alert
+              </span>
+            </div>
           </div>
 
           <!-- Card 6: OPD Patients Today -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">OPD Patients Today</div>
-              <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">128</div>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">OPD Patients Today</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono mt-1">Appt 80 | Walk-ins 48</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">128</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Appt 80 | Walk-ins 48</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ High Vol. Flow
+              </span>
+            </div>
           </div>
 
           <!-- Card 7: Avg Admission Time -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Avg Admission Time</div>
-              <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">22m</div>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Avg Admission Time</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-medium mt-1">Reg to bed allotment</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">22m</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Reg to bed allotment</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ SLA Target Met
+              </span>
+            </div>
           </div>
 
           <!-- Card 8: Pending Documentation -->
-          <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-            <div>
-              <div class="text-xs text-slate-500 font-medium">Pending Docs</div>
-              <div class="text-xl font-bold tracking-tight text-amber-500 mt-1">${window.state.pendingDocuments.length}</div>
+          <div class="admin-kpi-card ${window.state.pendingDocuments.length > 0 ? 'status-warning' : 'status-normal'}" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Pending Docs</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-medium mt-1">ABHA/Consent/Deposit</div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${window.state.pendingDocuments.length}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">ABHA/Consent/Deposit</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: ${window.state.pendingDocuments.length > 0 ? 'var(--color-warning)' : 'var(--color-success)'}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ${window.state.pendingDocuments.length > 0 ? '▼ Verification Due' : '▲ Cleared'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1785,8 +1787,8 @@
     }
   };
 
-  window.dischargePatientDirect = function(bedId) {
-    const confirm = window.confirm(`Proceed with billing & clearance discharge check for bed ${bedId}?`);
+  window.dischargePatientDirect = async function(bedId) {
+    const confirm = await customConfirm(`Proceed with billing & clearance discharge check for bed ${bedId}?`);
     if (confirm) {
       // release bed
       window.state.bedsStatus[bedId] = {
@@ -2310,7 +2312,7 @@
     }
   };
 
-  window.triggerWizardSearch = function() {
+  window.triggerWizardSearch = async function() {
     const term = document.getElementById('wizard-search-input').value.trim();
     if (!term) return;
 
@@ -2323,9 +2325,9 @@
       document.getElementById('w-pat-gender').value = 'Male';
       document.getElementById('w-pat-aadhaar').value = '3829-1092-3847';
       document.getElementById('w-pat-abha').value = '90-1829-3829-12';
-      alert('Patient file found! Loaded Demographics.');
-    } else {
-      alert('No record matching query. Proceeding with New Patient registration.');
+      await customAlert('Patient file found! Loaded Demographics.');
+      await customAlert('No record matching query. Redirecting to Centralized Registration Desk...');
+      router.navigate('registration');
     }
   };
 

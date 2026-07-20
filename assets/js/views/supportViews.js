@@ -264,7 +264,7 @@ function renderEquipmentTab(container) {
                     <td><strong style="color: ${tkt.priority === 'Critical' ? 'var(--color-danger)' : 'var(--text-secondary)'};">${tkt.priority}</strong></td>
                     <td><span style="color: var(--color-warning); font-weight:600;">${tkt.status}</span></td>
                     <td style="text-align: right;">
-                      <button class="btn btn-success" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="closeRepairTicket('${tkt.id}')">Resolve & Calibrate</button>
+                      <button class="btn btn-success" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="window.closeRepairTicket('${tkt.id}')">Resolve & Calibrate</button>
                     </td>
                   </tr>
                 `).join('') || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No active repair tickets.</td></tr>'}

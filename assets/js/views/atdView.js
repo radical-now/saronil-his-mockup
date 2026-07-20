@@ -43,7 +43,12 @@ window.updateHkSlaLimit = function(value) {
 function renderBedBoard(container) {
   // Compute counts
   const totalBeds = Object.keys(state.bedsStatus).length;
-  const occupiedBeds = Object.values(state.bedsStatus).filter(b => b.status === "Occupied").length;
+  const dischargingBeds = Object.values(state.bedsStatus).filter(b => {
+    if (b.status !== 'Occupied' || !b.patientUhid) return false;
+    const patient = state.patients.find(p => p.uhid === b.patientUhid);
+    return patient && patient.dischargeStatus === 'In Progress — Clearances Pending';
+  }).length;
+  const occupiedBeds = Object.values(state.bedsStatus).filter(b => b.status === "Occupied").length - dischargingBeds;
   const vacantBeds = Object.values(state.bedsStatus).filter(b => b.status === "Available" || b.status === "Vacant").length;
   const reservedBeds = Object.values(state.bedsStatus).filter(b => b.status === "Reserved").length;
   const vacatedBeds = Object.values(state.bedsStatus).filter(b => b.status === "Vacated - Pending Housekeeping").length;
@@ -77,6 +82,7 @@ function renderBedBoard(container) {
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: var(--color-success); width: 12px; height: 12px; border-radius: 3px;"></div> Available (${vacantBeds})</div>
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: var(--primary); width: 12px; height: 12px; border-radius: 3px;"></div> Reserved (${reservedBeds})</div>
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: var(--color-purple); width: 12px; height: 12px; border-radius: 3px;"></div> Occupied (${occupiedBeds})</div>
+            <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: #f97316; width: 12px; height: 12px; border-radius: 3px;"></div> Discharging (${dischargingBeds})</div>
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: #f59e0b; width: 12px; height: 12px; border-radius: 3px;"></div> Vacated (${vacatedBeds})</div>
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: #fbbf24; width: 12px; height: 12px; border-radius: 3px;"></div> In Progress (${hkProgressBeds})</div>
             <div class="legend-item" style="display: flex; align-items: center; gap: 0.35rem;"><div class="legend-color" style="background-color: #ec4899; width: 12px; height: 12px; border-radius: 3px;"></div> Isolation (${isoBeds})</div>
@@ -164,7 +170,7 @@ function renderBedBoard(container) {
       <div class="modal-content" style="max-width: 480px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
         <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
           <h4 id="modal-bed-title" style="margin:0; font-weight: 700;">Bed Details</h4>
-          <span class="modal-close" style="cursor:pointer; font-size:1.5rem;" onclick="closeBedModal()">&times;</span>
+          <span class="modal-close" style="cursor:pointer; font-size:1.5rem;" onclick="window.closeBedModal()">&times;</span>
         </div>
         <div class="modal-body" id="modal-bed-body" style="padding: 1rem;">
           <!-- Populated dynamically -->
@@ -187,14 +193,23 @@ function renderBedBoard(container) {
     let bedHTML = '';
     
     beds.forEach(bedId => {
+      // Auto-initialize missing bed entries (e.g. newly added wards not yet seeded)
+      if (!state.bedsStatus[bedId]) {
+        state.bedsStatus[bedId] = { wardKey: wardKey, status: 'Available', patientUhid: null, notes: '' };
+      }
       const statusObj = state.bedsStatus[bedId];
       let statusClass = statusClassMap[statusObj.status] || 'bed-available';
       let patientName = '';
       let elapsedHTML = '';
+      let displayStatus = statusObj.status;
       
       if (statusObj.status === 'Occupied' && statusObj.patientUhid) {
         const patient = state.patients.find(p => p.uhid === statusObj.patientUhid);
         patientName = patient ? patient.name : 'Unknown Patient';
+        if (patient && patient.dischargeStatus === 'In Progress — Clearances Pending') {
+          statusClass = 'bed-discharge-progress';
+          displayStatus = 'Discharge in progress';
+        }
       }
 
       // Compute SLA elapsed time for housekeeping pending
@@ -222,7 +237,7 @@ function renderBedBoard(container) {
             <span class="bed-name">${bedId}</span>
             <span class="bed-icon">🛏️</span>
           </div>
-          <span class="bed-status-text">${statusObj.status}</span>
+          <span class="bed-status-text">${displayStatus}</span>
           ${elapsedHTML}
           ${patientName ? `<div class="bed-patient-name" title="${patientName}"><a href="#patients?uhid=${statusObj.patientUhid}" class="patient-link" style="color: inherit; font-size: inherit;" onclick="event.stopPropagation(); closeBedModal();">${patientName}</a></div>` : ''}
         </div>
@@ -340,7 +355,7 @@ function renderAuditLogs() {
         <td><strong>${dateStr}</strong></td>
         <td><strong style="color: var(--primary);">${log.bedId}</strong></td>
         <td>${state.wards[log.wardKey]?.name || log.wardKey || 'N/A'}</td>
-        <td>${log.patientId ? `<a href="#patients?uhid=${log.patientId}" class="patient-link" onclick="closeBedModal();">${log.patientId}</a>` : 'N/A'}</td>
+        <td>${log.patientId ? `<a href="#patients?uhid=${log.patientId}" class="patient-link" onclick="window.closeBedModal();">${log.patientId}</a>` : 'N/A'}</td>
         <td><span class="badge" style="background-color: var(--bg-surface-elevated); color: var(--text-primary); font-size: 0.65rem;">${log.action}</span></td>
         <td><span style="color: var(--text-muted);">${log.prevStatus}</span></td>
         <td><strong style="color: ${log.newStatus === 'Available' ? 'var(--color-success)' : (log.newStatus === 'Occupied' ? 'var(--color-purple)' : '#d97706')};">${log.newStatus}</strong></td>
@@ -459,14 +474,47 @@ window.closeBedModal = function() {
 };
 
 window.openBedModal = function(bedId) {
-  const modal = document.getElementById('bed-action-modal');
+  let modal = document.getElementById('bed-action-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bed-action-modal';
+    modal.className = 'modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
+    modal.style.backdropFilter = 'blur(4px)';
+    modal.style.display = 'none';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '2000';
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 480px; width: 90%; background: #ffffff; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); font-family: 'Inter', sans-serif; overflow: hidden; border: 1px solid #e2e8f0;">
+        <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+          <h4 id="modal-bed-title" style="margin:0; font-weight: 700; color: #1e293b; font-size: 1.1rem;">Bed Details</h4>
+          <span class="modal-close" style="cursor:pointer; font-size:1.5rem; color: #94a3b8; font-weight: 700;" onclick="window.closeBedModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="modal-bed-body" style="padding: 1.25rem;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
   const title = document.getElementById('modal-bed-title');
   const body = document.getElementById('modal-bed-body');
   
   if (!modal || !title || !body) return;
 
-  const statusObj = state.bedsStatus[bedId];
-  const wardInfo = state.wards[statusObj.wardKey];
+  const statusObj = state.bedsStatus[bedId] || { wardKey: null, status: 'Unknown', patientUhid: null, notes: '' };
+  
+
+
+  const wardInfo = statusObj.wardKey ? (state.wards[statusObj.wardKey] || { name: statusObj.wardKey, price: 1500 }) : { name: 'Unknown Ward', price: 1500 };
   
   title.innerText = `Bed Action: ${bedId}`;
   modal.classList.add('active');
@@ -486,32 +534,27 @@ window.openBedModal = function(bedId) {
     const admissionDate = admission ? (admission.date || (admission.admissionTimestamp ? new Date(admission.admissionTimestamp).toLocaleDateString() : 'N/A')) : 'N/A';
 
     patientInfoHTML = `
-      <div style="background-color: var(--primary-glow); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-        <h5 style="margin-bottom: 0.5rem; color: var(--primary); font-weight:700;">Patient Information</h5>
-        <p><strong>Name:</strong> ${patient ? `<a href="#patients?uhid=${patient.uhid}" class="patient-link" onclick="closeBedModal();">${patient.name}</a>` : 'N/A'}</p>
-        <p><strong>UHID:</strong> ${statusObj.patientUhid}</p>
-        <p><strong>Admitted Date:</strong> ${admissionDate}</p>
-        <p><strong>Doctor In-charge:</strong> ${patient ? patient.primaryConsultant : 'N/A'}</p>
-        <p><strong>Diagnosis:</strong> ${patient ? (patient.clinicalData?.diagnosis || 'N/A') : 'N/A'}</p>
-        ${admission?.procedureName ? `<p><strong>Day Care Procedure:</strong> ${admission.procedureName}</p>` : ''}
+      <div style="background-color: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: #2563eb; font-weight: 700; font-size: 0.95rem;">Patient Information</h5>
+        <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem;"><strong>Name:</strong> ${patient ? `<a href="#patients?uhid=${patient.uhid}" class="patient-link" style="color: #2563eb; font-weight: 700; text-decoration: underline;" onclick="window.closeBedModal();">${patient.name}</a>` : 'N/A'}</p>
+        <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem;"><strong>UHID:</strong> ${statusObj.patientUhid}</p>
+        <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem;"><strong>Admitted Date:</strong> ${admissionDate}</p>
+        <p style="margin: 0 0 0.25rem 0; font-size: 0.85rem;"><strong>Doctor In-charge:</strong> ${patient ? (patient.primaryConsultant || 'Dr. Mehta') : 'Dr. Mehta'}</p>
+        <p style="margin: 0; font-size: 0.85rem;"><strong>Diagnosis:</strong> ${patient ? (patient.clinicalData?.diagnosis || 'Evaluation') : 'Evaluation'}</p>
+        ${admission?.procedureName ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;"><strong>Day Care Procedure:</strong> ${admission.procedureName}</p>` : ''}
       </div>
     `;
 
-    if (statusObj.wardKey === 'DAYCARE') {
-      actionsHTML = `
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="closeBedModal(); window.selectedDaycareBed = '${bedId}'; router.navigate('daybed');">Go to Day Care Clinical Flow</button>
-        </div>
-      `;
-    } else {
-      actionsHTML = `
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="initiateBedTransfer('${bedId}')">Transfer Bed</button>
-          <button class="btn btn-danger" onclick="dischargePatientFromBed('${bedId}')">Approve Discharge & Initiate Billing</button>
-          <button class="btn btn-secondary" disabled title="Bed can be sent for housekeeping only after patient discharge, transfer, or bed vacation." style="cursor: not-allowed; opacity: 0.6;">Send to House Keeping</button>
-        </div>
-      `;
-    }
+    actionsHTML = `
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%; box-sizing: border-box;">
+        <button class="btn btn-primary" style="background-color: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; font-size: 0.9rem; text-align: center; box-sizing: border-box;" onclick="initiateBedTransfer('${bedId}')">Transfer Bed</button>
+        <button class="btn btn-danger" style="background-color: #fef2f2; border: 1.5px solid #fca5a5; color: #b91c1c; padding: 10px; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; font-size: 0.9rem; text-align: center; box-sizing: border-box;" onclick="dischargePatientFromBed('${bedId}')">Approve Discharge & Initiate Billing</button>
+        <button class="btn btn-secondary" disabled title="Bed can be sent for housekeeping only after patient discharge, transfer, or bed vacation." style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; color: #94a3b8; padding: 10px; border-radius: 8px; font-weight: 700; width: 100%; cursor: not-allowed; font-size: 0.9rem; text-align: center; box-sizing: border-box; opacity: 0.6;">Send to House Keeping</button>
+        ${statusObj.wardKey === 'DAYCARE' ? `
+          <button class="btn btn-primary" style="background-color: #7c3aed; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; font-size: 0.9rem; text-align: center; box-sizing: border-box; margin-top: 4px;" onclick="window.closeBedModal(); window.selectedDaycareBed = '${bedId}'; router.navigate('daybed');">Go to Day Care Clinical Flow</button>
+        ` : ''}
+      </div>
+    `;
   } else if (statusObj.status === 'Available' || statusObj.status === 'Vacant') {
     patientInfoHTML = `
       <p style="color: var(--text-muted); margin-bottom: 1.5rem;">This bed is clean, available, and ready for patient allotment.</p>
@@ -519,7 +562,7 @@ window.openBedModal = function(bedId) {
     if (statusObj.wardKey === 'DAYCARE') {
       actionsHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="closeBedModal(); window.selectedDaycareBed = '${bedId}'; router.navigate('daybed');">Admit Patient (Day Care)</button>
+          <button class="btn btn-primary" onclick="window.closeBedModal(); window.selectedDaycareBed = '${bedId}'; router.navigate('daybed');">Admit Patient (Day Care)</button>
           <button class="btn btn-danger" onclick="markBedStatus('${bedId}', 'Out of Service / Blocked')">Block Bed / Out of Service</button>
         </div>
       `;
@@ -846,3 +889,110 @@ window.dischargePatientFromBed = function(bedId) {
     alert("No patient currently assigned to this bed.");
   }
 };
+
+window._updatePatientDietFromBedBoard = function(uhid, newDiet) {
+  if (!window.state.dietData) {
+    window.state.dietData = { patients: [], screeningQueue: [], counsellingQueue: [], kitchenDispatches: [], activeNPOAlerts: [], dietOrdersCount: 42 };
+  }
+  // Update patient clinicalData if present
+  var p = window.state.patients.find(pt => pt.uhid === uhid);
+  if (p) {
+    if (!p.clinicalData) p.clinicalData = {};
+    p.clinicalData.carePlan = `Follow ${newDiet}. Daily walking for 30 minutes. Monitor blood pressure charts.`;
+  }
+  var dp = window.state.dietData.patients.find(pt => pt.uhid === uhid);
+  if (dp) {
+    dp.dietRx = newDiet;
+    dp.status = newDiet.includes('NPO') ? 'NPO Lock' : 'Active';
+  } else {
+    window.state.dietData.patients.push({
+      name: p ? p.name : "Patient",
+      uhid: uhid,
+      bed: p ? p.bed : "Ward Room",
+      diagnosis: (p && p.clinicalData) ? p.clinicalData.diagnosis : "IPD Admitted",
+      dietRx: newDiet,
+      lastReview: "Today",
+      status: newDiet.includes('NPO') ? 'NPO Lock' : 'Active',
+      energy: 1800, protein: 70, fluid: 1500, route: "Oral",
+      prepBy: "Doctor Bed Board",
+      preferences: "Veg",
+      allergies: "None",
+      mealStats: { breakfast: "—", lunch: "—", dinner: "—" }
+    });
+  }
+
+  if (newDiet.includes('NPO')) {
+    var npoAlertExists = window.state.dietData.activeNPOAlerts.some(n => n.uhid === uhid);
+    if (!npoAlertExists) {
+      window.state.dietData.activeNPOAlerts.unshift({
+        name: p ? p.name : "Patient",
+        uhid: uhid,
+        bed: p ? p.bed : "Ward Room",
+        duration: `8 hrs`,
+        ivFluids: "No",
+        status: "Warning Alert"
+      });
+    }
+  } else {
+    window.state.dietData.activeNPOAlerts = window.state.dietData.activeNPOAlerts.filter(n => n.uhid !== uhid);
+  }
+  
+  // Save state
+  localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+  
+  alert(`Diet order updated to ${newDiet} for patient ${p ? p.name : uhid}.`);
+};
+
+window.sendOccupiedBedToHousekeeping = function(bedId) {
+  const statusObj = state.bedsStatus[bedId];
+  if (!statusObj) return;
+  const patientUhid = statusObj.patientUhid;
+  if (patientUhid) {
+    if (!confirm(`Are you sure you want to vacate patient (UHID: ${patientUhid}) from bed ${bedId} and send it to House Keeping?`)) {
+      return;
+    }
+    // Set bed to vacated - pending housekeeping
+    const prev = statusObj.status;
+    statusObj.status = 'Vacated - Pending Housekeeping';
+    statusObj.patientUhid = null;
+    statusObj.transitionTimestamp = new Date().toISOString();
+    statusObj.notes = 'Sent to housekeeping';
+
+    // Remove patient from active IPD admission record bed field if exists
+    const admission = state.admissions.find(a => a.uhid === patientUhid && a.status === 'Active');
+    if (admission) {
+      admission.bed = null;
+    }
+
+    // Auto trigger housekeeping request
+    if (typeof state.triggerHousekeepingRequest === 'function') {
+      state.triggerHousekeepingRequest(bedId, statusObj.wardKey, `Occupied bed sent to housekeeping manually`);
+    }
+
+    // Log Bed Movement
+    state.logBedMovement({
+      patientId: patientUhid,
+      bedId: bedId,
+      wardKey: statusObj.wardKey,
+      prevStatus: prev,
+      newStatus: 'Vacated - Pending Housekeeping',
+      action: 'Housekeeping Assigned',
+      remarks: `Occupied bed sent to housekeeping manually`
+    });
+
+    closeBedModal();
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      if (window.location.hash.includes('ipdAdmission')) {
+        if (window.router && typeof window.router.handleRouting === 'function') {
+          window.router.handleRouting();
+        }
+      } else {
+        renderBedBoard(mainContent);
+      }
+    }
+  } else {
+    alert("No patient currently assigned to this bed.");
+  }
+};
+

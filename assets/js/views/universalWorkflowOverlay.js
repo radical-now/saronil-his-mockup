@@ -28,7 +28,7 @@
   function refreshActiveSPAView() {
     if (window.router && window.router.currentPage && window.views[window.router.currentPage]) {
       try {
-        window.views[window.router.currentPage](window.router.container, window.router.currentSubAnchor || '', window.router.currentParams || {});
+        window.views[window.router.currentPage](window.router.container, window.router.currentSubAnchor || '', window.router.currentParams ? { ...window.router.currentParams } : {});
       } catch (e) {
         console.error("SPA view refresh error:", e);
       }
@@ -39,6 +39,8 @@
       }
     }
   }
+  // Also expose on window so external window.* functions can call it
+  window.refreshActiveSPAView = refreshActiveSPAView;
 
   // --- STAGE 2 DYNAMIC ROOM & BED HELPER FOR TRANSFER ---
   function getRoomsForWard(wardKey) {
@@ -92,7 +94,7 @@
     var activeSubForm = ''; // 'nursing' | 'billing' | 'pharmacy' | 'tpa' | 'lab'
 
     function renderDischargeContent() {
-      var currentRole = window._ipdActiveRole || 'ATD Coordinator';
+      var currentRole = (window.state && window.state.activeUserRole) || window._ipdActiveRole || 'ATD Coordinator';
 
       // 1. DISCHARGED STATE (READ-ONLY DISCHARGE SUMMARY)
       if (pat.status === 'Discharged') {
@@ -101,7 +103,7 @@
           <div class="bg-white rounded-2xl w-[600px] max-w-[95vw] max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-slate-900 border-b border-slate-200 px-6 py-4 flex justify-between items-center text-white">
               <h3 class="margin-0 text-white font-bold text-base flex items-center gap-2">🏁 Patient Discharge Summary (Read-Only)</h3>
-              <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="closeDischargeOverlay()">✕</button>
+              <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="window.closeDischargeOverlay()">✕</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-4 text-left text-xs text-slate-700">
               <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3.5 flex justify-between items-center text-emerald-800">
@@ -127,7 +129,7 @@
               </div>
             </div>
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
-              <button class="py-2 px-5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold" onclick="closeDischargeOverlay()">Close Summary</button>
+              <button class="py-2 px-5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold" onclick="window.closeDischargeOverlay()">Close Summary</button>
             </div>
           </div>
         `;
@@ -151,13 +153,13 @@
               <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-800 flex flex-col gap-2 max-w-[400px] mx-auto">
                 <span class="font-bold">Prototype Review Panel:</span>
                 <span>Switch to the treating Doctor persona below to initiate the discharge order.</span>
-                <button class="py-1.5 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer text-[10px]" onclick="switchRoleAndRerenderDischarge('Treating Consultant / Doctor')">
+                <button class="py-1.5 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer text-[10px]" onclick="window.switchRoleAndRerenderDischarge('Treating Consultant / Doctor')">
                   Switch Role to Doctor 🥼
                 </button>
               </div>
 
               <div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
-                <button class="py-2 px-5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer" onclick="closeDischargeOverlay()">Close</button>
+                <button class="py-2 px-5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer" onclick="window.closeDischargeOverlay()">Close</button>
               </div>
             </div>
           `;
@@ -259,19 +261,23 @@
       ];
 
       var MEDICINE_LIST = [
-        { name: "Tab Pantocid 40mg", generic: "Pantoprazole", dose: "40mg", freq: "Once daily (Before breakfast)", route: "Oral", dur: "10 Days" },
-        { name: "Tab Paracetamol 650mg", generic: "Paracetamol", dose: "650mg", freq: "As needed (SOS)", route: "Oral", dur: "5 Days" },
-        { name: "Tab Cardace 5mg", generic: "Ramipril", dose: "5mg", freq: "Once daily (Morning)", route: "Oral", dur: "30 Days" },
-        { name: "Tab Olimelt 5mg", generic: "Olanzapine", dose: "5mg", freq: "Once daily (Bedtime)", route: "Oral", dur: "30 Days" },
-        { name: "Inj Tramadol 50mg", generic: "Tramadol", dose: "50mg", freq: "SOS", route: "IV", dur: "3 Days" },
-        { name: "Tab Metformin 500mg", generic: "Metformin", dose: "500mg", freq: "Twice daily (With meals)", route: "Oral", dur: "30 Days" },
-        { name: "Tab Amoxicillin 500mg", generic: "Amoxicillin", dose: "500mg", freq: "Three times daily", route: "Oral", dur: "7 Days" },
-        { name: "Tab Atorvastatin 10mg", generic: "Atorvastatin", dose: "10mg", freq: "Once daily (Night)", route: "Oral", dur: "30 Days" },
-        { name: "Syp Cremaffin 15ml", generic: "Liquid Paraffin", dose: "15ml", freq: "Once daily (Bedtime)", route: "Oral", dur: "7 Days" }
+        { name: "Tab Pantocid 40mg", generic: "Pantoprazole", dose: "40mg", freq: "Once daily (Before breakfast)", route: "Oral", dur: "10 Days", stock: 100 },
+        { name: "Tab Paracetamol 650mg", generic: "Paracetamol", dose: "650mg", freq: "As needed (SOS)", route: "Oral", dur: "5 Days", stock: 100 },
+        { name: "Tab Cardace 5mg", generic: "Ramipril", dose: "5mg", freq: "Once daily (Morning)", route: "Oral", dur: "30 Days", stock: 100 },
+        { name: "Tab Olimelt 5mg", generic: "Olanzapine", dose: "5mg", freq: "Once daily (Bedtime)", route: "Oral", dur: "30 Days", stock: 100 },
+        { name: "Inj Tramadol 50mg", generic: "Tramadol", dose: "50mg", freq: "SOS", route: "IV", dur: "3 Days", stock: 100 },
+        { name: "Tab Metformin 500mg", generic: "Metformin", dose: "500mg", freq: "Twice daily (With meals)", route: "Oral", dur: "30 Days", stock: 100 },
+        { name: "Tab Amoxicillin 500mg", generic: "Amoxicillin", dose: "500mg", freq: "Three times daily", route: "Oral", dur: "7 Days", stock: 100 },
+        { name: "Tab Atorvastatin 10mg", generic: "Atorvastatin", dose: "10mg", freq: "Once daily (Night)", route: "Oral", dur: "30 Days", stock: 100 },
+        { name: "Syp Cremaffin 15ml", generic: "Liquid Paraffin", dose: "15ml", freq: "Once daily (Bedtime)", route: "Oral", dur: "7 Days", stock: 100 },
+        { name: "Tab Febrex Plus", generic: "Paracetamol + Chlorpheniramine + Phenylephrine", dose: "Combination", freq: "Once daily", route: "Oral", dur: "5 Days", stock: 0 },
+        { name: "Tab Sinarest", generic: "Paracetamol + Chlorpheniramine + Phenylephrine", dose: "Combination", freq: "Once daily", route: "Oral", dur: "5 Days", stock: 120 },
+        { name: "Tab Cheston Cold", generic: "Paracetamol + Cetirizine + Phenylephrine", dose: "Combination", freq: "Once daily", route: "Oral", dur: "5 Days", stock: 150 },
+        { name: "Tab Colgin Plus", generic: "Paracetamol + Chlorpheniramine + Phenylephrine", dose: "Combination", freq: "Once daily", route: "Oral", dur: "5 Days", stock: 80 }
       ];
 
       // Computes Day N of admission
-      var admDate = new Date(pat.admissionDate || '2026-06-24');
+      var admDate = new Date(pat.admitted || pat.admissionDate || '2026-06-24');
       var today = new Date();
       var diffTime = Math.abs(today - admDate);
       var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
@@ -349,7 +355,7 @@
                       <span>·</span>
                       <span>Ward: <strong class="text-slate-700">${pat.ward || 'General'}</strong></span>
                       <span>·</span>
-                      <span>Admitted: <strong class="text-slate-700">${pat.admissionDate || '24 Jun 2026'}</strong></span>
+                      <span>Admitted: <strong class="text-slate-700">${pat.admitted || pat.admissionDate || '24 Jun 2026'}</strong></span>
                       <span>·</span>
                       <span>Day <strong class="text-slate-700">${diffDays}</strong></span>
                     </div>
@@ -554,22 +560,15 @@
                         Enter your 4-digit clinical PIN to sign and issue this discharge order. This action is permanently recorded.
                       </p>
 
-                      <!-- PIN Dots indicator -->
-                      <div class="flex gap-4 justify-center my-3" id="pin-dots-display">
-                        ${[0, 1, 2, 3].map(i => {
-                          var filled = i < enteredPin.length;
-                          return `<div class="w-7 h-7 rounded-full border-2 border-red-300 flex items-center justify-center font-bold text-lg ${filled ? 'bg-red-605 text-white font-bold bg-red-600' : 'bg-white'}" id="pin-dot-${i}"></div>`;
-                        }).join('')}
-                      </div>
-
-                      <!-- Number Pad Grid -->
-                      <div class="grid grid-cols-3 gap-2.5 max-w-[190px] mx-auto text-xs my-1" id="pin-numeric-pad">
-                        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `
-                          <button type="button" class="py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded text-xs font-bold cursor-pointer select-none text-slate-800 text-center shadow-sm" onclick="window.tapPinNum(${n})">${n}</button>
-                        `).join('')}
-                        <button type="button" class="py-1.5 text-[9px] hover:underline font-bold text-slate-500 cursor-pointer select-none text-center" onclick="window.clearPinInput()">Clear</button>
-                        <button type="button" class="py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded text-xs font-bold cursor-pointer select-none text-slate-800 text-center shadow-sm" onclick="window.tapPinNum(0)">0</button>
-                        <button type="button" class="py-1.5 text-[9px] hover:underline font-bold text-slate-500 cursor-pointer select-none text-center" onclick="window.backspacePinInput()">Delete</button>
+                      <!-- 4-digit code input field -->
+                      <div class="flex flex-col gap-2 my-2 items-center">
+                        <input type="password" 
+                               id="signature-pin-input" 
+                               maxlength="4" 
+                               placeholder="••••" 
+                               value="${enteredPin}"
+                               style="letter-spacing: 0.5rem; text-align: center; font-size: 1.25rem; font-weight: 700; width: 140px; padding: 8px 12px; border: 2px solid #ef4444; border-radius: 8px; outline: none; background-color: white; color: #1e293b;"
+                               oninput="window.updateEnteredPin(this.value)">
                       </div>
 
                       ${pinErrorMsg ? `<div class="text-center font-extrabold text-[10px] text-red-600 animate-shake mt-1">${pinErrorMsg}</div>` : ''}
@@ -860,7 +859,11 @@
         if (activeTypeaheadId !== 'medicine') return '';
 
         var matches = MEDICINE_LIST;
-        if (queryVal) {
+        if (window.dischargeShowAlternativesFor === "Tab Febrex Plus") {
+          matches = MEDICINE_LIST.filter(item => 
+            ["Tab Sinarest", "Tab Cheston Cold", "Tab Colgin Plus"].includes(item.name)
+          );
+        } else if (queryVal) {
           matches = MEDICINE_LIST.filter(item => 
             item.name.toLowerCase().includes(queryVal.toLowerCase()) || 
             item.generic.toLowerCase().includes(queryVal.toLowerCase())
@@ -871,20 +874,48 @@
 
         return `
           <div class="absolute left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg mt-1 z-30 max-h-[140px] overflow-y-auto">
-            ${matches.map(item => `
-              <button type="button" class="w-full text-left p-2 hover:bg-slate-50 border-b border-slate-100 text-xs cursor-pointer select-none font-medium flex justify-between" onclick="window.selectMedicine('${item.name.replace(/'/g, "\\'")}', '${item.dose}', '${item.route}', '${item.freq}', '${item.dur}')">
-                <div class="flex flex-col text-left">
-                  <span class="text-slate-800 font-semibold">${item.name}</span>
-                  <span class="text-[10px] text-slate-400 font-medium">${item.generic}</span>
-                </div>
-                <div class="text-right text-[10px] text-slate-500 font-semibold self-center">
-                  ${item.dose} &bull; ${item.route}
-                </div>
-              </button>
-            `).join('')}
+            ${window.dischargeShowAlternativesFor ? `
+              <div class="p-1.5 bg-sky-50 text-sky-800 text-[10px] font-bold border-b border-slate-100 flex justify-between items-center">
+                <span>Alternatives for ${window.dischargeShowAlternativesFor}:</span>
+                <button type="button" class="text-sky-600 hover:text-sky-800" onclick="window.dischargeShowAlternativesFor = null; drawForm();">✕</button>
+              </div>
+            ` : ''}
+            ${matches.map(item => {
+              const isOOS = item.stock === 0;
+              if (isOOS) {
+                return `
+                  <div class="w-full text-left p-2 border-b border-slate-100 text-xs font-medium flex justify-between items-center bg-slate-50 opacity-95">
+                    <div class="flex flex-col text-left">
+                      <span class="text-slate-500 font-semibold">${item.name}</span>
+                      <span class="text-[10px] text-slate-400 font-medium">${item.generic}</span>
+                    </div>
+                    <div class="text-right flex flex-col items-end gap-1">
+                      <span class="text-red-500 font-bold text-[9px]">Out of Stock</span>
+                      <button type="button" class="px-2 py-0.5 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded text-[9px] font-bold cursor-pointer" onclick="event.stopPropagation(); window.overlayShowAlternativesFor('${item.name.replace(/'/g, "\\'")}')">See Alternative</button>
+                    </div>
+                  </div>
+                `;
+              }
+              return `
+                <button type="button" class="w-full text-left p-2 hover:bg-slate-50 border-b border-slate-100 text-xs cursor-pointer select-none font-medium flex justify-between" onclick="window.selectMedicine('${item.name.replace(/'/g, "\\'")}', '${item.dose}', '${item.route}', '${item.freq}', '${item.dur}')">
+                  <div class="flex flex-col text-left">
+                    <span class="text-slate-800 font-semibold">${item.name}</span>
+                    <span class="text-[10px] text-slate-400 font-medium">${item.generic}</span>
+                  </div>
+                  <div class="text-right text-[10px] text-slate-500 font-semibold self-center">
+                    ${item.dose} &bull; ${item.route}
+                  </div>
+                </button>
+              `;
+            }).join('')}
           </div>
         `;
       }
+
+      window.overlayShowAlternativesFor = function(medName) {
+        window.dischargeShowAlternativesFor = medName;
+        drawForm();
+      };
 
       window.selectMedicine = function (name, dose, route, freq, dur) {
         newMedName = name;
@@ -893,6 +924,7 @@
         newMedFreq = freq;
         newMedDur = dur;
         activeTypeaheadId = null;
+        window.dischargeShowAlternativesFor = null;
         drawForm();
       };
 
@@ -1165,6 +1197,7 @@
           nMedName.addEventListener('input', function () {
             newMedName = nMedName.value;
             activeTypeaheadId = 'medicine';
+            window.dischargeShowAlternativesFor = null;
             drawForm();
           });
         }
@@ -1231,26 +1264,22 @@
         drawForm();
       };
 
-      // PIN PAD ACTIONS
-      window.tapPinNum = function (num) {
-        if (pinLocked || enteredPin.length >= 4) return;
-        enteredPin += String(num);
-        pinErrorMsg = '';
-        drawForm();
-      };
-
-      window.clearPinInput = function () {
+       // PIN PAD ACTIONS
+      window.updateEnteredPin = function (val) {
         if (pinLocked) return;
-        enteredPin = '';
+        enteredPin = val.replace(/\D/g, '').substring(0, 4);
         pinErrorMsg = '';
         drawForm();
-      };
 
-      window.backspacePinInput = function () {
-        if (pinLocked || enteredPin.length === 0) return;
-        enteredPin = enteredPin.slice(0, -1);
-        pinErrorMsg = '';
-        drawForm();
+        // Auto focus back on input and place cursor at the end
+        setTimeout(function() {
+          const input = document.getElementById('signature-pin-input');
+          if (input) {
+            input.focus();
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+          }
+        }, 10);
       };
 
       // CANCEL / DISCARD HANDLERS
@@ -1270,6 +1299,17 @@
 
       // SIGN & SAVE SUBMISSION
       window.submitDischargeOrderForm = function () {
+        // Active doctor credentials check
+        const activeDocId = localStorage.getItem('saronil_active_doctor_id') || 'DOC_AMIT';
+        const list = window.state.staffList || [];
+        const matchedDoc = list.find(s => s.id === activeDocId);
+        if (matchedDoc) {
+          if (matchedDoc.credentialStatus === 'Expired' || matchedDoc.status === 'Suspended') {
+            alert(`🚫 Sign-off Blocked: Your council registration status is currently Expired or Suspended. Please contact the Credentialing Officer.`);
+            return;
+          }
+        }
+
         if (!isFormValid()) return;
 
         // Verify PIN Code
@@ -1324,8 +1364,20 @@
         }
         
         // Lab clearance check
-        if (pat.pendingLabResults) {
+        if (pat.pendingLabResults || (pat.flags && pat.flags.includes('Lab'))) {
           pat.dischargeClearances.lab = { cleared: false, clearedBy: null, clearedAt: null, notes: '' };
+        }
+
+        // Radiology clearance check
+        var hasRad = pat.pendingRadResults || (pat.flags && pat.flags.includes('Radiology')) || (pat.flags && pat.flags.includes('Imaging'));
+        if (hasRad) {
+          pat.dischargeClearances.radiology = { cleared: false, clearedBy: null, clearedAt: null, notes: '' };
+        }
+
+        // OT / Procedure clearance check
+        var hasOt = pat.pendingOtResults || (pat.flags && pat.flags.includes('OT')) || (pat.flags && pat.flags.includes('Procedure'));
+        if (hasOt) {
+          pat.dischargeClearances.ot = { cleared: false, clearedBy: null, clearedAt: null, notes: '' };
         }
 
         // Add timeline event
@@ -1354,7 +1406,7 @@
 
     // STAGE 2 — RENDER CLEARANCES CHECKLIST & OVERRIDES PANEL
     function renderClearancesChecklistPanel() {
-      var currentRole = window._ipdActiveRole || 'ATD Coordinator';
+      var currentRole = (window.state && window.state.activeUserRole) || window._ipdActiveRole || 'ATD Coordinator';
 
       // Check if sub form is active
       if (activeSubForm) {
@@ -1368,7 +1420,8 @@
         if (!v.cleared) allClear = false;
       });
 
-      var isCoordinator = currentRole === 'ATD Coordinator' || currentRole === 'Administrator / Medical Superintendent';
+      var isCoordinator = currentRole === 'ATD Coordinator' || currentRole === 'Administrator / Medical Superintendent' || currentRole === 'ATD Officer' || currentRole === 'Administrator' || currentRole === 'Super Admin' || currentRole === 'CEO';
+      var isAdmin = currentRole === 'Administrator / Medical Superintendent' || currentRole === 'Administrator' || currentRole === 'Super Admin' || currentRole === 'CEO';
 
       container.innerHTML = `
         <div class="bg-white rounded-2xl w-[520px] max-w-[95vw] shadow-2xl overflow-hidden flex flex-col animate-scale-in">
@@ -1378,7 +1431,7 @@
               <h3 class="margin-0 text-slate-800 font-bold text-base">DISCHARGE IN PROGRESS</h3>
               <div class="text-[10px] text-slate-500 mt-0.5">Patient: ${pat.name} (${pat.uhid}) · Ward: ${pat.ward} Bed: ${pat.bed}</div>
             </div>
-            <button class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" onclick="closeDischargeOverlay()">✕</button>
+            <button class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" onclick="window.closeDischargeOverlay()">✕</button>
           </div>
 
           <!-- Body -->
@@ -1393,19 +1446,22 @@
             <!-- Clearances Checklist rows -->
             <div class="flex flex-col gap-3">
               ${Object.entries(list).map(([deptKey, clrObj]) => {
-                var deptLabel = deptKey.toUpperCase();
+                var deptLabelMap = { nursing: '🩺 Nursing', billing: '💳 Billing & Finance', pharmacy: '💊 Pharmacy', tpa: '🏥 TPA / Insurance', lab: '🧪 Laboratory', radiology: '📡 Radiology & Imaging', ot: '🔬 OT / Procedure' };
+                var deptLabel = deptLabelMap[deptKey] || deptKey.toUpperCase();
                 var actionBtn = '';
 
                 // Gating permissions
                 var canClear = false;
-                if (deptKey === 'nursing' && (currentRole === 'Ward Nurse' || currentRole === 'Nursing Supervisor')) canClear = true;
-                if (deptKey === 'billing' && (currentRole === 'Billing Executive' || currentRole === 'Billing Counter Executive')) canClear = true;
-                if (deptKey === 'pharmacy' && (currentRole === 'Pharmacist' || currentRole === 'Nursing Supervisor')) canClear = true;
-                if (deptKey === 'tpa' && (currentRole === 'TPA / Insurance Coordinator' || currentRole === 'Billing Counter Executive')) canClear = true;
-                if (deptKey === 'lab' && (currentRole === 'Lab Supervisor' || currentRole === 'Nursing Supervisor')) canClear = true;
+                if (deptKey === 'nursing' && (currentRole === 'Ward Nurse' || currentRole === 'Nursing Supervisor' || currentRole === 'Nurse')) canClear = true;
+                if (deptKey === 'billing' && (currentRole === 'Billing Executive' || currentRole === 'Billing Counter Executive' || currentRole === 'Billing' || currentRole === 'CFO' || currentRole === 'Finance Manager' || currentRole === 'Billing Officer' || currentRole === 'CASHIER' || currentRole === 'BILLING_EXECUTIVE' || currentRole === 'BILLING_SUPERVISOR' || currentRole === 'ACCOUNTS_MANAGER')) canClear = true;
+                if (deptKey === 'pharmacy' && (currentRole === 'Pharmacist' || currentRole === 'Nursing Supervisor' || currentRole === 'Pharmacy')) canClear = true;
+                if (deptKey === 'tpa' && (currentRole === 'TPA / Insurance Coordinator' || currentRole === 'Billing Counter Executive' || currentRole === 'Billing' || currentRole === 'TPA' || currentRole === 'TPA Officer' || currentRole === 'Billing Counter Exec' || currentRole === 'BILLING_EXECUTIVE' || currentRole === 'BILLING_SUPERVISOR')) canClear = true;
+                if (deptKey === 'lab' && (currentRole === 'Lab Supervisor' || currentRole === 'Nursing Supervisor' || currentRole === 'Lab' || currentRole === 'Lab Staff' || currentRole === 'Pathologist' || currentRole === 'Lab Technician' || currentRole === 'Lab Manager')) canClear = true;
+                if (deptKey === 'radiology' && (currentRole === 'Radiologist' || currentRole === 'Radiology Supervisor' || currentRole === 'Radiology Technician' || currentRole === 'Radiology' || currentRole === 'Imaging Technician')) canClear = true;
+                if (deptKey === 'ot' && (currentRole === 'OT Supervisor' || currentRole === 'Surgeon' || currentRole === 'Treating Consultant / Doctor' || currentRole === 'OT Staff' || currentRole === 'OT In-Charge' || currentRole === 'Anaesthesiologist')) canClear = true;
                 
-                // Admin override permission
-                var isAdmin = currentRole === 'Administrator / Medical Superintendent';
+                // Admin override permission (also declared at outer scope for footer buttons)
+                var isAdminLocal = currentRole === 'Administrator / Medical Superintendent' || currentRole === 'Administrator' || currentRole === 'Super Admin' || currentRole === 'CEO';
 
                 if (clrObj.cleared) {
                   actionBtn = `
@@ -1420,7 +1476,7 @@
                       Clear Department
                     </button>
                   `;
-                } else if (isAdmin) {
+                } else if (isAdminLocal) {
                   actionBtn = `
                     <button class="py-1 px-2.5 border border-red-300 text-red-600 hover:bg-red-50 font-bold rounded text-[10px] cursor-pointer" onclick="window.triggerAdminOverrideClearance('${deptKey}')">
                       Force Override ⚙️
@@ -1439,34 +1495,11 @@
               }).join('')}
             </div>
 
-            <!-- Review Desk switches for prototyping -->
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 mt-4">
-              <label class="block font-bold mb-1">Test Clearance Personas (Simulation):</label>
-              <select class="w-full p-2 border rounded bg-white text-xs font-semibold text-slate-700 mt-1" onchange="switchRoleAndRerenderDischarge(this.value)">
-                <option value="">-- Choose Role --</option>
-                <option value="Ward Nurse" ${currentRole==='Ward Nurse'?'selected':''}>Ward Nurse</option>
-                <option value="Billing Executive" ${currentRole==='Billing Executive'?'selected':''}>Billing Executive</option>
-                <option value="Pharmacist" ${currentRole==='Pharmacist'?'selected':''}>Pharmacist</option>
-                <option value="TPA / Insurance Coordinator" ${currentRole==='TPA / Insurance Coordinator'?'selected':''}>TPA Coordinator</option>
-                <option value="Lab Supervisor" ${currentRole==='Lab Supervisor'?'selected':''}>Lab Supervisor</option>
-                <option value="ATD Coordinator" ${currentRole==='ATD Coordinator'?'selected':''}>ATD Coordinator</option>
-                <option value="Administrator / Medical Superintendent" ${currentRole==='Administrator / Medical Superintendent'?'selected':''}>Administrator Override</option>
-              </select>
-            </div>
           </div>
 
           <!-- Footer Buttons -->
-          <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-            <button class="py-2.5 px-5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100" onclick="closeDischargeOverlay()">Close</button>
-            ${isCoordinator ? `
-              <button class="py-2.5 px-6 rounded-lg text-xs font-bold transition-all text-white ${allClear ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer shadow-md' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}" ${allClear ? '' : 'disabled'} onclick="window.triggerFinalizeDischarge()">
-                Complete Discharge 🏁
-              </button>
-            ` : `
-              <button class="py-2.5 px-6 bg-slate-300 text-slate-500 rounded-lg text-xs font-bold cursor-not-allowed" disabled>
-                Awaiting clearances
-              </button>
-            `}
+          <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end items-center">
+            <button class="py-2.5 px-6 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 cursor-pointer" onclick="window.closeDischargeOverlay()">Close</button>
           </div>
         </div>
       `;
@@ -1626,12 +1659,66 @@
             </button>
           </div>
         `;
+      } else if (deptKey === 'radiology') {
+        return `
+          <p class="text-xs text-slate-500 mb-4">Confirm all pending radiology imaging reports have been released and findings documented.</p>
+          <div class="flex flex-col gap-3 text-xs text-slate-700">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-rad-reports">
+              <span>All imaging reports (X-Ray, CT, MRI, USG) released to EMR</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-rad-critical">
+              <span>Critical radiology findings communicated to treating physician</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-rad-cd">
+              <span>CD/digital copy handed to patient or attender (if applicable)</span>
+            </label>
+
+            <div class="mt-2">
+              <label class="block font-bold text-slate-600 mb-1">Radiologist Clearance Notes</label>
+              <textarea class="w-full p-2 border rounded" id="rad-notes" rows="2" placeholder="e.g. All reports finalised..."></textarea>
+            </div>
+
+            <button class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs mt-4 cursor-pointer" id="btn-confirm-clearance">
+              Confirm Radiology Clearance
+            </button>
+          </div>
+        `;
+      } else if (deptKey === 'ot') {
+        return `
+          <p class="text-xs text-slate-500 mb-4">Confirm all OT / procedure-related sign-offs and implant records are complete.</p>
+          <div class="flex flex-col gap-3 text-xs text-slate-700">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-ot-notes">
+              <span>Operation notes / procedure report finalised and uploaded</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-ot-implants">
+              <span>Implant log / sticker records filed in patient chart</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chk-ot-specimen">
+              <span>Histopathology specimen dispatched (if applicable)</span>
+            </label>
+
+            <div class="mt-2">
+              <label class="block font-bold text-slate-600 mb-1">OT Clearance Notes</label>
+              <textarea class="w-full p-2 border rounded" id="ot-notes" rows="2" placeholder="e.g. Wound inspection done, staples removed..."></textarea>
+            </div>
+
+            <button class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs mt-4 cursor-pointer" id="btn-confirm-clearance">
+              Confirm OT / Procedure Clearance
+            </button>
+          </div>
+        `;
       }
       return '';
     }
 
     function executeClearanceConfirmation(deptKey) {
-      var currentRole = window._ipdActiveRole || 'ATD Coordinator';
+      var currentRole = (window.state && window.state.activeUserRole) || window._ipdActiveRole || 'ATD Coordinator';
 
       // Check fields
       if (deptKey === 'nursing') {
@@ -1684,6 +1771,24 @@
           alert('Error: Lab diagnostics checklist must be completed.');
           return;
         }
+      } else if (deptKey === 'radiology') {
+        var radRep = document.getElementById('chk-rad-reports')?.checked;
+        var radCrit = document.getElementById('chk-rad-critical')?.checked;
+        if (!radRep || !radCrit) {
+          alert('Error: Radiology report release and critical findings communication checkboxes must be verified.');
+          return;
+        }
+        var radNotesVal = document.getElementById('rad-notes')?.value?.trim() || '';
+        pat.dischargeClearances[deptKey].notes = radNotesVal;
+      } else if (deptKey === 'ot') {
+        var otNotes = document.getElementById('chk-ot-notes')?.checked;
+        var otImpl = document.getElementById('chk-ot-implants')?.checked;
+        if (!otNotes || !otImpl) {
+          alert('Error: OT notes and implant log verification are mandatory.');
+          return;
+        }
+        var otNotesVal = document.getElementById('ot-notes')?.value?.trim() || '';
+        pat.dischargeClearances[deptKey].notes = otNotesVal;
       }
 
       // Mark cleared
@@ -1698,8 +1803,8 @@
     }
 
     // ADMIN OVERRIDE HANDLER
-    window.triggerAdminOverrideClearance = function (deptKey) {
-      var reason = prompt(`Enter Administrator reason to override ${deptKey.toUpperCase()} clearance checklist:`);
+    window.triggerAdminOverrideClearance = async function (deptKey) {
+      var reason = await customPrompt(`Enter Administrator reason to override ${deptKey.toUpperCase()} clearance checklist:`);
       if (reason) {
         pat.dischargeClearances[deptKey].cleared = true;
         pat.dischargeClearances[deptKey].clearedBy = 'Admin Override: ' + window._ipdActiveRole;
@@ -1777,6 +1882,7 @@
       }
 
       if (currentBedId && window.state.bedsStatus[currentBedId]) {
+        var prevStatus = window.state.bedsStatus[currentBedId].status;
         if (isDaycare) {
           window.state.bedsStatus[currentBedId] = {
             wardKey: 'DAYCARE',
@@ -1784,12 +1890,34 @@
             patientUhid: null,
             notes: ''
           };
+          window.state.logBedMovement({
+            patientId: pat.uhid,
+            bedId: currentBedId,
+            wardKey: 'DAYCARE',
+            prevStatus: prevStatus,
+            newStatus: 'Available',
+            action: 'Discharge',
+            user: window._ipdActiveRole || 'ATD Coordinator',
+            role: window._ipdActiveRole || 'ATD Coordinator',
+            remarks: `Daycare bed vacated post discharge of ${pat.name}`
+          });
         } else {
+          var wardKey = window.state.bedsStatus[currentBedId].wardKey || 'GENERAL-WARD-M';
           window.state.bedsStatus[currentBedId].status = 'Cleaning';
           window.state.bedsStatus[currentBedId].patientUhid = null;
           window.state.bedsStatus[currentBedId].notes = `Sanitizing bed space after discharge of ${pat.name}`;
-          var wardKey = window.state.bedsStatus[currentBedId].wardKey || 'GENERAL-WARD-M';
           window.state.triggerHousekeepingRequest(currentBedId, wardKey, `Sanitizing bed space after discharge of ${pat.name}`);
+          window.state.logBedMovement({
+            patientId: pat.uhid,
+            bedId: currentBedId,
+            wardKey: wardKey,
+            prevStatus: prevStatus,
+            newStatus: 'Cleaning',
+            action: 'Discharge',
+            user: window._ipdActiveRole || 'ATD Coordinator',
+            role: window._ipdActiveRole || 'ATD Coordinator',
+            remarks: `Bed released post discharge of ${pat.name}. Triggered discharge cleaning.`
+          });
         }
       }
 
@@ -1798,6 +1926,17 @@
       pat.dischargeStatus = 'Completed';
       pat.dischargeDate = new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
       pat.bed = '';
+
+      // Update corresponding admission in window.state.admissions
+      if (window.state.admissions) {
+        var activeAdm = window.state.admissions.find(a => a.uhid === pat.uhid && a.status === 'Active');
+        if (activeAdm) {
+          activeAdm.status = 'Discharged';
+          activeAdm.dischargeDate = pat.dischargeDate;
+          activeAdm.bed = '';
+        }
+        localStorage.setItem('saronil_admissions', JSON.stringify(window.state.admissions));
+      }
 
       // 3. EMR timeline event logs
       pat.timelineEvents = pat.timelineEvents || [];
@@ -1810,7 +1949,30 @@
         hasDischargeSummary: true
       });
 
-      // 4. SMS Simulation Toast
+      // 4. Auto-book follow-up appointment if doctor and date provided
+      if (pat.dischargeOrder?.followUpDate && pat.dischargeOrder?.followUpDoctor) {
+        window.state.appointments = window.state.appointments || [];
+        var apptExists = window.state.appointments.some(a =>
+          a.patientId === pat.uhid && a.date === pat.dischargeOrder.followUpDate && a.doctorName === pat.dischargeOrder.followUpDoctor
+        );
+        if (!apptExists) {
+          var apptSeq = window.state.appointments.length + 1;
+          window.state.appointments.push({
+            id: 'APT-DC-' + String(apptSeq).padStart(4, '0'),
+            patientId: pat.uhid,
+            patientName: pat.name,
+            doctorName: pat.dischargeOrder.followUpDoctor,
+            date: pat.dischargeOrder.followUpDate,
+            time: '10:00 AM',
+            type: 'Follow-up',
+            status: 'Scheduled',
+            notes: 'Post-discharge follow-up booked automatically on discharge'
+          });
+          localStorage.setItem('saronil_appointments', JSON.stringify(window.state.appointments));
+        }
+      }
+
+      // 5. SMS Simulation Toast
       var fupMsg = pat.dischargeOrder?.followUpDate ? ` Follow-up scheduled on ${pat.dischargeOrder.followUpDate}.` : '';
       var smsText = `SMS Sent: [Saronil IHS]: ${isDaycare ? 'Daycare' : 'Inpatient'} discharge complete for ${pat.name}.${fupMsg}`;
 
@@ -1837,6 +1999,29 @@
     window.closeDischargeOverlay = function () {
       var wrapper = document.getElementById(overlayId);
       if (wrapper) wrapper.remove();
+      refreshActiveSPAView();
+    };
+
+    // CANCEL DISCHARGE ORDER — resets clearances and status
+    window.triggerCancelDischargeOrder = async function () {
+      var reason = await customConfirm('Are you sure you want to cancel the discharge order for ' + pat.name + '? All clearances will be reset.');
+      if (!reason) return;
+      pat.dischargeStatus = 'Not Initiated';
+      pat.dischargeOrder = null;
+      pat.dischargeClearances = null;
+      pat.timelineEvents = pat.timelineEvents || [];
+      pat.timelineEvents.unshift({
+        date: new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
+        type: 'admin',
+        icon: '✕',
+        title: 'Discharge Order Cancelled',
+        desc: 'Discharge process cancelled by ' + ((window.state && window.state.activeUserRole) || window._ipdActiveRole || 'Staff') + '. Patient remains admitted.'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+      var wrapper = document.getElementById(overlayId);
+      if (wrapper) wrapper.remove();
+      window.showToastNotification && window.showToastNotification('Discharge cancelled. Patient remains admitted.');
+      refreshActiveSPAView();
     };
 
     // Start rendering
@@ -1934,7 +2119,7 @@
           <div class="bg-white rounded-2xl w-[640px] max-w-[95vw] max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
               <h3 class="margin-0 text-blue-600 font-bold text-lg flex items-center gap-2">🔄 Initiate Relocation Order</h3>
-              <button class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" onclick="closeTransferOverlay()">✕</button>
+              <button class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" onclick="window.closeTransferOverlay()">✕</button>
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-4 text-left">
@@ -2056,7 +2241,7 @@
 
             <!-- Footer -->
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3">
-              <button class="py-2 px-5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100" onclick="closeTransferOverlay()">Cancel</button>
+              <button class="py-2 px-5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100" onclick="window.closeTransferOverlay()">Cancel</button>
               <button class="py-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold cursor-pointer" id="btn-submit-transfer-req">Review Request ➡️</button>
             </div>
           </div>
@@ -2148,7 +2333,7 @@
         <div class="bg-white rounded-2xl w-[560px] max-w-[95vw] shadow-2xl overflow-hidden flex flex-col text-left">
           <div class="bg-slate-900 text-white px-6 py-4 font-bold text-base flex justify-between items-center">
             <span>📋 Confirm Patient Relocation Request</span>
-            <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="closeTransferOverlay()">✕</button>
+            <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="window.closeTransferOverlay()">✕</button>
           </div>
           
           <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-4 text-xs">
@@ -2266,7 +2451,7 @@
         <div class="bg-white rounded-2xl w-[480px] max-w-[95vw] shadow-2xl overflow-hidden flex flex-col text-left">
           <div class="bg-slate-900 text-white px-6 py-4 font-bold text-sm tracking-wide flex justify-between items-center">
             <span>🔄 REVIEW PATIENT TRANSFER REQUEST</span>
-            <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="closeTransferOverlay()">✕</button>
+            <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="window.closeTransferOverlay()">✕</button>
           </div>
 
           <div class="p-6 flex flex-col gap-4 text-xs text-slate-700">
@@ -2315,8 +2500,8 @@
         refreshActiveSPAView();
       };
 
-      window.rejectTransferRequest = function () {
-        var reason = prompt('Please enter reason for transfer rejection:');
+      window.rejectTransferRequest = async function () {
+        var reason = await customPrompt('Please enter reason for transfer rejection:');
         if (reason) {
           req.status = 'Rejected';
           req.rejectionReason = reason;
@@ -2356,7 +2541,7 @@
           <div class="bg-white rounded-2xl w-[520px] max-w-[95vw] shadow-2xl overflow-hidden flex flex-col text-left">
             <div class="bg-slate-900 text-white px-6 py-4 font-bold text-sm tracking-wide flex justify-between items-center">
               <span>🔄 EXECUTE PATIENT RELOCATION ORDER</span>
-              <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="closeTransferOverlay()">✕</button>
+              <button class="text-white hover:text-slate-200 text-xl font-bold cursor-pointer" onclick="window.closeTransferOverlay()">✕</button>
             </div>
 
             <div class="p-6 flex flex-col gap-4 text-xs text-slate-700">
@@ -2400,7 +2585,7 @@
             </div>
 
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3">
-              <button class="py-2 px-5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100" onclick="closeTransferOverlay()">Cancel</button>
+              <button class="py-2 px-5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 bg-white hover:bg-slate-100" onclick="window.closeTransferOverlay()">Cancel</button>
               <button class="py-2 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer" id="btn-exec-confirm">Confirm Relocation Now</button>
             </div>
           </div>
@@ -2434,6 +2619,7 @@
 
         // 1. Vacate old bed (Infection control cleaning status)
         var currentWardKey = window.state.bedsStatus[req.currentBed]?.wardKey || 'GENERAL-WARD-M';
+        var prevStatusOld = window.state.bedsStatus[req.currentBed]?.status || 'Occupied';
         window.state.bedsStatus[req.currentBed] = {
           wardKey: currentWardKey,
           status: 'Cleaning',
@@ -2441,15 +2627,38 @@
           notes: `Awaiting cleaning after relocation of ${pat.name} to ${targetBedPick || 'External'}`
         };
         window.state.triggerHousekeepingRequest(req.currentBed, currentWardKey, `Awaiting cleaning after relocation of ${pat.name} to ${targetBedPick || 'External'}`);
+        window.state.logBedMovement({
+          patientId: pat.uhid,
+          bedId: req.currentBed,
+          wardKey: currentWardKey,
+          prevStatus: prevStatusOld,
+          newStatus: 'Cleaning',
+          action: 'Transfer Out',
+          user: window._ipdActiveRole || 'ATD Coordinator',
+          role: window._ipdActiveRole || 'ATD Coordinator',
+          remarks: `Vacated bed. Relocated to ${targetBedPick || 'External'}.`
+        });
 
         // 2. Occupy new bed if internal
         if (req.type === 'Internal' || req.type === 'ICU escalation' || req.type === 'ICU step-down') {
+          var prevStatusNew = window.state.bedsStatus[targetBedPick]?.status || 'Available';
           window.state.bedsStatus[targetBedPick] = {
             wardKey: req.targetWard,
             status: 'Occupied',
             patientUhid: pat.uhid,
             notes: `Patient relocated from ${req.currentBed}`
           };
+          window.state.logBedMovement({
+            patientId: pat.uhid,
+            bedId: targetBedPick,
+            wardKey: req.targetWard,
+            prevStatus: prevStatusNew,
+            newStatus: 'Occupied',
+            action: 'Transfer In',
+            user: window._ipdActiveRole || 'ATD Coordinator',
+            role: window._ipdActiveRole || 'ATD Coordinator',
+            remarks: `Patient relocated from ${req.currentBed}`
+          });
 
           pat.ward = WARD_RATES[req.targetWard].name;
           pat.bed = targetBedPick;
@@ -2516,7 +2725,7 @@
           <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-800 flex flex-col gap-2 text-left">
             <span class="font-bold">Supervisor / Coordinator Simulation Desk:</span>
             <span>Switch active role to test the approval and execution screens:</span>
-            <select class="w-full p-2 border rounded bg-white text-xs font-semibold text-slate-700 mt-1" onchange="switchRoleAndRerenderTransfer(this.value)">
+            <select class="w-full p-2 border rounded bg-white text-xs font-semibold text-slate-700 mt-1" onchange="window.switchRoleAndRerenderTransfer(this.value)">
               <option value="">-- Switch Role --</option>
               <option value="Nursing Supervisor" ${window._ipdActiveRole==='Nursing Supervisor'?'selected':''}>Nursing Supervisor (Approve)</option>
               <option value="ATD Coordinator" ${window._ipdActiveRole==='ATD Coordinator'?'selected':''}>ATD Coordinator (Execute)</option>
@@ -2525,7 +2734,7 @@
           </div>
 
           <div class="flex justify-end gap-3 mt-4 border-t pt-4">
-            <button class="py-2 px-5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer" onclick="closeTransferOverlay()">Close</button>
+            <button class="py-2 px-5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer" onclick="window.closeTransferOverlay()">Close</button>
           </div>
         </div>
       `;
@@ -2558,7 +2767,24 @@
     }
 
     const patient = window.state.patients.find(p => p.uhid === uhid);
-    if (!patient) return;
+    if (!patient) {
+      console.warn("Patient not found by UHID in triggerAllocateBedWorkflow:", uhid);
+      // Case-insensitive name search fallback to correct mismatched UHIDs from previous sessions
+      const adm = (window.state.admissions || []).find(a => a.uhid === uhid) || 
+                  (window.state.admissionRequests || []).find(r => r.uhid === uhid);
+      if (adm) {
+        const fallbackPatient = window.state.patients.find(p => p.name.toLowerCase() === adm.name.toLowerCase());
+        if (fallbackPatient) {
+          console.log("Auto-correcting UHID for patient:", fallbackPatient.name, "from", adm.uhid, "to", fallbackPatient.uhid);
+          adm.uhid = fallbackPatient.uhid;
+          localStorage.setItem('saronil_admissionRequests', JSON.stringify(window.state.admissionRequests));
+          window.triggerAllocateBedWorkflow(fallbackPatient.uhid);
+          return;
+        }
+      }
+      alert("Error: Patient record not found in system registry for UHID " + uhid);
+      return;
+    }
 
     // 2. Fetch admission request info to determine ward requested
     const adm = (window.state.admissions || []).find(a => a.uhid === uhid) || 
@@ -2751,7 +2977,10 @@
 
   window.openBedAllocationPopupDirect = function (uhid) {
     const patient = window.state.patients.find(p => p.uhid === uhid);
-    if (!patient) return;
+    if (!patient) {
+      alert("Error: Patient record not found in system registry for UHID " + uhid);
+      return;
+    }
 
     window.activeAllocPatientUhid = uhid;
     selectedAllocBed = null;
@@ -2884,11 +3113,15 @@
 
     patient.type = 'IPD';
     patient.status = 'Admitted';
-    patient.ward = window.state.wards[wardKey].name;
+    const wardInfo = window.state.wards[wardKey];
+    patient.ward = wardInfo ? wardInfo.name : (WARD_RATES[wardKey] ? WARD_RATES[wardKey].name : wardKey);
     patient.bed = selectedAllocBed;
     patient.ipNumber = 'IP-2400' + seq;
     patient.primaryConsultant = doctor;
     patient.department = (window.state.doctors.find(d => d.name === doctor) || { spec: 'General Medicine' }).spec;
+    patient.dischargeStatus = 'Not Initiated';
+    patient.dischargeOrder = null;
+    patient.dischargeClearances = null;
 
     window.state.logBedMovement({
       patientId: patient.uhid,
@@ -2913,10 +3146,105 @@
     window.showToastNotification('✓ Patient admitted and bed allocated successfully.');
     
     // Refresh current SPA view to reflect new status!
-    if (typeof refreshActiveSPAView === 'function') {
-      refreshActiveSPAView();
+    window.refreshActiveSPAView();
+  };
+
+  // ==========================================================================
+  // DISCHARGE SUMMARY PRINT
+  // ==========================================================================
+
+  window.prPrintDischargeSummary = function (uhid) {
+    var pat = window.state.patients.find(p => p.uhid === uhid);
+    if (!pat || !pat.dischargeOrder) {
+      alert('Discharge summary not available for this patient.');
+      return;
+    }
+    var d = pat.dischargeOrder;
+    var clearances = pat.dischargeClearances || {};
+    var deptLabelMap = { nursing: 'Nursing', billing: 'Billing & Finance', pharmacy: 'Pharmacy', tpa: 'TPA / Insurance', lab: 'Laboratory', radiology: 'Radiology & Imaging', ot: 'OT / Procedure' };
+
+    var clearanceRows = Object.entries(clearances).map(function ([key, c]) {
+      var lbl = deptLabelMap[key] || key.toUpperCase();
+      var badge = c.cleared
+        ? '<span style="color:#16a34a;font-weight:bold">✓ Cleared</span>'
+        : '<span style="color:#dc2626;font-weight:bold">✗ Pending</span>';
+      var by = c.clearedBy ? ' by ' + c.clearedBy : '';
+      var at = c.clearedAt ? ' at ' + new Date(c.clearedAt).toLocaleString() : '';
+      return '<tr><td style="padding:4px 8px;border:1px solid #e2e8f0">' + lbl + '</td><td style="padding:4px 8px;border:1px solid #e2e8f0">' + badge + '</td><td style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">' + by + at + '</td></tr>';
+    }).join('');
+
+    var html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discharge Summary — ${pat.name}</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1e293b; margin: 0; padding: 24px; }
+    .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { font-size: 18px; color: #2563eb; margin: 0 0 4px; }
+    .header p { margin: 2px 0; color: #64748b; }
+    .section-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #2563eb; margin: 16px 0 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-bottom: 8px; }
+    .field label { color: #64748b; font-size: 10px; text-transform: uppercase; }
+    .field span { font-weight: 600; display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th { background: #f1f5f9; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; border: 1px solid #e2e8f0; text-align: left; }
+    .footer { margin-top: 32px; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 12px; color: #94a3b8; font-size: 10px; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Saronil IHS — Discharge Summary</h1>
+    <p>Generated: ${new Date().toLocaleString()} &nbsp;|&nbsp; Printed by System</p>
+  </div>
+
+  <div class="section-title">Patient Information</div>
+  <div class="grid">
+    <div class="field"><label>Patient Name</label><span>${pat.name || '—'}</span></div>
+    <div class="field"><label>UHID</label><span>${pat.uhid || '—'}</span></div>
+    <div class="field"><label>IP Number</label><span>${pat.ipNumber || '—'}</span></div>
+    <div class="field"><label>Age / Gender</label><span>${pat.age || '—'} / ${pat.gender || '—'}</span></div>
+    <div class="field"><label>Admission Date</label><span>${pat.admitted || pat.admissionDate || '—'}</span></div>
+    <div class="field"><label>Discharge Date</label><span>${pat.dischargeDate || '—'}</span></div>
+    <div class="field"><label>Ward / Bed</label><span>${pat.ward || '—'}</span></div>
+    <div class="field"><label>Treating Consultant</label><span>${pat.primaryConsultant || '—'}</span></div>
+  </div>
+
+  <div class="section-title">Discharge Order Details</div>
+  <div class="grid">
+    <div class="field"><label>Discharge Type</label><span>${d.dischargeType || '—'}</span></div>
+    <div class="field"><label>Condition at Discharge</label><span>${d.conditionAtDischarge || '—'}</span></div>
+    <div class="field"><label>Provisional Diagnosis</label><span>${d.provisionalDiagnosis || pat.provisionalDiagnosis || '—'}</span></div>
+    <div class="field"><label>Final Diagnosis</label><span>${d.finalDiagnosis || '—'}</span></div>
+    <div class="field"><label>Follow-up Doctor</label><span>${d.followUpDoctor || '—'}</span></div>
+    <div class="field"><label>Follow-up Date</label><span>${d.followUpDate || '—'}</span></div>
+  </div>
+
+  ${d.dischargeNotes ? `<div class="section-title">Discharge Notes</div><p style="margin:4px 0">${d.dischargeNotes}</p>` : ''}
+  ${d.medicationsOnDischarge ? `<div class="section-title">Medications at Discharge</div><p style="margin:4px 0;white-space:pre-wrap">${d.medicationsOnDischarge}</p>` : ''}
+  ${d.specialInstructions ? `<div class="section-title">Special Instructions / Advice</div><p style="margin:4px 0">${d.specialInstructions}</p>` : ''}
+
+  <div class="section-title">Departmental Clearances</div>
+  <table>
+    <thead><tr><th>Department</th><th>Status</th><th>Cleared By / At</th></tr></thead>
+    <tbody>${clearanceRows || '<tr><td colspan="3" style="padding:6px 8px;border:1px solid #e2e8f0;color:#94a3b8">No clearances recorded</td></tr>'}</tbody>
+  </table>
+
+  <div class="footer">
+    <span>Saronil Integrated Hospital Information System</span>
+    <span>Document ID: DS-${pat.uhid}-${Date.now()}</span>
+  </div>
+  <script>window.print();<\/script>
+</body>
+</html>`;
+
+    var win = window.open('', '_blank', 'width=800,height=700');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
     } else {
-      location.reload();
+      alert('Pop-up blocked. Please allow pop-ups to print the discharge summary.');
     }
   };
 

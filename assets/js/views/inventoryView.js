@@ -650,8 +650,8 @@
     renderInventoryLayout(document.getElementById('main-content'));
   };
 
-  window.resolveNDPSLock = function() {
-    var code = prompt("NDPS Count discrepancy verification logic.\nEnter physical counted count for Inj. Fentanyl 100mcg to verify:");
+  window.resolveNDPSLock = async function() {
+    var code = await customPrompt("NDPS Count discrepancy verification logic.\nEnter physical counted count for Inj. Fentanyl 100mcg to verify:");
     if (code) {
       ndpsLocked = false;
       ndpsDiscrepancyAlert = false;
@@ -1368,9 +1368,9 @@
     renderInventoryLayout(document.getElementById('main-content'));
   };
 
-  window.loadSavedTemplate = function() {
+  window.loadSavedTemplate = async function() {
     var list = window.state.invTemplates.map((t, idx) => `${idx + 1}: ${t.name} (${t.items.length} items)`).join('\n');
-    var select = prompt("Select Template index:\n\n" + list);
+    var select = await customPrompt("Select Template index:\n\n" + list);
     if (select) {
       var tIndex = parseInt(select) - 1;
       var template = window.state.invTemplates[tIndex];
@@ -1652,12 +1652,12 @@
   }
 
   // Reservation Wizard Modal
-  window.openReservationWizard = function() {
-    var pUhid = prompt("Enter Patient UHID:", "SH-2026-00445");
+  window.openReservationWizard = async function() {
+    var pUhid = await customPrompt("Enter Patient UHID:", "SH-2026-00445");
     if (!pUhid) return;
-    var proc = prompt("Enter Surgery / Procedure Name:", "Ortho Hip Surgery");
-    var code = prompt("Enter Item code to reserve:", "ITM-IMP-003");
-    var qty = parseInt(prompt("Enter Reservation Qty:", "1")) || 1;
+    var proc = await customPrompt("Enter Surgery / Procedure Name:", "Ortho Hip Surgery");
+    var code = await customPrompt("Enter Item code to reserve:", "ITM-IMP-003");
+    var qty = parseInt(await customPrompt("Enter Reservation Qty:", "1")) || 1;
 
     var item = window.state.invStock.find(s => s.code === code);
     if (!item) { alert("Invalid Item code."); return; }
@@ -1678,8 +1678,8 @@
     renderInventoryLayout(document.getElementById('main-content'));
   };
 
-  window.saveAsTemplate = function() {
-    var name = prompt("Enter Template Name:");
+  window.saveAsTemplate = async function() {
+    var name = await customPrompt("Enter Template Name:");
     if (!name) return;
     if (newIndentItems.length === 0) {
       alert("No items in indent to save.");
@@ -2006,8 +2006,8 @@
     }
   };
 
-  window.rejectPurchaseRequest = function(id) {
-    var reason = prompt("Enter Rejection Reason:");
+  window.rejectPurchaseRequest = async function(id) {
+    var reason = await customPrompt("Enter Rejection Reason:");
     if (reason) {
       var pr = window.state.invIndents.find(i => i.id === id);
       if (pr) {
@@ -2091,9 +2091,9 @@
     `;
   }
 
-  window.handleBatchSelectChange = function (indentId, itemCode, val) {
+  window.handleBatchSelectChange = async function (indentId, itemCode, val) {
     if (val === 'override') {
-      var reason = prompt("Enter mandatory override reason for deviating from FIFO/FEFO selection:");
+      var reason = await customPrompt("Enter mandatory override reason for deviating from FIFO/FEFO selection:");
       if (!reason) {
         alert("Batch override cancelled. Reverting to FIFO selection.");
         renderInventoryLayout(document.getElementById('main-content'));
@@ -2225,8 +2225,8 @@
     }
   };
 
-  window.cancelMyRequest = function(id) {
-    var reason = prompt("Enter cancel reason (mandatory):");
+  window.cancelMyRequest = async function(id) {
+    var reason = await customPrompt("Enter cancel reason (mandatory):");
     if (!reason) { alert("Cancellation cancelled."); return; }
     var ind = window.state.invIndents.find(i => i.id === id);
     if (ind) {
@@ -3017,16 +3017,16 @@
     renderInventoryLayout(document.getElementById('main-content'));
   };
 
-  window.amendPO = function(poId) {
-    var reason = prompt("Enter PO Amendment Reason:");
+  window.amendPO = async function(poId) {
+    var reason = await customPrompt("Enter PO Amendment Reason:");
     if (reason) {
       alert(`PO Amendment logged for ${poId}. Revision approved.`);
       renderInventoryLayout(document.getElementById('main-content'));
     }
   };
 
-  window.cancelPO = function(poId) {
-    var confirmCancel = confirm(`Are you sure you want to cancel PO ${poId}?`);
+  window.cancelPO = async function(poId) {
+    var confirmCancel = await customConfirm(`Are you sure you want to cancel PO ${poId}?`);
     if (confirmCancel) {
       var po = window.state.invPOs.find(p => p.poId === poId);
       if (po) po.status = 'Cancelled';
@@ -4332,13 +4332,13 @@
       }
     };
 
-    window.closeStockRequestOverlay = function () {
+    window.closeStockRequestOverlay = async function () {
       var hasData = selectedItems.length > 0 || 
         (document.getElementById('over-notes') && document.getElementById('over-notes').value.trim() !== '') ||
         (document.getElementById('over-pr-desc') && document.getElementById('over-pr-desc').value.trim() !== '');
 
       if (hasData) {
-        if (!confirm("Are you sure you want to discard this request?")) return;
+        if (!await customConfirm("Are you sure you want to discard this request?")) return;
       }
       overlayDiv.remove();
     };
@@ -4459,8 +4459,8 @@
     `;
   };
 
-  window.cancelMyRequestFromModule = function(id, dept) {
-    var reason = prompt("Enter cancel reason (mandatory):");
+  window.cancelMyRequestFromModule = async function(id, dept) {
+    var reason = await customPrompt("Enter cancel reason (mandatory):");
     if (!reason) { alert("Cancellation cancelled."); return; }
     if (!window.state.invIndents) {
       window.state.invIndents = [];

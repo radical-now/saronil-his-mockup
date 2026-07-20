@@ -48,6 +48,18 @@
   var _allottedBed = null;
   var _generatedAdmNo = '';
 
+  // Safety Precaution and Pre-Admission Checklist state variables
+  var _wizAllergyFlag = false;
+  var _wizFallRiskFlag = false;
+  var _wizDnrFlag = false;
+  var _wizLimbPrecautionFlag = false;
+  var _wizWristbandPrinted = false;
+  var _wizConsentSigned = false;
+  var _wizEmergencyImpliedConsent = false;
+  var _wizEmergencyImpliedConsentDoctor = 'Dr. Amit Verma';
+  var _wizDietOrderIssued = false;
+  var _wizValuablesRecorded = false;
+
   // Daycare specific variables
   var PROCEDURES = [
     'Cataract Surgery (Phacoemulsification)',
@@ -191,25 +203,33 @@
     var localAdms = localStorage.getItem('saronil_admissionRequests');
     if (localAdms) {
       var parsed = JSON.parse(localAdms);
+      // Map to correct UHIDs if they were seeded incorrectly in the past
+      var corrected = false;
+      parsed.forEach(function(r) {
+        if (r.name === 'Rajan Pillai' && r.uhid === 'SH-2026-04840') { r.uhid = 'SH-2026-04850'; corrected = true; }
+        if (r.name === 'Pramod Rao' && r.uhid === 'SH-2026-04851') { r.uhid = 'SH-2026-04870'; corrected = true; }
+      });
+      if (corrected) {
+        localStorage.setItem('saronil_admissionRequests', JSON.stringify(parsed));
+      }
       // Discard any cached data that still has legacy fake UHIDs (003xx prefix)
       var hasFakeUhids = parsed.some(function(r) { return r.uhid && r.uhid.startsWith('SH-2026-003'); });
       if (!hasFakeUhids) {
         window.state.admissionRequests = parsed;
       } else {
-        // Let productionSeed overwrite with real UHIDs — seed placeholder now
         window.state.admissionRequests = [
           { id: 'REQ001', name: 'Sunita Sharma',   uhid: 'SH-2026-04817', source: 'OPD Referral',       refDoc: 'Dr. Srinivasan',    diagnosis: 'Acute Cholecystitis — Surgical Review',   ward: 'GENERAL-WARD-M', advancePaid: true,  waitingHrs: 2, branch: 'Bengaluru' },
           { id: 'REQ002', name: 'Deepak Verma',    uhid: 'SH-2026-04755', source: 'Emergency Transfer',  refDoc: 'Dr. Fatima Sheikh', diagnosis: 'Polytrauma — stabilised in Emergency',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 1, branch: 'Bengaluru' },
-          { id: 'REQ003', name: 'Rajan Pillai',    uhid: 'SH-2026-04840', source: 'External Referral',   refDoc: 'Dr. K. Prasad',     diagnosis: 'Severe Community-Acquired Pneumonia',    ward: 'CCU',            advancePaid: true,  waitingHrs: 8, branch: 'Whitefield' },
-          { id: 'REQ004', name: 'Pramod Rao',      uhid: 'SH-2026-04851', source: 'OPD Referral',        refDoc: 'Dr. Priya Nair',    diagnosis: 'Pre-eclampsia — Obstetric Assessment',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 7, branch: 'Electronic City' }
+          { id: 'REQ003', name: 'Rajan Pillai',    uhid: 'SH-2026-04850', source: 'External Referral',   refDoc: 'Dr. K. Prasad',     diagnosis: 'Severe Community-Acquired Pneumonia',    ward: 'CCU',            advancePaid: true,  waitingHrs: 8, branch: 'Whitefield' },
+          { id: 'REQ004', name: 'Pramod Rao',      uhid: 'SH-2026-04870', source: 'OPD Referral',        refDoc: 'Dr. Priya Nair',    diagnosis: 'Pre-eclampsia — Obstetric Assessment',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 7, branch: 'Electronic City' }
         ];
       }
     } else {
       window.state.admissionRequests = [
         { id: 'REQ001', name: 'Sunita Sharma',   uhid: 'SH-2026-04817', source: 'OPD Referral',       refDoc: 'Dr. Srinivasan',    diagnosis: 'Acute Cholecystitis — Surgical Review',   ward: 'GENERAL-WARD-M', advancePaid: true,  waitingHrs: 2, branch: 'Bengaluru' },
         { id: 'REQ002', name: 'Deepak Verma',    uhid: 'SH-2026-04755', source: 'Emergency Transfer',  refDoc: 'Dr. Fatima Sheikh', diagnosis: 'Polytrauma — stabilised in Emergency',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 1, branch: 'Bengaluru' },
-        { id: 'REQ003', name: 'Rajan Pillai',    uhid: 'SH-2026-04840', source: 'External Referral',   refDoc: 'Dr. K. Prasad',     diagnosis: 'Severe Community-Acquired Pneumonia',    ward: 'CCU',            advancePaid: true,  waitingHrs: 8, branch: 'Whitefield' },
-        { id: 'REQ004', name: 'Pramod Rao',      uhid: 'SH-2026-04851', source: 'OPD Referral',        refDoc: 'Dr. Priya Nair',    diagnosis: 'Pre-eclampsia — Obstetric Assessment',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 7, branch: 'Electronic City' }
+        { id: 'REQ003', name: 'Rajan Pillai',    uhid: 'SH-2026-04850', source: 'External Referral',   refDoc: 'Dr. K. Prasad',     diagnosis: 'Severe Community-Acquired Pneumonia',    ward: 'CCU',            advancePaid: true,  waitingHrs: 8, branch: 'Whitefield' },
+        { id: 'REQ004', name: 'Pramod Rao',      uhid: 'SH-2026-04870', source: 'OPD Referral',        refDoc: 'Dr. Priya Nair',    diagnosis: 'Pre-eclampsia — Obstetric Assessment',  ward: 'GENERAL-WARD-F', advancePaid: false, waitingHrs: 7, branch: 'Electronic City' }
       ];
     }
 
@@ -221,44 +241,68 @@
         { id: 'TRF001', name: 'Suresh Babu', uhid: 'SH-2026-04768', currentBed: 'SP-302', currentWard: 'SEMI-PRIVATE', targetWard: 'CCU', requestedBy: 'Dr. Srinivasan', reason: 'Clinical deterioration — CCU upgrade', requestedAt: new Date().toISOString(), status: 'Pending Nursing Supervisor Approval', branch: 'Bengaluru' }
       ];
     }
+
+    // Dynamically retrieve names from common patients registry to ensure single source of truth
+    if (window.state.admissionRequests) {
+      window.state.admissionRequests.forEach(function(r) {
+        var pat = window.state.patients.find(p => p.uhid === r.uhid);
+        if (pat) {
+          r.name = pat.name;
+        }
+      });
+    }
+    if (window.state.transferRequests) {
+      window.state.transferRequests.forEach(function(t) {
+        var pat = window.state.patients.find(p => p.uhid === t.uhid);
+        if (pat) {
+          t.name = pat.name;
+        }
+      });
+    }
+
     if (!window.state.dischargeOrders) {
       window.state.dischargeOrders = [];
     }
+
     // Seed some demo discharge requests
     var admitted = window.state.patients.filter(p => p.status === 'Admitted');
     if (admitted.length > 1) {
-      // Seed first patient
-      admitted[0].dischargeStatus = 'In Progress — Clearances Pending';
-      admitted[0].dischargeOrder = {
-        type: 'Regular',
-        condition: 'Improved',
-        finalDiagnosis: 'Acute Appendicitis (K35.8)',
-        summary: 'Clinical course resolved with surgery. Vitals stable.',
-        timestamp: '2026-06-29T09:30:00Z',
-        followUpDoctor: admitted[0].primaryConsultant || 'Dr. Ramesh Kumar'
-      };
-      admitted[0].dischargeClearances = {
-        nursing: { cleared: true, clearedBy: 'Ward Nurse', clearedAt: '2026-06-29T09:45:00Z' },
-        billing: { cleared: false, clearedBy: null, clearedAt: null },
-        pharmacy: { cleared: true, clearedBy: 'Pharmacist', clearedAt: '2026-06-29T09:50:00Z' },
-        tpa: { cleared: false, clearedBy: null, clearedAt: null }
-      };
+      // Seed first patient if not already in discharge progress
+      if (!admitted[0].dischargeStatus || admitted[0].dischargeStatus === 'Not Initiated') {
+        admitted[0].dischargeStatus = 'In Progress — Clearances Pending';
+        admitted[0].dischargeOrder = {
+          type: 'Regular',
+          condition: 'Improved',
+          finalDiagnosis: 'Acute Appendicitis (K35.8)',
+          summary: 'Clinical course resolved with surgery. Vitals stable.',
+          timestamp: '2026-06-29T09:30:00Z',
+          followUpDoctor: admitted[0].primaryConsultant || 'Dr. Ramesh Kumar'
+        };
+        admitted[0].dischargeClearances = {
+          nursing: { cleared: true, clearedBy: 'Ward Nurse', clearedAt: '2026-06-29T09:45:00Z' },
+          billing: { cleared: false, clearedBy: null, clearedAt: null },
+          pharmacy: { cleared: true, clearedBy: 'Pharmacist', clearedAt: '2026-06-29T09:50:00Z' },
+          tpa: { cleared: false, clearedBy: null, clearedAt: null }
+        };
+      }
 
-      // Seed second patient (delayed >6h)
-      admitted[1].dischargeStatus = 'In Progress — Clearances Pending';
-      admitted[1].dischargeOrder = {
-        type: 'Regular',
-        condition: 'Improved',
-        finalDiagnosis: 'Severe Pneumonia (J18.9)',
-        summary: 'Clinical course resolved with IV antibiotics. Vitals stable.',
-        timestamp: '2026-06-29T03:00:00Z',
-        followUpDoctor: admitted[1].primaryConsultant || 'Dr. Priya Nair'
-      };
-      admitted[1].dischargeClearances = {
-        nursing: { cleared: false, clearedBy: null, clearedAt: null },
-        billing: { cleared: false, clearedBy: null, clearedAt: null },
-        pharmacy: { cleared: false, clearedBy: null, clearedAt: null }
-      };
+      // Seed second patient (delayed >6h) if not already in discharge progress
+      if (!admitted[1].dischargeStatus || admitted[1].dischargeStatus === 'Not Initiated') {
+        admitted[1].dischargeStatus = 'In Progress — Clearances Pending';
+        admitted[1].dischargeOrder = {
+          type: 'Regular',
+          condition: 'Improved',
+          finalDiagnosis: 'Severe Pneumonia (J18.9)',
+          summary: 'Clinical course resolved with IV antibiotics. Vitals stable.',
+          timestamp: '2026-06-29T03:00:00Z',
+          followUpDoctor: admitted[1].primaryConsultant || 'Dr. Priya Nair'
+        };
+        admitted[1].dischargeClearances = {
+          nursing: { cleared: false, clearedBy: null, clearedAt: null },
+          billing: { cleared: false, clearedBy: null, clearedAt: null },
+          pharmacy: { cleared: false, clearedBy: null, clearedAt: null }
+        };
+      }
     }
   }
 
@@ -327,11 +371,11 @@
       }
       .admin-kpi-card {
         flex: 0 0 calc(12.5% - 11px);
-        min-width: 170px;
+        min-width: 140px;
         background-color: #ffffff;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 16px;
+        padding: 10px 12px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -446,9 +490,9 @@
       .ipd-drawer-val { font-weight: 600; color: var(--text-primary); text-align: right; }
       
       /* Modals */
-      .ipd-modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index: 999; }
-      .ipd-modal { background:white; border-radius:12px; width:450px; max-width:90%; max-height:90%; overflow-y:auto; box-shadow:0 8px 30px rgba(0,0,0,0.12); border:1px solid var(--border-color); }
-      .ipd-modal-hdr { background:#f8fafc; padding:16px 20px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; }
+      .ipd-modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display:flex; align-items:center; justify-content:center; z-index: 1200; }
+      .ipd-modal { background:white; border-radius:16px; width:500px; max-width:90%; max-height:90%; overflow-y:auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border:1px solid #cbd5e1; }
+      .ipd-modal-hdr { background:white; padding:18px 24px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; }
       .ipd-modal-title { font-weight:800; font-size:14px; color:#1e3a8a; margin:0; text-transform:uppercase; }
       .ipd-modal-body { padding:20px; }
       .ipd-modal-field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
@@ -461,6 +505,7 @@
 
       .atd-card { background: var(--bg-surface, #fff); border: none !important; border-radius: 0 !important; box-shadow: none !important; overflow: hidden; margin-top: 0 !important; }
       .atd-body { padding: 24px 0 !important; }
+      .atd-header { background: transparent !important; background-color: transparent !important; border: none !important; border-bottom: none !important; padding: 12px 0 !important; margin-bottom: 12px; }
     `;
     document.head.appendChild(style);
   }
@@ -474,10 +519,8 @@
 
     // Set active tab based on query param
     if (params && params.tab) {
-      if (params.tab === 'dashboard') {
+      if (params.tab === 'dashboard' || params.tab === 'atd') {
         _activeTab = 'dashboard';
-      } else if (params.tab === 'atd') {
-        _activeTab = 'bedboard';
       }
     }
 
@@ -490,6 +533,14 @@
         _provisionalDiagnosis = pat.clinicalData ? pat.clinicalData.diagnosis : '';
         _referringDoctor = pat.primaryConsultant || '';
         _activeTab = 'admission_wizard';
+
+        if (params.bed) {
+          _allottedBed = params.bed;
+          var bedStatusObj = window.state.bedsStatus[params.bed];
+          if (bedStatusObj && bedStatusObj.wardKey) {
+            _wardPreference = bedStatusObj.wardKey;
+          }
+        }
 
         if (params.from_er === 'true' || params.from_er === true) {
           _admSource = 'Same hospital Emergency';
@@ -518,8 +569,6 @@
     // Switch screens based on active tab
     if (_activeTab === 'dashboard') {
       contentHTML = renderDashboardScreen();
-    } else if (_activeTab === 'bedboard') {
-      contentHTML = renderBedBoardScreen();
     } else if (_activeTab === 'admission_wizard') {
       contentHTML = renderAdmissionWizardWrapper();
     } else if (_activeTab === 'bed_mgmt') {
@@ -554,7 +603,7 @@
       </div>
     `;
 
-    container.innerHTML = `
+    window.ipdSafeRender(container, `
       <div class="ipd-wrapper">
         ${roleSelectorHTML}
         <!-- Workspace Body Content -->
@@ -562,7 +611,7 @@
           ${contentHTML}
         </div>
         <!-- Patient Details Central Modal Popup -->
-        <div class="ipd-details-overlay ${(_drawerOpen && _activeTab === 'bedboard') ? 'open' : ''}" id="ipd-drawer-container" onclick="if(event.target===this) window._drawerClose()">
+        <div class="ipd-details-overlay ${(_drawerOpen && _activeTab === 'dashboard') ? 'open' : ''}" id="ipd-drawer-container" onclick="if(event.target===this) window._drawerClose()">
           <div class="ipd-details-modal">
             ${renderRightDrawerHTML()}
           </div>
@@ -570,7 +619,7 @@
         <!-- Modal Overlays -->
         ${renderModalOverlays()}
       </div>
-    `;
+    `);
   }
 
   window._ipdSwitchRole = function(role) {
@@ -675,16 +724,152 @@
       <!-- KPI Strip -->
       ${renderKPICards()}
 
-      <!-- Pending Queues -->
-      ${renderPendingQueues()}
+      <!-- 2-Column Command Center Layout: 30% Queues Left + 70% Bed Board Right -->
+      <div style="display: grid; grid-template-columns: 3fr 7fr; gap: 20px; align-items: start; margin-top: 15px;">
+        <!-- Left Column: 30% Pending Action Queues -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          ${renderPendingQueues()}
+        </div>
 
-      <!-- Ward Census Table -->
-      ${renderWardCensusTable()}
+        <!-- Right Column: 70% Real-Time Facility Bed Board -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          ${renderDashboardBedBoard()}
+        </div>
+      </div>
 
       <!-- Administrator Retrospective Audit Panel -->
       ${adminOverridesLogHTML}
     `;
   }
+
+  window._showBedLogsPopup = function() {
+    var existing = document.getElementById('bed-logs-popup-overlay');
+    if (existing) existing.remove();
+
+    var wrapper = document.createElement('div');
+    wrapper.id = 'bed-logs-popup-overlay';
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
+    wrapper.style.left = '0';
+    wrapper.style.width = '100vw';
+    wrapper.style.height = '100vh';
+    wrapper.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
+    wrapper.style.backdropFilter = 'blur(4px)';
+    wrapper.style.display = 'flex';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.zIndex = '999999';
+
+    var logs = window.state.bedAuditLogs || [];
+    var sortedLogs = [...logs].reverse();
+    
+    var logRowsHTML = sortedLogs.map(log => {
+      var dateStr = '';
+      try {
+        dateStr = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+      } catch (e) {
+        dateStr = log.timestamp || '—';
+      }
+      
+      var patientInfo = '—';
+      if (log.patientId) {
+        var pat = window.state.patients.find(p => p.uhid === log.patientId);
+        var name = pat ? pat.name : 'Patient';
+        patientInfo = `<strong style="color:#1b3a5c;">${name}</strong> <span style="font-family:monospace; font-size:10px; color:#64748b;">(${log.patientId})</span>`;
+      }
+      
+      var badgeColor = '#f1f5f9';
+      var badgeTextColor = '#475569';
+      var actionLabel = log.action || log.newStatus || 'Status Update';
+      
+      if (actionLabel === 'Admission' || actionLabel === 'Allocation' || log.newStatus === 'Occupied') {
+        badgeColor = '#dcfce7';
+        badgeTextColor = '#15803d';
+      } else if (actionLabel === 'Transfer' || actionLabel === 'Relocation' || actionLabel === 'Transfer In' || actionLabel === 'Transfer Out') {
+        badgeColor = '#f3e8ff';
+        badgeTextColor = '#6b21a8';
+      } else if (actionLabel === 'Release' || actionLabel === 'Discharge' || actionLabel === 'Discharge Checkout' || log.newStatus === 'Dirty' || log.newStatus === 'Cleaning') {
+        badgeColor = '#fee2e2';
+        badgeTextColor = '#b91c1c';
+      } else if (log.newStatus === 'Blocked' || log.newStatus === 'Maintenance Required') {
+        badgeColor = '#fef3c7';
+        badgeTextColor = '#d97706';
+      }
+      
+      var wardName = (window.state.wards && window.state.wards[log.wardKey]?.name) || log.wardKey || '—';
+      var opName = log.user || 'System';
+      if (log.role) {
+        opName += ` (${log.role})`;
+      }
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+          <td style="padding: 10px 12px; color: #64748b; white-space: nowrap;">${dateStr}</td>
+          <td style="padding: 10px 12px;"><span class="reg-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-family:monospace;">${log.bedId}</span></td>
+          <td style="padding: 10px 12px; color: #475569;">${wardName}</td>
+          <td style="padding: 10px 12px;"><span class="reg-badge" style="background:${badgeColor}; color:${badgeTextColor}; font-weight:700;">${actionLabel}</span></td>
+          <td style="padding: 10px 12px; color: #475569;">${patientInfo}</td>
+          <td style="padding: 10px 12px; color: #475569;">${log.remarks || log.reason || 'Status updated'}</td>
+          <td style="padding: 10px 12px; color: #64748b;">${opName}</td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">No bed activity logged</td></tr>`;
+
+    wrapper.innerHTML = `
+      <div style="background: white; width: 85%; max-width: 1000px; max-height: 80%; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display: flex; flex-direction: column; overflow: hidden; animation: modalFadeIn 0.25s ease-out;">
+        <style>
+          @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        </style>
+        
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">📋</span>
+            <div>
+              <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #1b3a5c;">Bed Activity & Transaction Logs</h3>
+              <div style="font-size: 10px; color: #64748b; margin-top: 1px;">Audit trail of all ward allocations, transfers, releases, and status changes.</div>
+            </div>
+          </div>
+          <button onclick="window.closeBedLogsPopup()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; font-weight: bold; padding: 4px;">&times;</button>
+        </div>
+
+        <!-- Modal Body (Logs Table) -->
+        <div style="padding: 20px; overflow-y: auto; flex-grow: 1;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 11px; color: #475569; font-weight: 700;">
+                <th style="padding: 10px 12px; width: 15%;">Timestamp</th>
+                <th style="padding: 10px 12px; width: 10%;">Bed</th>
+                <th style="padding: 10px 12px; width: 15%;">Ward</th>
+                <th style="padding: 10px 12px; width: 12%;">Activity</th>
+                <th style="padding: 10px 12px; width: 22%;">Patient Details</th>
+                <th style="padding: 10px 12px; width: 21%;">Remarks / Reason</th>
+                <th style="padding: 10px 12px; width: 15%;">Operator</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${logRowsHTML}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="display: flex; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; gap: 8px;">
+          <button onclick="window.closeBedLogsPopup()" class="btn btn-secondary" style="padding: 6px 16px; font-size: 11px; font-weight: 700; cursor: pointer;">Close</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(wrapper);
+  };
+
+  window.closeBedLogsPopup = function() {
+    var el = document.getElementById('bed-logs-popup-overlay');
+    if (el) el.remove();
+  };
 
   function renderAdminOverridesAuditPanel() {
     var overrides = window.state.emergencyOverridesHistory || [];
@@ -832,42 +1017,42 @@
 
     return `
       <div class="admin-kpi-scroll-row">
-        <div class="admin-kpi-card ${kpi1Class}">
+        <div class="admin-kpi-card ${kpi1Class}" onclick="window.router.navigate('dashboard?kpi=admissions_today')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Active IPD Patients</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${activeCount}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">${capacityPct}% Hospital Occupied</div>
         </div>
-        <div class="admin-kpi-card ${kpi2Class}">
+        <div class="admin-kpi-card ${kpi2Class}" onclick="window.router.navigate('dashboard?kpi=beds_available')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Available Beds</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${availableBeds} / ${totalBeds}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">${Math.round((availableBeds/totalBeds)*100)}% Free Space</div>
         </div>
-        <div class="admin-kpi-card ${kpi3Class}">
+        <div class="admin-kpi-card ${kpi3Class}" onclick="window.router.navigate('dashboard?kpi=admissions_pending')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">OPD Referrals</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pendingAdmissions.filter(a => a.source === 'OPD referral').length}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">Awaiting Admission</div>
         </div>
-        <div class="admin-kpi-card ${kpi4Class}">
+        <div class="admin-kpi-card ${kpi4Class}" onclick="window.router.navigate('dashboard?kpi=admissions_pending')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Emergency Transfers</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pendingAdmissions.filter(a => a.source === 'Emergency transfer').length}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">Trauma Intake Alerts</div>
         </div>
-        <div class="admin-kpi-card ${kpi5Class}">
+        <div class="admin-kpi-card ${kpi5Class}" onclick="window.router.navigate('dashboard?kpi=discharges_today')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Discharges Pending</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pendingDischarges.length}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">In-progress Clearances</div>
         </div>
-        <div class="admin-kpi-card ${kpi6Class}">
+        <div class="admin-kpi-card ${kpi6Class}" onclick="window.router.navigate('dashboard?kpi=admissions_pending')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Delayed (>6h)</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pendingDischarges.filter(d => d.waitingHrs > 6).length}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">Escalations Pending</div>
         </div>
-        <div class="admin-kpi-card status-normal">
+        <div class="admin-kpi-card status-normal" onclick="window.router.navigate('dashboard?kpi=admissions_today')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Expected Today</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${pendingAdmissions.length + 2}</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">Projected ATD Flow</div>
         </div>
-        <div class="admin-kpi-card ${kpi8Class}">
+        <div class="admin-kpi-card ${kpi8Class}" onclick="window.router.navigate('dashboard?kpi=beds_available')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">ICU Occupancy</div>
           <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${icuPct}%</span>
           <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">${icuOccupied} / ${icuTotal} ICU Beds</div>
@@ -907,288 +1092,207 @@
     var badgeDis = pendingDischarges.length;
     var badgeDly = delayedItems.length;
 
-    var headerHTML = `
-      <div class="tab-container" style="margin-bottom: 12px; display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px;">
-        <div class="tab-item ${tab === 'admissions' ? 'active' : ''}" onclick="window._dashboardSetSubTab('admissions')">Admission Requests <span class="tab-badge">${badgeAdms}</span></div>
-        <div class="tab-item ${tab === 'transfers' ? 'active' : ''}" onclick="window._dashboardSetSubTab('transfers')">Transfer Requests <span class="tab-badge">${badgeTrfs}</span></div>
-        <div class="tab-item ${tab === 'discharges' ? 'active' : ''}" onclick="window._dashboardSetSubTab('discharges')">Discharge Clearances <span class="tab-badge">${badgeDis}</span></div>
-        <div class="tab-item ${tab === 'delayed' ? 'active' : ''}" style="${badgeDly > 0 ? 'color:#ef4444; font-weight:800;' : ''}" onclick="window._dashboardSetSubTab('delayed')">Delayed (>6h) <span class="tab-badge" style="background:#ef4444; color:white;">${badgeDly}</span></div>
-      </div>
-    `;
-
-    var tableHTML = '';
+    var cardsHTML = '';
 
     if (tab === 'admissions') {
-      tableHTML = `
-        <table class="custom-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
-              <th style="padding:10px;">#</th>
-              <th style="padding:10px;">Patient name</th>
-              <th style="padding:10px;">UHID</th>
-              <th style="padding:10px;">Type</th>
-              <th style="padding:10px;">Source</th>
-              <th style="padding:10px;">Referring Doctor</th>
-              <th style="padding:10px;">Diagnosis</th>
-              <th style="padding:10px;">Ward Requested</th>
-              <th style="padding:10px;">Advance payment status</th>
-              <th style="padding:10px;">Time Waiting</th>
-              <th style="padding:10px; text-align:right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${pendingAdmissions.map((adm, i) => {
-              var isOverride = adm.emergencyOverride ? true : false;
-              var isPaid = adm.advancePaid || adm.status === 'Confirmed' || isOverride;
-              var actionCol = '';
-              
-              if (adm.admType !== 'Daycare') {
-                actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; cursor:pointer;" onclick="window.triggerAllocateBedWorkflow('${adm.uhid}')">Allocate Bed</button>`;
-              } else {
-                if (isPaid) {
-                  if (window._ipdActiveRole === 'ATD Coordinator' || window._ipdActiveRole === 'Nursing Supervisor' || window._ipdActiveRole === 'Administrator / Medical Superintendent') {
-                    actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c;" onclick="window._dashboardAssignBed('${adm.uhid}')">Assign Bed</button>`;
-                  } else {
-                    actionCol = `<span class="reg-badge" style="background:#dcfce7; color:#15803d;">Confirmed (Awaiting Nursing)</span>`;
-                  }
-                } else {
-                  if (window._ipdActiveRole === 'Billing Counter Executive') {
-                    actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#16a34a; border-color:#16a34a;" onclick="window._billingOpen('${adm.id}')">💳 Collect Deposit</button>`;
-                  } else if (window._ipdActiveRole === 'Treating Consultant / Doctor') {
-                    actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#dc2626; border-color:#dc2626;" onclick="window._emergencyOverrideOpen('${adm.id}')">🚨 ER Override</button>`;
-                  } else {
-                    actionCol = `<span class="reg-badge" style="background:#fee2e2; color:#b91c1c;">Pending Deposit (Billing Handoff)</span>`;
-                  }
-                }
-              }
+      cardsHTML = pendingAdmissions.map((adm, i) => {
+        var isOverride = adm.emergencyOverride ? true : false;
+        var isPaid = adm.advancePaid || adm.status === 'Confirmed' || isOverride;
+        var actionCol = '';
+        
+        if (adm.admType !== 'Daycare') {
+          actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; width:100%; cursor:pointer;" onclick="window.router.navigate('ipdAdmit?uhid=${adm.uhid}')">Admit Patient</button>`;
+        } else {
+          if (isPaid) {
+            if (window._ipdActiveRole === 'ATD Coordinator' || window._ipdActiveRole === 'Nursing Supervisor' || window._ipdActiveRole === 'Administrator / Medical Superintendent') {
+              actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; width:100%;" onclick="window.router.navigate('ipdAdmit?uhid=${adm.uhid}')">Admit Patient</button>`;
+            } else {
+              actionCol = `<span class="reg-badge" style="background:#dcfce7; color:#15803d; text-align:center; width:100%; display:block; box-sizing:border-box;">Confirmed (Awaiting Nursing)</span>`;
+            }
+          } else {
+            if (window._ipdActiveRole === 'Billing Counter Executive') {
+              actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#16a34a; border-color:#16a34a; width:100%;" onclick="window._billingOpen('${adm.id}')">💳 Collect Deposit</button>`;
+            } else if (window._ipdActiveRole === 'Treating Consultant / Doctor') {
+              actionCol = `<button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#dc2626; border-color:#dc2626; width:100%;" onclick="window._emergencyOverrideOpen('${adm.id}')">🚨 ER Override</button>`;
+            } else {
+              actionCol = `<span class="reg-badge" style="background:#fee2e2; color:#b91c1c; text-align:center; width:100%; display:block; box-sizing:border-box;">Pending Deposit (Billing Handoff)</span>`;
+            }
+          }
+        }
 
-              var statusBadgeHTML = '';
-              if (isOverride) {
-                statusBadgeHTML = `<span class="reg-badge" style="background:#fee2e2; color:#ef4444; font-weight:800;" title="Justification: ${adm.emergencyOverride.justification}">ER Override (Deferred)</span>`;
-              } else {
-                statusBadgeHTML = `
-                  <span class="reg-badge" style="background:${isPaid ? '#ecfdf5' : '#fee2e2'}; color:${isPaid ? '#047857' : '#b91c1c'}; font-weight: 700;">
-                    ${isPaid ? 'Advance Received' : 'Pending Deposit'}
-                  </span>
-                `;
-              }
+        var statusBadgeHTML = '';
+        if (isOverride) {
+          statusBadgeHTML = `<span class="reg-badge" style="background:#fee2e2; color:#ef4444; font-weight:800;" title="Justification: ${adm.emergencyOverride.justification}">ER Override</span>`;
+        } else {
+          statusBadgeHTML = `
+            <span class="reg-badge" style="background:${isPaid ? '#ecfdf5' : '#fee2e2'}; color:${isPaid ? '#047857' : '#b91c1c'}; font-weight: 700;">
+              ${isPaid ? 'Deposit Paid' : 'Pending Deposit'}
+            </span>
+          `;
+        }
 
-              var patObj = window.state.patients && window.state.patients.find(p => p.uhid === adm.uhid);
-              var isDischarged = patObj && (patObj.status === 'Discharged' || patObj.dischargeStatus === 'Completed');
-              var admTypeBadge = isDischarged ? '' : ((adm.admType === 'Daycare')
-                ? `<span class="reg-badge" style="background:#ccfbf1; color:#0f766e; font-weight:700;">Daycare</span>`
-                : `<span class="reg-badge" style="background:#dbeafe; color:#1d4ed8; font-weight:700;">IPD</span>`);
-
-              return `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;">${i+1}</td>
-                  <td style="padding:10px;"><strong style="color: #1b3a5c; text-decoration: underline; cursor: pointer;" onclick="window.router.navigate('patients?uhid=${adm.uhid}&name=${encodeURIComponent(adm.name)}')">${adm.name}</strong></td>
-                  <td style="padding:10px;" class="mono">${adm.uhid}</td>
-                  <td style="padding:10px;">${admTypeBadge}</td>
-                  <td style="padding:10px;">${adm.source}</td>
-                  <td style="padding:10px;">${adm.refDoc}</td>
-                  <td style="padding:10px;">${adm.diagnosis}</td>
-                  <td style="padding:10px;">${WARD_RATES[adm.ward]?.name || adm.ward}</td>
-                  <td style="padding:10px;">
-                    ${statusBadgeHTML}
-                  </td>
-                  <td style="padding:10px;">${adm.waitingHrs}h</td>
-                  <td style="padding:10px; text-align:right;">${actionCol}</td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">No pending admission requests for this branch</td></tr>'}
-          </tbody>
-        </table>
-      `;
+        return `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <strong style="color: #1b3a5c; text-decoration: underline; cursor: pointer; font-size:12px;" onclick="window.router.navigate('patients?uhid=${adm.uhid}&name=${encodeURIComponent(adm.name)}')">${adm.name}</strong>
+                <div style="font-family: monospace; font-size:10px; color:#64748b;">${adm.uhid}</div>
+              </div>
+              ${statusBadgeHTML}
+            </div>
+            <div style="font-size:11px; color:#475569; display:grid; grid-template-columns:1fr; gap:3px; line-height:1.3;">
+              <div><strong>Req Ward:</strong> ${WARD_RATES[adm.ward]?.name || adm.ward}</div>
+              <div><strong>Diagnosis:</strong> ${adm.diagnosis}</div>
+              <div><strong>Ref Doc:</strong> ${adm.refDoc}</div>
+              <div><strong>Waiting:</strong> ${adm.waitingHrs}h</div>
+            </div>
+            <div style="margin-top:4px;">
+              ${actionCol}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:12px;">No pending admission requests</div>';
     } else if (tab === 'transfers') {
-      tableHTML = `
-        <table class="custom-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
-              <th style="padding:10px;">#</th>
-              <th style="padding:10px;">Patient name</th>
-              <th style="padding:10px;">UHID</th>
-              <th style="padding:10px;">Current bed + ward</th>
-              <th style="padding:10px;">Transfer to ward</th>
-              <th style="padding:10px;">Requested by</th>
-              <th style="padding:10px;">Reason</th>
-              <th style="padding:10px;">Requested at</th>
-              <th style="padding:10px;">Status</th>
-              <th style="padding:10px; text-align:right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${pendingTransfers.map((trf, i) => {
-              var isApproved = trf.status.includes('Approved');
-              var actionCol = '';
+      cardsHTML = pendingTransfers.map((trf, i) => {
+        var isApproved = trf.status.includes('Approved');
+        var actionCol = '';
 
-              if (window._ipdActiveRole === 'Nursing Supervisor' && !isApproved) {
-                actionCol = `
-                  <button class="btn btn-primary cursor-pointer" style="padding:4px 8px; font-size:10px; background:#10b981;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">Review & Approve</button>
-                `;
-              } else if (window._ipdActiveRole === 'ATD Coordinator' && isApproved) {
-                actionCol = `<button class="btn btn-primary cursor-pointer" style="padding:4px 8px; font-size:10px; background:#7c3aed;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">Execute Relocation</button>`;
-              } else {
-                actionCol = `<button class="btn btn-secondary cursor-pointer" style="padding:4px 8px; font-size:10px;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">View Status</button>`;
-              }
+        if (window._ipdActiveRole === 'Nursing Supervisor' && !isApproved) {
+          actionCol = `
+            <button class="btn btn-primary cursor-pointer" style="padding:4px 8px; font-size:10px; background:#10b981; width:100%;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">Review & Approve</button>
+          `;
+        } else if (window._ipdActiveRole === 'ATD Coordinator' && isApproved) {
+          actionCol = `<button class="btn btn-primary cursor-pointer" style="padding:4px 8px; font-size:10px; background:#7c3aed; width:100%;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">Execute Relocation</button>`;
+        } else {
+          actionCol = `<button class="btn btn-secondary cursor-pointer" style="padding:4px 8px; font-size:10px; width:100%;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">View Status</button>`;
+        }
 
-              return `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;">${i+1}</td>
-                  <td style="padding:10px;"><strong style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="window.router.navigate('patients?uhid=${trf.uhid}&name=${encodeURIComponent(trf.name)}')">${trf.name}</strong></td>
-                  <td style="padding:10px;" class="mono">${trf.uhid}</td>
-                  <td style="padding:10px;">${trf.currentBed} (${WARD_RATES[trf.currentWard]?.name || trf.currentWard})</td>
-                  <td style="padding:10px;">${WARD_RATES[trf.targetWard]?.name || trf.targetWard}</td>
-                  <td style="padding:10px;">${trf.requestedBy}</td>
-                  <td style="padding:10px;">${trf.reason}</td>
-                  <td style="padding:10px;">${new Date(trf.requestedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                  <td style="padding:10px;"><span class="reg-badge" style="background:#eff6ff; color:#1e40af;">${trf.status}</span></td>
-                  <td style="padding:10px; text-align:right; display:flex; gap:4px; justify-content:flex-end;">${actionCol}</td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">No pending transfer approvals for this branch</td></tr>'}
-          </tbody>
-        </table>
-      `;
+        return `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <strong style="color: var(--primary); text-decoration: underline; cursor: pointer; font-size:12px;" onclick="window.router.navigate('patients?uhid=${trf.uhid}&name=${encodeURIComponent(trf.name)}')">${trf.name}</strong>
+                <div style="font-family: monospace; font-size:10px; color:#64748b;">${trf.uhid}</div>
+              </div>
+              <span class="reg-badge" style="background:#eff6ff; color:#1e40af; font-size:9px;">${trf.status}</span>
+            </div>
+            <div style="font-size:11px; color:#475569; display:grid; grid-template-columns:1fr; gap:3px; line-height:1.3;">
+              <div><strong>Current Bed:</strong> ${trf.currentBed} (${WARD_RATES[trf.currentWard]?.name || trf.currentWard})</div>
+              <div><strong>Target Ward:</strong> ${WARD_RATES[trf.targetWard]?.name || trf.targetWard}</div>
+              <div><strong>Requested By:</strong> ${trf.requestedBy}</div>
+              <div><strong>Reason:</strong> ${trf.reason}</div>
+            </div>
+            <div style="margin-top:4px;">
+              ${actionCol}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:12px;">No pending transfers</div>';
     } else if (tab === 'discharges') {
-      tableHTML = `
-        <table class="custom-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
-              <th style="padding:10px;">#</th>
-              <th style="padding:10px;">Patient name</th>
-              <th style="padding:10px;">UHID</th>
-              <th style="padding:10px;">Ward + bed</th>
-              <th style="padding:10px;">Discharge ordered by</th>
-              <th style="padding:10px;">Nursing Clearance</th>
-              <th style="padding:10px;">Billing Clearance</th>
-              <th style="padding:10px;">Pharmacy Clearance</th>
-              <th style="padding:10px;">TPA Clearance</th>
-              <th style="padding:10px; text-align:right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${pendingDischarges.map((dis, i) => {
-              var isNursing = dis.clearances.nursing?.cleared;
-              var isBilling = dis.clearances.billing?.cleared;
-              var isPharmacy = dis.clearances.pharmacy?.cleared;
-              var isTpa = dis.clearances.tpa ? dis.clearances.tpa.cleared : true;
+      cardsHTML = pendingDischarges.map((dis, i) => {
+        var isNursing = dis.clearances.nursing?.cleared;
+        var isBilling = dis.clearances.billing?.cleared;
+        var isPharmacy = dis.clearances.pharmacy?.cleared;
+        var isTpa = dis.clearances.tpa ? dis.clearances.tpa.cleared : true;
 
-              var allCleared = isNursing && isBilling && isPharmacy && isTpa;
-              var actionCol = '';
+        var allCleared = isNursing && isBilling && isPharmacy && isTpa;
+        var actionCol = '';
 
-              if (window._ipdActiveRole === 'ATD Coordinator' || window._ipdActiveRole === 'Administrator / Medical Superintendent') {
-                actionCol = `<button class="btn btn-primary cursor-pointer" style="padding:4px 10px; font-size:11px; background:#10b981;" onclick="window.showUniversalDischargeWorkflow('${dis.uhid}')">Complete Discharge</button>`;
-              } else {
-                actionCol = `<button class="btn btn-secondary cursor-pointer" style="padding:4px 10px; font-size:11px;" onclick="window.showUniversalDischargeWorkflow('${dis.uhid}')">Review & Clear</button>`;
-              }
+        if (window._ipdActiveRole === 'ATD Coordinator' || window._ipdActiveRole === 'Administrator / Medical Superintendent') {
+          actionCol = `<button class="btn btn-primary cursor-pointer" style="padding:4px 10px; font-size:11px; background:#10b981; width:100%;" onclick="window.showUniversalDischargeWorkflow('${dis.uhid}')">Complete Discharge</button>`;
+        } else {
+          actionCol = `<button class="btn btn-secondary cursor-pointer" style="padding:4px 10px; font-size:11px; width:100%;" onclick="window.showUniversalDischargeWorkflow('${dis.uhid}')">Review & Clear</button>`;
+        }
 
-              return `
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                  <td style="padding:10px;">${i+1}</td>
-                  <td style="padding:10px;"><strong style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="window.router.navigate('patients?uhid=${dis.uhid}&name=${encodeURIComponent(dis.patientName)}')">${dis.patientName}</strong></td>
-                  <td style="padding:10px;" class="mono">${dis.uhid}</td>
-                  <td style="padding:10px;">${dis.bed} (${WARD_RATES[dis.ward]?.name || dis.ward})</td>
-                  <td style="padding:10px;">${dis.doctorName}</td>
-                  <td style="padding:10px;">
-                    <span class="font-bold ${isNursing ? 'text-emerald-600' : 'text-red-500'}">${isNursing ? '🟢 Cleared' : '🔴 Pending'}</span>
-                  </td>
-                  <td style="padding:10px;">
-                    <span class="font-bold ${isBilling ? 'text-emerald-600' : 'text-red-500'}">${isBilling ? '🟢 Cleared' : '🔴 Pending'}</span>
-                  </td>
-                  <td style="padding:10px;">
-                    <span class="font-bold ${isPharmacy ? 'text-emerald-600' : 'text-red-500'}">${isPharmacy ? '🟢 Cleared' : '🔴 Pending'}</span>
-                  </td>
-                  <td style="padding:10px;">
-                    <span class="font-bold">${dis.clearances.tpa ? (isTpa ? '🟢 Cleared' : '🔴 Pending') : '—'}</span>
-                  </td>
-                  <td style="padding:10px; text-align:right;">${actionCol}</td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">No pending discharge clearance lists active</td></tr>'}
-          </tbody>
-        </table>
-      `;
+        var clearanceChecklistHTML = `
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:2px;">
+            <span class="reg-badge" style="background:${isNursing ? '#ecfdf5; color:#047857;' : '#fee2e2; color:#b91c1c;'} font-size:9px;">🩺 Nurse</span>
+            <span class="reg-badge" style="background:${isPharmacy ? '#ecfdf5; color:#047857;' : '#fee2e2; color:#b91c1c;'} font-size:9px;">💊 Pharma</span>
+            <span class="reg-badge" style="background:${isBilling ? '#ecfdf5; color:#047857;' : '#fee2e2; color:#b91c1c;'} font-size:9px;">💳 Bill</span>
+            ${dis.clearances.tpa ? `<span class="reg-badge" style="background:${isTpa ? '#ecfdf5; color:#047857;' : '#fee2e2; color:#b91c1c;'} font-size:9px;">🏥 TPA</span>` : ''}
+          </div>
+        `;
+
+        return `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <div>
+              <strong style="color: var(--primary); text-decoration: underline; cursor: pointer; font-size:12px;" onclick="window.router.navigate('patients?uhid=${dis.uhid}&name=${encodeURIComponent(dis.patientName)}')">${dis.patientName}</strong>
+              <div style="font-family: monospace; font-size:10px; color:#64748b;">${dis.uhid}</div>
+            </div>
+            <div style="font-size:11px; color:#475569; display:grid; grid-template-columns:1fr; gap:3px; line-height:1.3;">
+              <div><strong>Bed:</strong> ${dis.bed} (${WARD_RATES[dis.ward]?.name || dis.ward})</div>
+              <div><strong>Ordered By:</strong> ${dis.doctorName}</div>
+              <div><strong>Waiting:</strong> ${dis.waitingHrs}h</div>
+            </div>
+            <div>
+              <strong>Clearance Status:</strong>
+              ${clearanceChecklistHTML}
+            </div>
+            <div style="margin-top:4px;">
+              ${actionCol}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:12px;">No pending discharges</div>';
     } else if (tab === 'delayed') {
-      tableHTML = `
-        <table class="custom-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-          <thead>
-            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
-              <th style="padding:10px;">Type</th>
-              <th style="padding:10px;">Patient name</th>
-              <th style="padding:10px;">UHID</th>
-              <th style="padding:10px;">Source / Ward</th>
-              <th style="padding:10px;">Consultant</th>
-              <th style="padding:10px;">Time Delayed</th>
-              <th style="padding:10px; text-align:right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${delayedItems.map((itm, i) => {
-              var name = itm.name || itm.patientName;
-              var isAdm = itm.type === 'Admission';
-              var actionCol = '';
+      cardsHTML = delayedItems.map((itm, i) => {
+        var name = itm.name || itm.patientName;
+        var isAdm = itm.type === 'Admission';
+        var actionCol = '';
 
-              if (window._ipdActiveRole === 'Administrator / Medical Superintendent' || window._ipdActiveRole === 'Nursing Supervisor') {
-                actionCol = `<button class="btn btn-primary" style="padding:4px 8px; font-size:10px; background:#ef4444; border-color:#b91c1c;" onclick="window._dashboardEscalate('${name}', '${itm.type}')">Escalate alert</button>`;
-              } else {
-                actionCol = `<span style="color:#b91c1c; font-weight:700;">Urgent Handoff</span>`;
-              }
+        if (window._ipdActiveRole === 'Administrator / Medical Superintendent' || window._ipdActiveRole === 'Nursing Supervisor') {
+          actionCol = `<button class="btn btn-primary" style="padding:4px 8px; font-size:10px; background:#ef4444; border-color:#b91c1c; width:100%;" onclick="window._dashboardEscalate('${name}', '${itm.type}')">Escalate alert</button>`;
+        } else {
+          actionCol = `<span style="color:#b91c1c; font-weight:700; font-size:10px; text-align:center; width:100%; display:block;">Urgent Handoff Required</span>`;
+        }
 
-              var patObj = window.state.patients && window.state.patients.find(p => p.uhid === itm.uhid);
-              var isDischarged = patObj && (patObj.status === 'Discharged' || patObj.dischargeStatus === 'Completed');
-
-              return `
-                <tr class="tr-delayed" style="border-bottom:1px solid #fecaca;">
-                  <td style="padding:12px 10px;">${isDischarged ? '' : `⚠️ ${itm.type}`}</td>
-                  <td style="padding:12px 10px;"><strong>${name}</strong></td>
-                  <td style="padding:12px 10px;" class="mono">${itm.uhid}</td>
-                  <td style="padding:12px 10px;">${isAdm ? itm.source : (WARD_RATES[itm.ward]?.name || itm.ward)}</td>
-                  <td style="padding:12px 10px;">${isAdm ? itm.refDoc : itm.doctorName}</td>
-                  <td style="padding:12px 10px;">${itm.waitingHrs} Hours</td>
-                  <td style="padding:12px 10px; text-align:right;">${actionCol}</td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No delayed requests >6h currently logged</td></tr>'}
-          </tbody>
-        </table>
-      `;
+        return `
+          <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+            <div>
+              <strong style="color:#b91c1c; font-size:12px;">⚠️ ${itm.type} Delayed</strong>
+              <div style="font-weight:700; color:#111827; font-size:11px; margin-top:2px;">${name} (${itm.uhid})</div>
+            </div>
+            <div style="font-size:11px; color:#b91c1c; display:grid; grid-template-columns:1fr; gap:3px; line-height:1.3;">
+              <div><strong>Ward/Source:</strong> ${isAdm ? itm.source : (WARD_RATES[itm.ward]?.name || itm.ward)}</div>
+              <div><strong>Consultant:</strong> ${isAdm ? itm.refDoc : itm.doctorName}</div>
+              <div><strong>Delayed by:</strong> ${itm.waitingHrs}h</div>
+            </div>
+            <div style="margin-top:4px;">
+              ${actionCol}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:12px;">No delayed items</div>';
     }
 
-    var totalTasks = badgeAdms + badgeTrfs + badgeDis + badgeDly;
-    var queueChartHTML = `
-      <!-- Visual Queue Load Chart -->
-      <div style="margin-bottom: 16px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; box-sizing: border-box;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px; font-weight:700; color:var(--text-secondary);">
-          <span>📊 WORKFLOW QUEUE VOLUMES</span>
-          <span>Total Pending: ${totalTasks} Tasks</span>
-        </div>
-        <div style="display:flex; height:10px; background:#e2e8f0; border-radius:5px; overflow:hidden; width:100%;">
-          ${badgeAdms > 0 ? `<div style="width:${(badgeAdms/(totalTasks || 1))*100}%; background:#3b82f6;" title="Admissions: ${badgeAdms}"></div>` : ''}
-          ${badgeTrfs > 0 ? `<div style="width:${(badgeTrfs/(totalTasks || 1))*100}%; background:#f59e0b;" title="Transfers: ${badgeTrfs}"></div>` : ''}
-          ${badgeDis > 0 ? `<div style="width:${(badgeDis/(totalTasks || 1))*100}%; background:#10b981;" title="Discharges: ${badgeDis}"></div>` : ''}
-          ${badgeDly > 0 ? `<div style="width:${(badgeDly/(totalTasks || 1))*100}%; background:#ef4444;" title="Delayed: ${badgeDly}"></div>` : ''}
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; font-weight:700; flex-wrap:wrap; gap:8px;">
-          <span style="display:flex; align-items:center; gap:4px; color:#3b82f6;">🔵 Admissions: ${badgeAdms}</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#f59e0b;">🟡 Transfers: ${badgeTrfs}</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#10b981;">🟢 Discharges: ${badgeDis}</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#ef4444;">🔴 Delayed (>6h): ${badgeDly}</span>
-        </div>
-      </div>
-    `;
-
     return `
-      <div class="admin-card" style="margin-bottom:20px;">
-        <div class="er-card-hdr">
-          <h3 style="color:#1e3a8a;">⚡ Urgent Pending Action Queues</h3>
+      <div class="admin-card" style="padding: 16px !important; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; text-align: left; height: 100%; margin-top: 0;">
+        <div style="display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+          <h3 style="color:#1b3a5c; margin: 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+            <span>⚡</span> <span>Urgent Pending Action Queues</span>
+          </h3>
+          <span style="font-size: 11px; color: var(--text-muted);">Process pending admissions, transfers, and clearances.</span>
         </div>
-        <div class="er-card-body" style="padding:16px;">
-          ${queueChartHTML}
-          ${headerHTML}
-          <div style="overflow-x:auto; margin-top:10px;">
-            ${tableHTML}
+
+        <!-- Horizontal Navigation Tabs -->
+        <div style="display: flex; gap: 2px; border-bottom: 2px solid var(--border-color); padding-bottom: 0px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;">
+          <div onclick="window._dashboardSetSubTab('admissions')" style="cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 700; border-bottom: 3px solid ${tab === 'admissions' ? '#7c3aed' : 'transparent'}; color: ${tab === 'admissions' ? '#7c3aed' : 'var(--text-secondary)'}; display: flex; align-items: center; gap: 5px; white-space: nowrap; transition: all 0.2s;">
+            Admit <span style="background: ${tab === 'admissions' ? '#7c3aed' : '#e2e8f0'}; color: ${tab === 'admissions' ? 'white' : 'var(--text-secondary)'}; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 800;">${badgeAdms}</span>
           </div>
+          <div onclick="window._dashboardSetSubTab('transfers')" style="cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 700; border-bottom: 3px solid ${tab === 'transfers' ? '#7c3aed' : 'transparent'}; color: ${tab === 'transfers' ? '#7c3aed' : 'var(--text-secondary)'}; display: flex; align-items: center; gap: 5px; white-space: nowrap; transition: all 0.2s;">
+            Transfer <span style="background: ${tab === 'transfers' ? '#7c3aed' : '#e2e8f0'}; color: ${tab === 'transfers' ? 'white' : 'var(--text-secondary)'}; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 800;">${badgeTrfs}</span>
+          </div>
+          <div onclick="window._dashboardSetSubTab('discharges')" style="cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 700; border-bottom: 3px solid ${tab === 'discharges' ? '#7c3aed' : 'transparent'}; color: ${tab === 'discharges' ? '#7c3aed' : 'var(--text-secondary)'}; display: flex; align-items: center; gap: 5px; white-space: nowrap; transition: all 0.2s;">
+            Clearance <span style="background: ${tab === 'discharges' ? '#7c3aed' : '#e2e8f0'}; color: ${tab === 'discharges' ? 'white' : 'var(--text-secondary)'}; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 800;">${badgeDis}</span>
+          </div>
+          <div onclick="window._dashboardSetSubTab('delayed')" style="cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 700; border-bottom: 3px solid ${tab === 'delayed' ? '#ef4444' : 'transparent'}; color: ${tab === 'delayed' ? '#ef4444' : 'var(--text-secondary)'}; display: flex; align-items: center; gap: 5px; white-space: nowrap; transition: all 0.2s;">
+            Delayed <span style="background: ${badgeDly > 0 ? '#ef4444' : '#e2e8f0'}; color: ${badgeDly > 0 ? 'white' : 'var(--text-secondary)'}; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 800;">${badgeDly}</span>
+          </div>
+        </div>
+
+        <!-- Action Card List Container -->
+        <div style="display: flex; flex-direction: column; gap: 8px; max-height: 580px; overflow-y: auto; padding-right: 4px; margin-top: 4px;">
+          ${cardsHTML}
         </div>
       </div>
     `;
@@ -1202,12 +1306,23 @@
 
   window._dashboardAssignBed = function(uhid) {
     var pat = window.state.patients.find(p => p.uhid === uhid);
+    if (!pat) {
+      var req = window.state.admissionRequests.find(r => r.uhid === uhid);
+      if (req) {
+        var fallbackPat = window.state.patients.find(p => p.name.toLowerCase() === req.name.toLowerCase());
+        if (fallbackPat) {
+          req.uhid = fallbackPat.uhid;
+          localStorage.setItem('saronil_admissionRequests', JSON.stringify(window.state.admissionRequests));
+          pat = fallbackPat;
+        }
+      }
+    }
     if (pat) {
       _selectedPatient = pat;
       _admissionStep = 'bed';
       _activeTab = 'admission_wizard';
       
-      var req = window.state.admissionRequests.find(r => r.uhid === uhid);
+      var req = window.state.admissionRequests.find(r => r.uhid === pat.uhid);
       if (req) {
         _wardPreference = req.ward;
         _provisionalDiagnosis = req.diagnosis;
@@ -1223,14 +1338,14 @@
     alert(`📢 Advance Deposit reminder alert sent to Patient/Attender: ${name} via SMS successfully.`);
   };
 
-  window._dashboardApproveTransfer = function(index, approve) {
+  window._dashboardApproveTransfer = async function(index, approve) {
     var req = window.state.transferRequests[index];
     if (req) {
       if (approve) {
         req.status = 'Approved - Pending ATD Execution';
         alert(`✓ Transfer approved for ${req.name}.\nATD coordinator may now execute ward allocation.`);
       } else {
-        var reason = prompt('Please enter reason for transfer rejection:');
+        var reason = await customPrompt('Please enter reason for transfer rejection:');
         if (reason) {
           req.status = 'Rejected - ' + reason;
           alert(`Transfer request rejected.`);
@@ -1321,12 +1436,14 @@
     }
   };
 
-  window._dashboardFinalizeDischarge = function(uhid, bedId) {
-    if (confirm(`Confirm physical discharge for patient? (Bed ${bedId} will be released to cleaning status)`)) {
+  window._dashboardFinalizeDischarge = async function(uhid, bedId) {
+    if (await customConfirm(`Confirm physical discharge for patient? (Bed ${bedId} will be released to cleaning status)`)) {
       
       // Update Bed Status to Dirty and trigger Housekeeping discharge clean
+      var prevStatus = window.state.bedsStatus[bedId]?.status || 'Occupied';
+      var wardKey = window.state.bedsStatus[bedId]?.wardKey || 'GENERAL-WARD-M';
       window.state.bedsStatus[bedId] = {
-        wardKey: window.state.bedsStatus[bedId].wardKey,
+        wardKey: wardKey,
         status: 'Dirty',
         patientUhid: null,
         notes: 'Awaiting discharge housekeeping clean'
@@ -1335,6 +1452,18 @@
       if (typeof window._triggerHKDischargeClean === 'function') {
         window._triggerHKDischargeClean(bedId, uhid);
       }
+
+      window.state.logBedMovement({
+        patientId: uhid,
+        bedId: bedId,
+        wardKey: wardKey,
+        prevStatus: prevStatus,
+        newStatus: 'Dirty',
+        action: 'Discharge Checkout',
+        user: window._ipdActiveRole || 'ATD Coordinator',
+        role: window._ipdActiveRole || 'ATD Coordinator',
+        remarks: `Discharge checkout finalized. Bed vacated.`
+      });
 
       // Set Patient Discharged — stamp discharge date
       var p = window.state.patients.find(pt => pt.uhid === uhid);
@@ -1381,143 +1510,105 @@
     }
   };
 
+  window.approveAllPendingDischarges = async function() {
+    var targets = window.state.patients.filter(p => p.dischargeStatus === 'In Progress — Clearances Pending');
+    if (targets.length === 0) {
+      alert("No discharges in progress to approve.");
+      return;
+    }
+
+    if (await customConfirm(`Are you sure you want to auto-approve clearances and complete physical checkout for all ${targets.length} pending discharges?`)) {
+      targets.forEach(p => {
+        var bedId = p.bed;
+        var uhid = p.uhid;
+
+        // Clear clearances
+        p.dischargeClearances = {
+          nursing: { cleared: true, clearedBy: 'System Auto-Approval', clearedAt: new Date().toISOString() },
+          billing: { cleared: true, clearedBy: 'System Auto-Approval', clearedAt: new Date().toISOString() },
+          pharmacy: { cleared: true, clearedBy: 'System Auto-Approval', clearedAt: new Date().toISOString() },
+          tpa: { cleared: true, clearedBy: 'System Auto-Approval', clearedAt: new Date().toISOString() }
+        };
+
+        // Update Bed Status to Dirty and trigger Housekeeping discharge clean
+        if (bedId && bedId !== '—') {
+          var prevStatus = window.state.bedsStatus[bedId]?.status || 'Occupied';
+          var wardKey = window.state.bedsStatus[bedId]?.wardKey || 'GENERAL-WARD-M';
+          window.state.bedsStatus[bedId] = {
+            wardKey: wardKey,
+            status: 'Dirty',
+            patientUhid: null,
+            notes: 'Awaiting discharge housekeeping clean'
+          };
+          if (typeof window._triggerHKDischargeClean === 'function') {
+            window._triggerHKDischargeClean(bedId, uhid);
+          }
+          window.state.logBedMovement({
+            patientId: uhid,
+            bedId: bedId,
+            wardKey: wardKey,
+            prevStatus: prevStatus,
+            newStatus: 'Dirty',
+            action: 'Discharge Checkout',
+            user: window._ipdActiveRole || 'ATD Coordinator',
+            role: window._ipdActiveRole || 'ATD Coordinator',
+            remarks: `Auto-approved discharge clearances. Bed vacated.`
+          });
+        }
+
+        // Set Patient Discharged
+        p.status = 'Discharged';
+        p.dischargeStatus = 'Completed';
+        var now = new Date();
+        p.dischargeDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                        + ' • ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        // Add timeline event
+        p.timelineEvents = p.timelineEvents || [];
+        p.timelineEvents.unshift({
+          date: p.dischargeDate,
+          type: 'clinical',
+          icon: '🏥',
+          title: 'Patient Discharged (Auto)',
+          desc: `Discharge finalised via system auto-approval. Bed ${bedId} released.`,
+          hasDischargeSummary: true
+        });
+
+        // Complete Active Admission
+        var adm = window.state.admissions && window.state.admissions.find(a => a.uhid === uhid && a.status === 'Active');
+        if (adm) {
+          adm.status = 'Discharged';
+          adm.dischargeDate = p.dischargeDate;
+        }
+
+        // Delete from discharge queue
+        if (window.state.dischargeOrders) {
+          var idx = window.state.dischargeOrders.findIndex(d => d.uhid === uhid);
+          if (idx !== -1) {
+            window.state.dischargeOrders.splice(idx, 1);
+          }
+        }
+      });
+
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+      localStorage.setItem('saronil_admissions', JSON.stringify(window.state.admissions));
+      localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+
+      alert(`Successfully finalized discharge and released beds for ${targets.length} patients!`);
+
+      var c = document.getElementById('main-content');
+      if (c) renderWorkspace(c);
+    }
+  };
+
 
   window._dashboardEscalate = function(name, type) {
     alert(`🚨 Escalation ALERT raised to Clinical Director for delayed ${type} of patient: ${name}.`);
   };
 
-  function renderWardCensusTable() {
+  function renderDashboardBedBoard() {
     var wards = window.state.wards || {};
     var isNurse = window._ipdActiveRole === 'Ward Nurse';
-
-    // Compute overall hospital bed capacity statistics
-    var totBeds = 0, totOcc = 0, totAv = 0, totHk = 0, totRes = 0;
-    Object.entries(wards).forEach(function([key, val]) {
-      if (isNurse && key !== 'GENERAL-WARD-M') return;
-      var beds = val.beds || [];
-      totBeds += beds.length;
-      beds.forEach(b => {
-        var s = window.state.bedsStatus[b] || { status: 'Available' };
-        if (s.status === 'Occupied') totOcc++;
-        else if (s.status === 'Available') totAv++;
-        else if (s.status === 'Cleaning') totHk++;
-        else if (s.status === 'Reserved') totRes++;
-      });
-    });
-
-    var totalCapPct = totBeds > 0 ? Math.round((totOcc / totBeds) * 100) : 0;
-
-    var overallCapacityHTML = `
-      <!-- Overall Hospital Capacity Visual Bar -->
-      <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; box-sizing: border-box;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px; font-weight:700; color:var(--text-secondary);">
-          <span>📊 OVERALL HOSPITAL BED CAPACITY BREAKDOWN</span>
-          <span>Total: ${totBeds} Beds · ${totalCapPct}% Occupancy Rate</span>
-        </div>
-        <div style="display:flex; height:14px; background:#e2e8f0; border-radius:7px; overflow:hidden; width:100%;">
-          ${totOcc > 0 ? `<div style="width:${(totOcc/(totBeds || 1))*100}%; background:#3b82f6;" title="Occupied: ${totOcc}"></div>` : ''}
-          ${totAv > 0 ? `<div style="width:${(totAv/(totBeds || 1))*100}%; background:#10b981;" title="Available: ${totAv}"></div>` : ''}
-          ${totHk > 0 ? `<div style="width:${(totHk/(totBeds || 1))*100}%; background:#f59e0b;" title="Cleaning: ${totHk}"></div>` : ''}
-          ${totRes > 0 ? `<div style="width:${(totRes/(totBeds || 1))*100}%; background:#a855f7;" title="Reserved: ${totRes}"></div>` : ''}
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; font-weight:700; flex-wrap:wrap; gap:8px;">
-          <span style="display:flex; align-items:center; gap:4px; color:#3b82f6;">🔵 Occupied: ${totOcc} / ${totBeds} (${totBeds > 0 ? Math.round((totOcc/totBeds)*100) : 0}%)</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#10b981;">🟢 Available: ${totAv} / ${totBeds} (${totBeds > 0 ? Math.round((totAv/totBeds)*100) : 0}%)</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#f59e0b;">🟡 Housekeeping: ${totHk} / ${totBeds} (${totBeds > 0 ? Math.round((totHk/totBeds)*100) : 0}%)</span>
-          <span style="display:flex; align-items:center; gap:4px; color:#a855f7;">🟣 Reserved: ${totRes} / ${totBeds} (${totBeds > 0 ? Math.round((totRes/totBeds)*100) : 0}%)</span>
-        </div>
-      </div>
-    `;
-
-    return `
-      <div class="admin-card">
-        <div class="er-card-hdr">
-          <h3 style="color:#1e3a8a;">🏥 Ward-Wise Inpatient Census Summary</h3>
-        </div>
-        <div class="er-card-body" style="padding:16px;">
-          ${overallCapacityHTML}
-          
-          <table class="custom-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-            <thead>
-              <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
-                <th style="padding:10px;">Ward name</th>
-                <th style="padding:10px;">Category</th>
-                <th style="padding:10px;">Total beds</th>
-                <th style="padding:10px;">Occupied</th>
-                <th style="padding:10px;">Available</th>
-                <th style="padding:10px;">Under Housekeeping</th>
-                <th style="padding:10px;">Reserved</th>
-                <th style="padding:10px;">Occupancy %</th>
-                <th style="padding:10px; min-width: 140px;">Bed distribution</th>
-                <th style="padding:10px; text-align:right;">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(wards).map(function([key, val]) {
-                // If role is Ward Nurse, restrict to General Ward Male only
-                if (isNurse && key !== 'GENERAL-WARD-M') return '';
-
-                var beds = val.beds || [];
-                var occ = 0, av = 0, hk = 0, res = 0;
-                
-                beds.forEach(b => {
-                  var s = window.state.bedsStatus[b] || { status: 'Available' };
-                  if (s.status === 'Occupied') occ++;
-                  else if (s.status === 'Available') av++;
-                  else if (s.status === 'Cleaning') hk++;
-                  else if (s.status === 'Reserved') res++;
-                });
-
-                var pct = beds.length > 0 ? Math.round((occ / beds.length) * 100) : 0;
-                var colorClass = pct > 90 ? 'color: #ef4444; font-weight:800;' : (pct >= 80 ? 'color:#f59e0b;' : 'color:#10b981;');
-
-                // Stacked bar chart inline for each row
-                var rowChartHTML = `
-                  <div style="display:flex; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; width:100%; min-width:120px;">
-                    ${occ > 0 ? `<div style="width:${(occ/beds.length)*100}%; background:#3b82f6;" title="Occupied: ${occ}"></div>` : ''}
-                    ${av > 0 ? `<div style="width:${(av/beds.length)*100}%; background:#10b981;" title="Available: ${av}"></div>` : ''}
-                    ${hk > 0 ? `<div style="width:${(hk/beds.length)*100}%; background:#f59e0b;" title="Cleaning: ${hk}"></div>` : ''}
-                    ${res > 0 ? `<div style="width:${(res/beds.length)*100}%; background:#a855f7;" title="Reserved: ${res}"></div>` : ''}
-                  </div>
-                `;
-
-                return `
-                  <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;"><strong>${val.name}</strong></td>
-                    <td style="padding:10px;">${WARD_RATES[key]?.category || 'General'}</td>
-                    <td style="padding:10px;">${beds.length}</td>
-                    <td style="padding:10px; color:#1e3a8a;"><strong>${occ}</strong></td>
-                    <td style="padding:10px; color:#22c55e;"><strong>${av}</strong></td>
-                    <td style="padding:10px; color:#f59e0b;"><strong>${hk}</strong></td>
-                    <td style="padding:10px; color:#a855f7;"><strong>${res}</strong></td>
-                    <td style="padding:10px; ${colorClass}">${pct}%</td>
-                    <td style="padding:10px; vertical-align: middle;">${rowChartHTML}</td>
-                    <td style="padding:10px; text-align:right;">
-                      <button class="ipd-bed-btn ipd-bed-btn-primary" onclick="window._dashboardRouteWard('${key}')">View Ward</button>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  window._dashboardRouteWard = function(wardKey) {
-    _gridWardFilter = wardKey;
-    _activeTab = 'bedboard';
-    var c = document.getElementById('main-content');
-    if (c) renderWorkspace(c);
-  };
-
-  /* ── SCREEN 2: VISUAL BED BOARD ─────────────────────────────── */
-  function renderBedBoardScreen() {
-    var wards = window.state.wards || {};
-    var isNurse = window._ipdActiveRole === 'Ward Nurse';
-    var pendingTransfers = (window.state.transferRequests || []).filter(t => _selectedBranch === 'All' || t.branch === _selectedBranch);
-    var pendingAdmissions = (window.state.admissionRequests || []).filter(a => _selectedBranch === 'All' || a.branch === _selectedBranch);
 
     var bedBoardGridHTML = Object.entries(wards).map(function([key, val]) {
       // Restricted scope checks
@@ -1569,131 +1660,58 @@
       `;
     }).join('');
 
-    var transfersHTML = pendingTransfers.map(trf => {
-      var statusBadge = `<span style="font-size: 9px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: 700; line-height: 1;">Pending</span>`;
-      if (trf.status.includes('Approved')) {
-        statusBadge = `<span style="font-size: 9px; background: #f5f3ff; color: #6d28d9; padding: 2px 6px; border-radius: 4px; font-weight: 700; line-height: 1;">Approved</span>`;
-      }
-      return `
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 11px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-              <strong style="color: var(--primary); font-size: 12px;">${trf.name}</strong>
-              <div style="color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 10px;">${trf.uhid}</div>
-            </div>
-            ${statusBadge}
-          </div>
-          <div style="display: flex; align-items: center; gap: 4px; color: #334155; font-weight: 600; margin: 2px 0;">
-            <span style="font-family: 'JetBrains Mono', monospace;">${trf.currentBed}</span>
-            <span>➡️</span>
-            <span>${WARD_RATES[trf.targetWard]?.name || trf.targetWard}</span>
-          </div>
-          <div style="color: #64748b; font-style: italic;">Reason: ${trf.reason}</div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-            <span style="color: #94a3b8; font-size: 9px;">Req: ${trf.requestedBy}</span>
-            <button class="btn btn-primary cursor-pointer" style="padding: 3px 8px; font-size: 9px; background: #2563eb; line-height: 1;" onclick="window.showUniversalTransferWorkflow('${trf.uhid}')">Action</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-    if (!transfersHTML) {
-      transfersHTML = `<div style="color: #94a3b8; font-size: 11px; text-align: center; padding: 15px; background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border-color);">No pending transfers</div>`;
-    }
-
-    var admissionsHTML = pendingAdmissions.map(adm => {
-      return `
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 11px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-          <div>
-            <strong style="color: var(--primary); font-size: 12px;">${adm.name}</strong>
-            <div style="color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 10px;">${adm.uhid}</div>
-          </div>
-          <div style="color: #334155;">Target Ward: <strong>${WARD_RATES[adm.ward]?.name || adm.ward}</strong></div>
-          <div style="color: #64748b; font-style: italic;">Diag: ${adm.diagnosis}</div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-            <span style="background: ${adm.advancePaid ? '#ecfdf5; color: #047857;' : '#fee2e2; color: #b91c1c;'} padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; line-height: 1;">
-              ${adm.advancePaid ? 'Paid' : 'Pending'}
-            </span>
-            <button class="btn btn-primary cursor-pointer" style="padding: 3px 8px; font-size: 9px; background: #10b981; line-height: 1;" onclick="window._bedOpenQuickAssign(null, '${adm.uhid}')">Allot</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-    if (!admissionsHTML) {
-      admissionsHTML = `<div style="color: #94a3b8; font-size: 11px; text-align: center; padding: 15px; background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border-color);">No pending admissions</div>`;
-    }
-
     return `
-      <!-- Filter Bar -->
-      <div style="background:#f8fafc; border: 1px solid var(--border-color); padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <div class="er-field" style="margin:0;">
-          <select class="er-select" style="padding: 6px 12px; font-size:12px;" onchange="window._gridSetWard(this.value)">
-            <option value="All" ${_gridWardFilter === 'All' ? 'selected' : ''}>All Wards</option>
-            ${Object.entries(wards).map(function([key, val]) {
-              if (isNurse && key !== 'GENERAL-WARD-M') return '';
-              return `<option value="${key}" ${key === _gridWardFilter ? 'selected' : ''}>${val.name}</option>`;
-            }).join('')}
-          </select>
+      <div class="admin-card" style="margin-top: 0;">
+        <div class="er-card-hdr" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+          <h3 style="color:#1e3a8a; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>🛏️</span> <span>Real-Time Facility Bed Board</span>
+          </h3>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 11px; color: var(--text-muted);">Click vacant beds to admit, occupied beds to view EMR details.</span>
+            <button onclick="window._showBedLogsPopup()" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; background: #7c3aed; border-color: #7c3aed; font-weight: 700; height: auto; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(124, 58, 237, 0.15);">
+              <span>📋</span> <span>View Log</span>
+            </button>
+          </div>
         </div>
-        <div class="er-field" style="margin:0;">
-          <select class="er-select" style="padding: 6px 12px; font-size:12px;" onchange="window._gridSetStatus(this.value)">
-            <option value="All" ${_gridStatusFilter === 'All' ? 'selected' : ''}>All Statuses</option>
-            <option value="Occupied" ${_gridStatusFilter === 'Occupied' ? 'selected' : ''}>Occupied</option>
-            <option value="Available" ${_gridStatusFilter === 'Available' ? 'selected' : ''}>Available</option>
-            <option value="Cleaning" ${_gridStatusFilter === 'Cleaning' ? 'selected' : ''}>Under Housekeeping</option>
-            <option value="Reserved" ${_gridStatusFilter === 'Reserved' ? 'selected' : ''}>Reserved</option>
-          </select>
-        </div>
-        <div class="er-field" style="margin:0; flex:1; min-width:200px;">
-          <input type="text" class="er-input" style="padding: 6px 12px; font-size:12px;" placeholder="Search Patient name or UHID..." value="${_gridSearchFilter}" oninput="window._gridSetSearch(this.value)">
-        </div>
-      </div>
-
-      <!-- 2-Column Layout: Bed Board (Left) + Transfer & Admission requests Log (Right) -->
-      <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 20px; align-items: start;">
         
-        <!-- Left Column: Visual Bed Board Grid -->
+        <!-- Filter Bar -->
+        <div style="background:#f8fafc; border: 1px solid var(--border-color); padding: 12px 18px; border-radius: 8px; margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div class="er-field" style="margin:0;">
+            <select class="er-select" style="padding: 6px 12px; font-size:12px;" onchange="window._gridSetWard(this.value)">
+              <option value="All" ${_gridWardFilter === 'All' ? 'selected' : ''}>All Wards</option>
+              ${Object.entries(wards).map(function([key, val]) {
+                if (isNurse && key !== 'GENERAL-WARD-M') return '';
+                return `<option value="${key}" ${key === _gridWardFilter ? 'selected' : ''}>${val.name}</option>`;
+              }).join('')}
+            </select>
+          </div>
+          <div class="er-field" style="margin:0;">
+            <select class="er-select" style="padding: 6px 12px; font-size:12px;" onchange="window._gridSetStatus(this.value)">
+              <option value="All" ${_gridStatusFilter === 'All' ? 'selected' : ''}>All Statuses</option>
+              <option value="Occupied" ${_gridStatusFilter === 'Occupied' ? 'selected' : ''}>Occupied</option>
+              <option value="Available" ${_gridStatusFilter === 'Available' ? 'selected' : ''}>Available</option>
+              <option value="Cleaning" ${_gridStatusFilter === 'Cleaning' ? 'selected' : ''}>Under Housekeeping</option>
+              <option value="Reserved" ${_gridStatusFilter === 'Reserved' ? 'selected' : ''}>Reserved</option>
+            </select>
+          </div>
+          <div class="er-field" style="margin:0; flex:1; min-width:200px;">
+            <input type="text" id="ipd-grid-search" class="er-input" style="padding: 6px 12px; font-size:12px;" placeholder="Search Patient name or UHID..." value="${_gridSearchFilter}" oninput="window._gridSetSearch(this.value)">
+          </div>
+        </div>
+
         <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           ${bedBoardGridHTML || '<div style="text-align:center; padding:50px; color:#64748b;">No beds matching filter constraints.</div>'}
         </div>
-
-        <!-- Right Column: Transfer & Requests Log -->
-        <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 16px;">
-          
-          <!-- Category 1: Transfer Requests -->
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">
-              <h3 style="font-size: 11px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
-                <span>🔄</span> Transfers Log
-              </h3>
-              <span style="background: #eff6ff; color: #1e40af; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; line-height: 1;">
-                ${pendingTransfers.length}
-              </span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              ${transfersHTML}
-            </div>
-          </div>
-
-          <!-- Category 2: Admission Requests -->
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-top: 10px;">
-              <h3 style="font-size: 11px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
-                <span>📥</span> Admission Requests
-              </h3>
-              <span style="background: #ecfdf5; color: #047857; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; line-height: 1;">
-                ${pendingAdmissions.length}
-              </span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              ${admissionsHTML}
-            </div>
-          </div>
-
-        </div>
-
       </div>
     `;
   }
+
+  window._dashboardRouteWard = function(wardKey) {
+    _gridWardFilter = wardKey;
+    _activeTab = 'dashboard';
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
 
   window._gridSetWard = function(val) {
     _gridWardFilter = val;
@@ -1738,14 +1756,20 @@
 
     if (status === 'Occupied') {
       var p = window.state.patients.find(pt => pt.uhid === s.patientUhid) || { name: 'Trauma Patient', uhid: s.patientUhid || 'SH-2026-00000' };
-      borderStyle = 'border: 2px solid #334155;';
-      badgeBg = '#334155';
-      statusText = 'Occupied';
+      if (p.dischargeStatus === 'In Progress — Clearances Pending') {
+        borderStyle = 'border: 2px solid #f97316;';
+        badgeBg = '#f97316';
+        statusText = 'Discharge in process';
+      } else {
+        borderStyle = 'border: 2px solid #334155;';
+        badgeBg = '#334155';
+        statusText = 'Occupied';
+      }
       patientNameHTML = `
         <div style="font-size: 13px; font-weight: 800; color: #000; margin-top: 6px; font-family: sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.name}">${p.name}</div>
         <div style="font-size: 11px; color: #4b5563; margin-top: 1px; font-family: sans-serif;">${p.uhid}</div>
       `;
-      onClickAction = `onclick="window._drawerOpenDetails('${p.uhid}', '${bedId}')"`;
+      onClickAction = `onclick="window.openBedModal('${bedId}')"`;
     } else if (status === 'Available') {
       borderStyle = 'border: 2px solid #10b981;';
       badgeBg = '#10b981';
@@ -1781,7 +1805,7 @@
         <div style="font-size: 13px; font-weight: 800; color: #ef4444; margin-top: 6px; font-family: sans-serif;">Dirty</div>
         <div style="font-size: 11px; color: #ef4444; margin-top: 1px; font-family: sans-serif;">Awaiting Clean</div>
       `;
-      onClickAction = `onclick="alert('Bed ${bedId} is dirty. Please assign a cleaning task in the Housekeeping module.')"`;
+      onClickAction = `onclick="window._handleDirtyBedClick('${bedId}', '${wardKey}')"`;
     } else if (status === 'Blocked') {
       borderStyle = 'border: 2px solid #64748b;';
       badgeBg = '#64748b';
@@ -1878,7 +1902,7 @@
       <!-- Header -->
       <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
         <h3 class="margin-0 text-slate-800 text-[17px] font-bold">Bed Action: ${formattedBedId}</h3>
-        <button class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer transition-colors duration-150" onclick="window._drawerClose()">✕</button>
+        <button class="ipd-drawer-close text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer transition-colors duration-150" onclick="window._drawerClose()">✕</button>
       </div>
 
       <!-- Body -->
@@ -1903,9 +1927,14 @@
         <!-- Patient Info Card -->
         <div class="bg-blue-50/30 rounded-xl p-4.5 border border-blue-100/50 flex flex-col gap-1 text-sm">
           <div class="text-blue-600 font-bold text-base mb-1.5">Patient Information</div>
-          <div>
-            <span class="font-bold text-slate-700">Name:</span>
-            <span class="font-bold text-blue-600">${p.name}</span>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <span class="font-bold text-slate-700">Name:</span>
+              <span class="font-bold text-blue-600">${p.name}</span>
+            </div>
+            <button class="btn btn-xs btn-primary" onclick="event.stopPropagation(); window.router.navigate('patients?uhid=${p.uhid}');" style="padding: 2px 8px; font-size: 10px; font-weight: 700; background: var(--primary); border: none; border-radius: 6px; color: white; cursor: pointer;">
+              View Details ➔
+            </button>
           </div>
           <div>
             <span class="font-bold text-slate-700">UHID:</span>
@@ -1925,22 +1954,7 @@
           </div>
         </div>
 
-        <!-- Diet Selection Card -->
-        <div class="bg-amber-50/30 rounded-xl p-4 border border-amber-200/50 flex flex-col gap-1.5 text-sm my-3">
-          <div class="text-amber-700 font-bold text-sm flex items-center gap-1">🍏 Clinical Diet Order</div>
-          <div class="flex items-center gap-2">
-            <select id="drawer-diet-select" class="form-select w-full text-xs" style="padding:6px 12px; border-radius:8px; border:1px solid #d1d5db; background-color:#fff;" onchange="window._updatePatientDietFromDrawer('${p.uhid}', this.value)">
-              <option value="Regular Diet" ${activeDiet === 'Regular Diet' ? 'selected' : ''}>Regular Diet</option>
-              <option value="Diabetic Diet" ${activeDiet === 'Diabetic Diet' ? 'selected' : ''}>Diabetic Diet</option>
-              <option value="Low Sodium Diet" ${activeDiet === 'Low Sodium Diet' ? 'selected' : ''}>Low Sodium Diet</option>
-              <option value="Renal Diet" ${activeDiet === 'Renal Diet' ? 'selected' : ''}>Renal Diet</option>
-              <option value="Clear Liquid Diet" ${activeDiet === 'Clear Liquid Diet' ? 'selected' : ''}>Clear Liquid Diet</option>
-              <option value="High Protein Diet" ${activeDiet === 'High Protein Diet' ? 'selected' : ''}>High Protein Diet</option>
-              <option value="Soft Diet" ${activeDiet === 'Soft Diet' ? 'selected' : ''}>Soft Diet</option>
-              <option value="NPO (Nil Per Oral)" ${activeDiet.includes('NPO') ? 'selected' : ''}>NPO (Nil Per Oral)</option>
-            </select>
-          </div>
-        </div>
+
 
         <!-- Buttons Section -->
         <div class="mt-2 flex flex-col gap-2">
@@ -1957,6 +1971,15 @@
     _drawerBedId = bedId;
     var c = document.getElementById('main-content');
     if (c) renderWorkspace(c);
+  };
+
+  window.openBedModal = function(bedId) {
+    var s = window.state.bedsStatus[bedId];
+    if (s && s.patientUhid) {
+      window._drawerOpenDetails(s.patientUhid, bedId);
+    } else {
+      window._bedOpenQuickAssign(bedId);
+    }
   };
 
   window._drawerClose = function() {
@@ -2027,8 +2050,8 @@
     window.router.navigate('patients?uhid=' + uhid + nameParam);
   };
 
-  window._drawerAddNursingNote = function(uhid) {
-    var txt = prompt('Enter nursing observation note:');
+  window._drawerAddNursingNote = async function(uhid) {
+    var txt = await customPrompt('Enter nursing observation note:');
     if (txt) {
       alert('Nursing Note added to patient chart timeline.');
     }
@@ -2155,9 +2178,9 @@
     if (c) renderWorkspace(c);
   };
 
-  window._bedMgmtBlock = function(bedId, block) {
+  window._bedMgmtBlock = async function(bedId, block) {
     if (block) {
-      var reason = prompt('Please enter maintenance block reason:');
+      var reason = await customPrompt('Please enter maintenance block reason:');
       if (reason) {
         window.state.bedsStatus[bedId] = {
           wardKey: window.state.bedsStatus[bedId].wardKey,
@@ -2173,8 +2196,8 @@
     if (c) renderWorkspace(c);
   };
 
-  window._bedMgmtReserve = function(bedId) {
-    var name = prompt('Reserve bed for patient (Full Name):');
+  window._bedMgmtReserve = async function(bedId) {
+    var name = await customPrompt('Reserve bed for patient (Full Name):');
     if (name) {
       window.state.bedsStatus[bedId] = {
         wardKey: window.state.bedsStatus[bedId].wardKey,
@@ -2191,6 +2214,7 @@
 
   /* ── VISUAL BED grid operations ────────────────────────────── */
   window._bedMarkReady = function(bedId, wardKey) {
+    var prevStatus = window.state.bedsStatus[bedId]?.status || 'Dirty';
     window.state.bedsStatus[bedId] = {
       wardKey: wardKey,
       status: 'Available',
@@ -2198,6 +2222,17 @@
       notes: ''
     };
     localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Available',
+      action: 'Clean Verified',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Bed clean verified. Returned to service.'
+    });
     if (typeof window.state.completeHousekeepingTasks === 'function') {
       window.state.completeHousekeepingTasks(bedId);
     }
@@ -2207,6 +2242,7 @@
   };
 
   window._bedReleaseReservation = function(bedId, wardKey) {
+    var prevStatus = window.state.bedsStatus[bedId]?.status || 'Reserved';
     window.state.bedsStatus[bedId] = {
       wardKey: wardKey,
       status: 'Available',
@@ -2214,13 +2250,25 @@
       notes: ''
     };
     localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Available',
+      action: 'Release Reservation',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Reservation released manually.'
+    });
     alert(`Reservation released on bed ${bedId}.`);
     var c = document.getElementById('main-content');
     if (c) renderWorkspace(c);
   };
 
-  window._bedSendToHousekeeping = function(bedId, wardKey) {
-    if (confirm(`Are you sure you want to manually vacate Bed ${bedId} and send it to Housekeeping?`)) {
+  window._bedSendToHousekeeping = async function(bedId, wardKey) {
+    if (await customConfirm(`Are you sure you want to manually vacate Bed ${bedId} and send it to Housekeeping?`)) {
+      var prevStatus = window.state.bedsStatus[bedId]?.status || 'Available';
       window.state.bedsStatus[bedId] = {
         wardKey: wardKey,
         status: 'Cleaning',
@@ -2229,11 +2277,110 @@
       };
       localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
       window.state.triggerHousekeepingRequest(bedId, wardKey, 'Routine cleaning post override request');
+      window.state.logBedMovement({
+        patientId: null,
+        bedId: bedId,
+        wardKey: wardKey,
+        prevStatus: prevStatus,
+        newStatus: 'Cleaning',
+        action: 'Housekeeping',
+        user: window._ipdActiveRole || 'ATD Coordinator',
+        role: window._ipdActiveRole || 'ATD Coordinator',
+        remarks: 'Sent to Housekeeping manually.'
+      });
       _drawerOpen = false;
       alert(`Bed ${bedId} has been sent to Housekeeping.`);
       var c = document.getElementById('main-content');
       if (c) renderWorkspace(c);
     }
+  };
+
+  window._handleDirtyBedClick = function(bedId, wardKey) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-dialog-overlay';
+    overlay.id = 'dirty-bed-modal-overlay';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center;';
+    
+    overlay.innerHTML = `
+      <div class="custom-dialog-box" style="background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); width:420px; max-width:90vw; display:flex; flex-direction:column; overflow:hidden; border:1px solid #e2e8f0; font-family:sans-serif;">
+        <div class="custom-dialog-header" style="padding:20px 24px 12px; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">ℹ️</span>
+          <h4 style="margin:0; font-size:16px; font-weight:700; color:#1e293b;">Information</h4>
+        </div>
+        <div class="custom-dialog-body" style="padding:8px 24px 24px; font-size:14px; color:#475569; line-height:1.5; text-align:left;">
+          Bed ${bedId} is dirty. Please assign a cleaning task in the Housekeeping module.
+        </div>
+        <div class="custom-dialog-footer" style="padding:16px 24px; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:8px; background:#f8fafc;">
+          <button class="custom-dialog-btn" style="background:#2563eb; color:#fff; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-size:13px;" onclick="window._dirtyBedAssignHousekeeping('${bedId}', '${wardKey}')">Assign to Housekeeping</button>
+          <button class="custom-dialog-btn" style="background:#ef4444; color:#fff; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-size:13px;" onclick="window._dirtyBedAssignMaintenance('${bedId}', '${wardKey}')">Assign for Maintenance</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  };
+
+  window._dirtyBedAssignHousekeeping = function(bedId, wardKey) {
+    const overlay = document.getElementById('dirty-bed-modal-overlay');
+    if (overlay) overlay.remove();
+    
+    var prevStatus = window.state.bedsStatus[bedId]?.status || 'Dirty';
+    window.state.bedsStatus[bedId] = {
+      wardKey: wardKey,
+      status: 'Cleaning',
+      patientUhid: null,
+      notes: 'Routine cleaning assigned post checkout'
+    };
+    localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    
+    if (typeof window.state.triggerHousekeepingRequest === 'function') {
+      window.state.triggerHousekeepingRequest(bedId, wardKey, 'Routine cleaning assigned post checkout');
+    }
+    
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Cleaning',
+      action: 'Housekeeping',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Sent to Housekeeping manually.'
+    });
+    
+    alert(`Bed ${bedId} has been sent to Housekeeping.`);
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
+
+  window._dirtyBedAssignMaintenance = function(bedId, wardKey) {
+    const overlay = document.getElementById('dirty-bed-modal-overlay');
+    if (overlay) overlay.remove();
+    
+    var prevStatus = window.state.bedsStatus[bedId]?.status || 'Dirty';
+    window.state.bedsStatus[bedId] = {
+      wardKey: wardKey,
+      status: 'Blocked',
+      patientUhid: null,
+      notes: 'Blocked for maintenance'
+    };
+    localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Blocked',
+      action: 'Maintenance Block',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Blocked for maintenance.'
+    });
+    
+    alert(`Bed ${bedId} is now blocked for maintenance.`);
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
   };
 
   /* ── SCREEN 3: TRANSFER MODAL TRIGGER ───────────────────────── */
@@ -2432,95 +2579,111 @@
     var req = window.state.admissionRequests.find(r => r.uhid === uhid);
     if (!req) return;
 
-    // Check if advance payment is completed
-    if (!req.advancePaid && req.status !== 'Confirmed' && !req.emergencyOverride) {
-      alert(`⚠️ Advance deposit of ₹10,000 is pending for ${req.name}. Bed assignment or admission is blocked until the deposit is collected.`);
-      return;
+    _quickAssignOpen = false;
+    window.router.navigate(`ipdAdmission?tab=admission_wizard&uhid=${uhid}&bed=${_quickAssignBedId}`);
+  };
+
+  window._quickAssignToHousekeeping = function(bedId) {
+    const statusObj = window.state.bedsStatus[bedId];
+    if (!statusObj) return;
+    const wardKey = statusObj.wardKey;
+    
+    _quickAssignOpen = false;
+    
+    var prevStatus = statusObj.status || 'Available';
+    window.state.bedsStatus[bedId] = {
+      wardKey: wardKey,
+      status: 'Cleaning',
+      patientUhid: null,
+      notes: 'Routine cleaning post quick assign request'
+    };
+    localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    
+    if (typeof window.state.triggerHousekeepingRequest === 'function') {
+      window.state.triggerHousekeepingRequest(bedId, wardKey, 'Routine cleaning post quick assign request');
     }
+    
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Cleaning',
+      action: 'Housekeeping',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Sent to Housekeeping from Quick Assign.'
+    });
+    
+    alert(`Bed ${bedId} has been sent to Housekeeping.`);
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
 
-    var pat = window.state.patients.find(p => p.uhid === uhid);
-    if (!pat) {
-      pat = {
-        uhid: uhid,
-        name: req.name,
-        age: 38,
-        gender: req.ward && req.ward.includes('-F') ? 'Female' : 'Male',
-        type: 'IPD',
-        mobile: '+91 98765 43210',
-        bloodGroup: 'O+',
-        primaryConsultant: req.refDoc || 'Dr. Srinivasan',
-        provisionalDiagnosis: req.diagnosis || 'Acute Condition',
-        clinicalData: { diagnosis: req.diagnosis || 'Acute Condition' },
-        status: 'Registered',
-        flags: [],
-        timelineEvents: []
-      };
-      window.state.patients.push(pat);
-    }
+  window._quickAssignToMaintenance = function(bedId) {
+    const statusObj = window.state.bedsStatus[bedId];
+    if (!statusObj) return;
+    const wardKey = statusObj.wardKey;
+    
+    _quickAssignOpen = false;
+    
+    var prevStatus = statusObj.status || 'Available';
+    window.state.bedsStatus[bedId] = {
+      wardKey: wardKey,
+      status: 'Blocked',
+      patientUhid: null,
+      notes: 'Blocked for maintenance'
+    };
+    localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Blocked',
+      action: 'Maintenance Block',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Blocked for maintenance.'
+    });
+    
+    alert(`Bed ${bedId} is now blocked for maintenance.`);
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
 
-    if (_quickAssignBedId) {
-      // Update patient EMR
-      pat.status = 'Admitted';
-      pat.bed = _quickAssignBedId;
-      var wardKey = window.state.bedsStatus[_quickAssignBedId].wardKey;
-      pat.ward = WARD_RATES[wardKey].name;
-
-      // Update Bed Board state occupied
-      window.state.bedsStatus[_quickAssignBedId] = {
-        wardKey: wardKey,
-        status: 'Occupied',
-        patientUhid: uhid,
-        notes: 'Admitted from Pending Admission requests'
-      };
-
-      // Add admission log
-      window.state.admissions = window.state.admissions || [];
-      window.state.admissions.push({
-        id: 'ADM' + String(5000 + window.state.admissions.length + 1),
-        uhid: uhid,
-        patientName: pat.name,
-        date: getTodayStr(),
-        ward: wardKey,
-        bed: _quickAssignBedId,
-        doctorName: pat.primaryConsultant || 'Dr. Srinivasan',
-        diagnosis: pat.provisionalDiagnosis,
-        status: 'Active'
-      });
-
-      // Add timeline event
-      pat.timelineEvents = pat.timelineEvents || [];
-      pat.timelineEvents.unshift({
-        date: new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
-        type: 'clinical',
-        icon: '🏥',
-        title: 'Admitted to Ward',
-        desc: `Admitted to ${pat.ward}, Bed ${_quickAssignBedId}`
-      });
-
-      // Remove from pending list
-      var idx = window.state.admissionRequests.findIndex(r => r.uhid === uhid);
-      if (idx !== -1) {
-        window.state.admissionRequests.splice(idx, 1);
-      }
-
-      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
-      localStorage.setItem('saronil_admissions', JSON.stringify(window.state.admissions));
-      localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
-      localStorage.setItem('saronil_admissionRequests', JSON.stringify(window.state.admissionRequests));
-
-      _quickAssignOpen = false;
-      alert(`✓ Patient ${pat.name} assigned to Bed ${_quickAssignBedId} successfully!`);
-
-      var c = document.getElementById('main-content');
-      if (c) renderWorkspace(c);
-
-      // Automatically generate barcode stickers after quick bed assignment
-      setTimeout(function() {
-        if (window._generatePatientBarcodeStickers) {
-          window._generatePatientBarcodeStickers(uhid);
-        }
-      }, 300);
-    }
+  window._quickAssignTentativeBlock = function(bedId) {
+    const statusObj = window.state.bedsStatus[bedId];
+    if (!statusObj) return;
+    const wardKey = statusObj.wardKey;
+    
+    _quickAssignOpen = false;
+    
+    var prevStatus = statusObj.status || 'Available';
+    window.state.bedsStatus[bedId] = {
+      wardKey: wardKey,
+      status: 'Reserved',
+      patientUhid: null,
+      notes: 'Tentatively Blocked'
+    };
+    localStorage.setItem('saronil_bedsStatus', JSON.stringify(window.state.bedsStatus));
+    
+    window.state.logBedMovement({
+      patientId: null,
+      bedId: bedId,
+      wardKey: wardKey,
+      prevStatus: prevStatus,
+      newStatus: 'Reserved',
+      action: 'Tentative Reservation',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      role: window._ipdActiveRole || 'ATD Coordinator',
+      remarks: 'Reserved / Tentatively Blocked.'
+    });
+    
+    alert(`Bed ${bedId} has been tentatively blocked (Reserved).`);
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
   };
 
 
@@ -2534,26 +2697,41 @@
       
       overlaysHTML += `
         <div class="ipd-modal-overlay">
-          <div class="ipd-modal" style="width:500px;">
-            <div class="ipd-modal-hdr">
-              <h4 class="ipd-modal-title">🛏️ Quick Assign Bed ${_quickAssignBedId}</h4>
-              <button class="ipd-drawer-close" style="color:#000;" onclick="window._quickAssignClose()">✕</button>
+          <div class="ipd-modal" style="width: 600px; max-width: 90vw;">
+            <div class="ipd-modal-hdr" style="background: white; border-bottom: 1px solid #cbd5e1; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0;">
+              <h4 class="ipd-modal-title" style="margin: 0; font-size: 15px; font-weight: 800; color: #1e3a8a; font-family: sans-serif; display: flex; align-items: center; gap: 8px;">
+                <span>🛌</span> <span>QUICK ASSIGN BED ${_quickAssignBedId}</span>
+              </h4>
+              <button class="ipd-drawer-close" style="background: none; border: none; font-size: 24px; font-weight: bold; color: #1e293b; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; line-height: 1;" onclick="window._quickAssignClose()">✕</button>
             </div>
-            <div class="ipd-modal-body">
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+            <div class="ipd-modal-body" style="padding: 24px; text-align: left;">
+              <p style="font-size: 13px; color: #475569; margin: 0 0 16px 0; font-family: sans-serif; line-height: 1.5;">
                 Select a patient from the pending admission requests queue to assign to this bed space.
               </p>
               
-              <div style="max-height:220px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:8px;">
-                ${requests.map(r => `
-                  <div style="padding:10px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                    <div>
-                        <strong style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="window.router.navigate('patients?uhid=${r.uhid}&name=${encodeURIComponent(r.name)}')">${r.name}</strong> (${r.uhid})<br>
-                      <span style="color:var(--text-muted); font-size:10px;">${r.diagnosis}</span>
-                    </div>
-                    <button class="ipd-bed-btn ipd-bed-btn-primary" onclick="window._bedQuickAssignSelect('${r.uhid}')">Select</button>
+              <div style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 30px; text-align: center; display: flex; align-items: center; justify-content: center; background: white; min-height: 100px; margin-bottom: 20px; box-sizing: border-box;">
+                ${requests.length > 0 ? `
+                  <div style="max-height: 220px; overflow-y: auto; width: 100%;">
+                    ${requests.map(r => `
+                      <div style="padding:10px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; font-size:12px; width: 100%; text-align: left;">
+                        <div>
+                          <strong style="color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="window.router.navigate('patients?uhid=${r.uhid}&name=${encodeURIComponent(r.name)}')">${r.name}</strong> (${r.uhid})<br>
+                          <span style="color:var(--text-muted); font-size:10px;">${r.diagnosis}</span>
+                        </div>
+                        <button class="ipd-bed-btn ipd-bed-btn-primary" style="background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="window._bedQuickAssignSelect('${r.uhid}')">Admit Patient</button>
+                      </div>
+                    `).join('')}
                   </div>
-                `).join('') || '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:12px;">No pending admission requests.</div>'}
+                ` : '<span style="color: #94a3b8; font-size: 14px; font-weight: 500; font-family: sans-serif;">No pending admission requests.</span>'}
+              </div>
+
+              <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: left;">
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-family: sans-serif;">Other Bed Actions</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="ipd-bed-btn" style="background-color: #2563eb; color: white; border: none; padding: 10px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 6px; font-family: sans-serif;" onclick="window._quickAssignToHousekeeping('${_quickAssignBedId}')">Assign to Housekeeping</button>
+                  <button class="ipd-bed-btn" style="background-color: #ef4444; color: white; border: none; padding: 10px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 6px; font-family: sans-serif;" onclick="window._quickAssignToMaintenance('${_quickAssignBedId}')">Assign for Maintenance</button>
+                  <button class="ipd-bed-btn" style="background-color: #7c3aed; color: white; border: none; padding: 10px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 6px; font-family: sans-serif;" onclick="window._quickAssignTentativeBlock('${_quickAssignBedId}')">Tentative Block</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3017,7 +3195,7 @@
     window.router.navigate('registration?action=new');
   };
 
-  window._atdPerformLookup = function() {
+  window._atdPerformLookup = async function() {
     var input = document.getElementById('atd-lookup-input');
     if (!input) return;
     var query = input.value.trim();
@@ -3036,8 +3214,20 @@
       _provisionalDiagnosis = match.clinicalData ? match.clinicalData.diagnosis : '';
       _referringDoctor = match.primaryConsultant || '';
       _wardPreference = match.gender === 'Female' ? 'GENERAL-WARD-F' : 'GENERAL-WARD-M';
+      
+      // Reset safety precaution and checklist states
+      _wizAllergyFlag = match.allergies && match.allergies !== 'None' ? true : false;
+      _wizFallRiskFlag = false;
+      _wizDnrFlag = false;
+      _wizLimbPrecautionFlag = false;
+      _wizWristbandPrinted = false;
+      _wizConsentSigned = false;
+      _wizEmergencyImpliedConsent = false;
+      _wizEmergencyImpliedConsentDoctor = match.primaryConsultant || 'Dr. Amit Verma';
+      _wizDietOrderIssued = false;
+      _wizValuablesRecorded = false;
     } else {
-      alert('No registered patient profile found. Please register the patient first.');
+      await customAlert('No registered patient profile found. Please register the patient first.');
       window.router.navigate('registration?action=new');
       return;
     }
@@ -3447,6 +3637,26 @@
         </div>
       ` : ''}
 
+      <div class="atd-section-title">Clinical Safety Precaution Flags (Safety Alert Strip)</div>
+      <div class="atd-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+          <input type="checkbox" id="wiz-allergy-flag" ${_wizAllergyFlag ? 'checked' : ''}>
+          <span style="color:#dc2626; font-weight:700;">🔴 Allergy Alert</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+          <input type="checkbox" id="wiz-fall-risk" ${_wizFallRiskFlag ? 'checked' : ''}>
+          <span style="color:#d97706; font-weight:700;">⚠️ Fall Risk</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+          <input type="checkbox" id="wiz-dnr-flag" ${_wizDnrFlag ? 'checked' : ''}>
+          <span style="color:#7c3aed; font-weight:700;">🟣 Purple DNR</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+          <input type="checkbox" id="wiz-limb-flag" ${_wizLimbPrecautionFlag ? 'checked' : ''}>
+          <span style="color:#db2777; font-weight:700;">🌸 Precaution</span>
+        </label>
+      </div>
+
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="window._atdStepBack('billing')">← Back to Payment</button>
         <button class="btn btn-primary" onclick="window._atdSaveAdmissionForm()">Save & Choose Bed space</button>
@@ -3488,6 +3698,12 @@
     _schemeFlag = schemeEl ? schemeEl.value : 'None';
     _beneficiaryId = benIdEl ? benIdEl.value.trim() : '';
     _mlcFlag = mlcEl ? mlcEl.value : 'No';
+
+    // Parse precaution flags from step 4
+    _wizAllergyFlag = document.getElementById('wiz-allergy-flag')?.checked || false;
+    _wizFallRiskFlag = document.getElementById('wiz-fall-risk')?.checked || false;
+    _wizDnrFlag = document.getElementById('wiz-dnr-flag')?.checked || false;
+    _wizLimbPrecautionFlag = document.getElementById('wiz-limb-flag')?.checked || false;
 
     if (!address) { alert('Residential address confirmation is mandatory for inpatient files.'); return; }
     if (!_nokName) { alert('Emergency Next-of-Kin (NOK) contact name is required.'); return; }
@@ -3563,9 +3779,144 @@
     var p = _selectedPatient;
     var beds = wardInfo.beds || [];
 
+    // Calculate overall IPD bed occupancy to enforce 30% free rule
+    var totalIpdBeds = 0;
+    var occupiedIpdBeds = 0;
+    Object.keys(window.state.wards || {}).forEach(wk => {
+      if (wk !== 'EMERGENCY' && wk !== 'DAYCARE') {
+        var wBeds = window.state.wards[wk].beds || [];
+        totalIpdBeds += wBeds.length;
+        wBeds.forEach(bId => {
+          var bObj = window.state.bedsStatus[bId];
+          if (bObj && (bObj.status === 'Occupied' || bObj.status === 'Reserved')) {
+            occupiedIpdBeds++;
+          }
+        });
+      }
+    });
+
+    var freeIpdBeds = totalIpdBeds - occupiedIpdBeds;
+    var freeIpdPct = totalIpdBeds > 0 ? (freeIpdBeds / totalIpdBeds) * 100 : 100;
+    
+    var isIpdWard = (_wardPreference !== 'EMERGENCY' && _wardPreference !== 'DAYCARE');
+    var wouldViolateReserve = false;
+    var nextFreePct = freeIpdPct;
+
+    if (isIpdWard && _allottedBed) {
+      // If we are allocating a bed, check if it pushes free percentage below 30%
+      var nextOccupied = occupiedIpdBeds;
+      var currentBedStatusObj = window.state.bedsStatus[_allottedBed];
+      if (!currentBedStatusObj || currentBedStatusObj.status === 'Available') {
+        nextOccupied++;
+      }
+      nextFreePct = ((totalIpdBeds - nextOccupied) / totalIpdBeds) * 100;
+      if (nextFreePct < 30) {
+        wouldViolateReserve = true;
+      }
+    }
+
+    var bannerHTML = '';
+    if (isIpdWard) {
+      var statusColor = freeIpdPct < 30 ? '#ef4444' : (freeIpdPct < 40 ? '#f59e0b' : '#10b981');
+      var statusBg = freeIpdPct < 30 ? '#fee2e2' : (freeIpdPct < 40 ? '#fef3c7' : '#f0fdf4');
+      var statusBorder = freeIpdPct < 30 ? '#fca5a5' : (freeIpdPct < 40 ? '#fde047' : '#bbf7d0');
+      
+      bannerHTML = `
+        <div style="background:${statusBg}; border:1px solid ${statusBorder}; border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; font-family:'Inter', sans-serif;">
+          <div>
+            <div style="font-size:12px; font-weight:800; color:${statusColor}; display:flex; align-items:center; gap:6px;">
+              <span>🚨</span> IPD Emergency Reserve Status (30% Vacancy Requirement)
+            </div>
+            <div style="font-size:11.5px; color:#4b5563; margin-top:3px;">
+              Total IPD Beds: <strong>${totalIpdBeds}</strong> &bull; Occupied/Reserved: <strong>${occupiedIpdBeds}</strong> &bull; Vacant: <strong>${freeIpdBeds}</strong> (<strong>${freeIpdPct.toFixed(1)}%</strong> free)
+            </div>
+          </div>
+          <div style="background:#fff; border:1.5px solid ${statusColor}; color:${statusColor}; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+            ${freeIpdPct < 30 ? 'Overcapacity Warning' : (freeIpdPct < 40 ? 'Warning: Low Reserve' : 'Reserve Maintained')}
+          </div>
+        </div>
+      `;
+
+      if (wouldViolateReserve) {
+        bannerHTML += `
+          <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px; font-family:'Inter', sans-serif;">
+            <span style="font-size:20px;">🛑</span>
+            <div>
+              <div style="font-size:12px; font-weight:800; color:#b91c1c;">Admission Blocked: Safety Reserve Reserve Threshold Exceeded</div>
+              <div style="font-size:11.5px; color:#991b1b; margin-top:2px;">
+                Admitting this patient reduces IPD vacancy to <strong>${nextFreePct.toFixed(1)}%</strong> (Limit: 30.0%). Admissions are restricted to preserve critical trauma & emergency capacity.
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    var consentPassed = _wizConsentSigned || _wizEmergencyImpliedConsent;
+    var wristbandPassed = _wizWristbandPrinted;
+    var bedSelected = _allottedBed ? true : false;
+    var isEnabled = bedSelected && !wouldViolateReserve && consentPassed && wristbandPassed;
+    
+    var btnBg = wouldViolateReserve ? '#dc2626' : '#7c3aed';
+    var btnText = 'Confirm Bed Assignment & Allot space';
+    if (!isEnabled) {
+      if (wouldViolateReserve) {
+        btnText = 'Blocked by Emergency Cap';
+      } else {
+        var reasons = [];
+        if (!bedSelected) reasons.push('Choose Bed');
+        if (!consentPassed) reasons.push('Consent');
+        if (!wristbandPassed) reasons.push('Wristband');
+        btnText = `Awaiting: ${reasons.join(', ')}`;
+      }
+    }
+
     return `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 1.5rem; font-size: 13px;">
-        👤 <strong>Patient:</strong> ${p.name} (${p.uhid}) · Type: <strong>${_admType}</strong> · Preferring: <strong>${wardInfo.name}</strong>
+      ${bannerHTML}
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 1.5rem;">
+        <!-- Left Side: Patient details -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; font-size: 12.5px; line-height: 1.5; display:flex; flex-direction:column; justify-content:center;">
+          <div>👤 <strong>Patient:</strong> <span style="font-size:14px; font-weight:700;">${p.name}</span> (${p.uhid})</div>
+          <div>🩺 <strong>Admitting Consultant:</strong> ${_treatingConsultant || 'Not Assigned'}</div>
+          <div>📋 <strong>Provisional Diagnosis:</strong> ${_provisionalDiagnosis || 'Not Documented'}</div>
+          <div>🛏️ <strong>Ward Preference:</strong> ${wardInfo.name}</div>
+          <div style="margin-top: 8px; font-size: 11.5px; color:#475569;">
+            <em>IPD Episode ADM ID will be generated upon final confirmation.</em>
+          </div>
+        </div>
+
+        <!-- Right Side: Wristband Preview Card -->
+        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #f1f5f9; padding-bottom:6px; margin-bottom:10px;">
+            <strong style="font-size:12px; color:#1e3a8a; text-transform:uppercase;">🏷️ Wearable Wristband Preview</strong>
+            <button class="btn btn-secondary btn-xs" style="font-size:10px; padding:3px 6px;" onclick="window._wizPrintWristbandManual()">🖨️ Print Wristband</button>
+          </div>
+          
+          <!-- Band layout -->
+          <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 12px; background: #faf5ff; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:10px; font-family:monospace; line-height:1.4;">
+              <strong>UHID:</strong> ${p.uhid}<br>
+              <strong>IPD NO:</strong> IP-2400${String(5000 + (window.state.admissions || []).length + 1)}<br>
+              <strong>NAME:</strong> ${p.name.toUpperCase()}<br>
+              <strong>SEX/AGE:</strong> ${p.gender.toUpperCase()} / ${p.age}Y<br>
+              <strong>BED:</strong> <span style="color:#7c3aed; font-weight:bold;">${_allottedBed || 'Awaiting Selection'}</span><br>
+              <strong>DOC:</strong> ${_treatingConsultant.toUpperCase()}
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <img src="https://barcode.tec-it.com/barcode.ashx?data=${p.uhid}&code=Code128&translate-esc=on" style="height:32px; max-width:85px;" alt="Wristband Barcode">
+              <span style="font-size:8px; font-family:monospace; color:#64748b;">${p.uhid}</span>
+            </div>
+          </div>
+
+          <!-- Color Flags Strip -->
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+            ${_wizAllergyFlag ? `<span class="reg-badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-size:9.5px; font-weight:800;">🔴 Allergy Alert</span>` : ''}
+            ${_wizFallRiskFlag ? `<span class="reg-badge" style="background:#fef9c3; color:#713f12; border:1px solid #fde68a; font-size:9.5px; font-weight:800;">⚠️ Fall Risk</span>` : ''}
+            ${_wizDnrFlag ? `<span class="reg-badge" style="background:#f3e8ff; color:#6b21a8; border:1px solid #e9d5ff; font-size:9.5px; font-weight:800;">🟣 Purple DNR</span>` : ''}
+            ${_wizLimbPrecautionFlag ? `<span class="reg-badge" style="background:#fce7f3; color:#9d174d; border:1px solid #fbcfe8; font-size:9.5px; font-weight:800;">🌸 Precaution</span>` : ''}
+            ${(!_wizAllergyFlag && !_wizFallRiskFlag && !_wizDnrFlag && !_wizLimbPrecautionFlag) ? `<span style="font-size:9.5px; color:#64748b; font-style:italic;">No active safety precaution flags.</span>` : ''}
+          </div>
+        </div>
       </div>
 
       <div class="bed-availability-title">Live Grid Space Map (${wardInfo.name})</div>
@@ -3646,9 +3997,66 @@
         }).join('')}
       </div>
 
+      <!-- Pre-Admission Safety & Documentation Checklist -->
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:16px; margin: 20px 0; text-align: left;">
+        <h4 style="margin:0 0 12px 0; font-size:12px; color:#1e3a8a; font-weight:800; border-bottom:1.5px solid #e2e8f0; padding-bottom:6px; display:flex; align-items:center; gap:6px;">
+          📋 Pre-Admission Safety &amp; Documentation Checklist
+        </h4>
+        
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;">
+          <!-- Consent Gate -->
+          <div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:11.5px; cursor:pointer; font-weight:700;">
+                <input type="checkbox" id="wiz-chk-consent-signed" ${_wizConsentSigned ? 'checked' : ''} onchange="window.updateWizConsentCheck(this.checked)">
+                General Treatment &amp; Admission Consent Signed <span style="color:#dc2626;">*</span>
+              </label>
+
+              <!-- Emergency Implied Consent Path -->
+              <div style="border-left: 3px solid #f59e0b; padding-left: 8px; margin-left: 12px; background: #fffbeb; padding: 6px 10px; border-radius: 4px;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer; color:#b45309; font-weight:700;">
+                  <input type="checkbox" id="wiz-chk-emergency-consent" ${_wizEmergencyImpliedConsent ? 'checked' : ''} onchange="window.updateWizEmergencyConsent(this.checked)">
+                  🚨 Emergency Implied Consent (By Admitting Doctor)
+                </label>
+                <div style="margin-top: 4px; display: ${_wizEmergencyImpliedConsent ? 'block' : 'none'};" id="wiz-emergency-doc-wrap">
+                  <label style="font-size:10px; color:#475569; font-weight:600;">Admitting Doctor: </label>
+                  <input type="text" id="wiz-emergency-doc-name" value="${_wizEmergencyImpliedConsentDoctor}" style="font-size:10px; padding:2px 4px; border:1px solid #cbd5e1; border-radius:3px; width:150px;" oninput="window.updateWizEmergencyDoc(this.value)">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wristband & Soft Checks Gate -->
+          <div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:11.5px; cursor:pointer; font-weight:700; opacity: 0.95;">
+                <input type="checkbox" id="wiz-chk-wristband-printed" ${_wizWristbandPrinted ? 'checked' : ''} disabled>
+                Barcode Wristband Printed &amp; Verified <span style="color:#dc2626;">*</span>
+              </label>
+              <div id="wristband-status-alert" style="font-size:10px; margin-left:20px; margin-top:-4px; margin-bottom:4px;">
+                ${_wizWristbandPrinted ? `<span style="color:#166534; font-weight:700;">✓ Barcode Wristband generated & printed successfully.</span>` : `<span style="color:#b91c1c; font-weight:700;">✗ Awaiting Print (Click "Print Wristband" above)...</span>`}
+              </div>
+
+              <div style="display:flex; gap:16px; margin-top:4px; border-top:1px dashed #cbd5e1; padding-top:8px;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+                  <input type="checkbox" id="wiz-chk-diet" ${_wizDietOrderIssued ? 'checked' : ''} onchange="window.updateWizDietCheck(this.checked)">
+                  🍏 Diet Order Issued
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;">
+                  <input type="checkbox" id="wiz-chk-valuables" ${_wizValuablesRecorded ? 'checked' : ''} onchange="window.updateWizValuablesCheck(this.checked)">
+                  💍 Valuables Recorded
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="btn-row" style="margin-top:20px;">
         <button class="btn btn-secondary" onclick="window._atdStepBack('form')">← Back to Form</button>
-        <button class="btn btn-primary" id="confirm-allotment-btn" style="background: #7c3aed; opacity: ${_allottedBed ? '1' : '0.65'};" ${_allottedBed ? '' : 'disabled'} onclick="window._atdFinalizeAdmission()">Confirm Bed Assignment & Allot space</button>
+        <button class="btn btn-primary" id="confirm-allotment-btn" style="background: ${btnBg}; opacity: ${isEnabled ? '1' : '0.5'};" ${!isEnabled ? 'disabled' : ''} onclick="window._atdFinalizeAdmission()">
+          ${btnText}
+        </button>
       </div>
     `;
   }
@@ -3663,8 +4071,84 @@
     if (c) renderWorkspace(c);
   };
 
+  // Pre-Admission Checklist Checkbox State Handlers
+  window.updateWizConsentCheck = function(checked) {
+    _wizConsentSigned = checked;
+    if (checked) {
+      _wizEmergencyImpliedConsent = false;
+    }
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
+
+  window.updateWizEmergencyConsent = function(checked) {
+    _wizEmergencyImpliedConsent = checked;
+    if (checked) {
+      _wizConsentSigned = false;
+    }
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
+
+  window.updateWizEmergencyDoc = function(val) {
+    _wizEmergencyImpliedConsentDoctor = val;
+  };
+
+  window.updateWizDietCheck = function(checked) {
+    _wizDietOrderIssued = checked;
+  };
+
+  window.updateWizValuablesCheck = function(checked) {
+    _wizValuablesRecorded = checked;
+  };
+
+  window._wizPrintWristbandManual = function() {
+    _wizWristbandPrinted = true;
+    alert("🖨️ Spooling wristband job: Barcode Wristband printed successfully (Logged event).");
+    var c = document.getElementById('main-content');
+    if (c) renderWorkspace(c);
+  };
+
   window._atdFinalizeAdmission = function() {
     if (!_allottedBed) return;
+
+    // Checklist Hard Gates Check
+    var consentPassed = _wizConsentSigned || _wizEmergencyImpliedConsent;
+    var wristbandPassed = _wizWristbandPrinted;
+    if (!consentPassed || !wristbandPassed) {
+      alert("❌ Admission Blocked: Hard gates not satisfied. Ensure Treatment Consent is checked (or Doctor Emergency Implied Consent is logged) and Barcode Wristband is printed.");
+      return;
+    }
+
+    // Strict 30% IPD reserve check
+    var isIpdWard = (_wardPreference !== 'EMERGENCY' && _wardPreference !== 'DAYCARE');
+    if (isIpdWard) {
+      var totalIpdBeds = 0;
+      var occupiedIpdBeds = 0;
+      Object.keys(window.state.wards || {}).forEach(wk => {
+        if (wk !== 'EMERGENCY' && wk !== 'DAYCARE') {
+          var wBeds = window.state.wards[wk].beds || [];
+          totalIpdBeds += wBeds.length;
+          wBeds.forEach(bId => {
+            var bObj = window.state.bedsStatus[bId];
+            if (bObj && (bObj.status === 'Occupied' || bObj.status === 'Reserved')) {
+              occupiedIpdBeds++;
+            }
+          });
+        }
+      });
+
+      var currentBedStatusObj = window.state.bedsStatus[_allottedBed];
+      var nextOccupied = occupiedIpdBeds;
+      if (!currentBedStatusObj || currentBedStatusObj.status === 'Available') {
+        nextOccupied++;
+      }
+      var nextFreePct = ((totalIpdBeds - nextOccupied) / totalIpdBeds) * 100;
+      if (nextFreePct < 30) {
+        alert("❌ Admission Blocked: Saronil hospital emergency reserve policy restricts further admissions. At least 30% of IPD beds must remain vacant for trauma/triage cases.");
+        return;
+      }
+    }
 
     var p = _selectedPatient;
     var seq = String(5000 + (window.state.admissions || []).length + 1);
@@ -3709,13 +4193,46 @@
       notes: `Admitted: ${_admType} under ${_treatingConsultant} (${_provisionalDiagnosis})`
     };
 
+    var ipdNo = 'IP-2400' + seq;
     p.type = _admType;
     p.status = 'Admitted';
     p.ward = WARD_RATES[_wardPreference].name;
     p.bed = _allottedBed;
-    p.ipNumber = 'IP-2400' + seq;
+    p.ipNumber = ipdNo;
+    p.barcode = ipdNo; // permanent two-identifier credential
+    admissionObj.barcode = ipdNo; // link admission record
     p.primaryConsultant = _treatingConsultant;
     p.department = (window.state.doctors.find(d => d.name === _treatingConsultant) || { spec: 'General Medicine' }).spec;
+    p.dischargeStatus = 'Not Initiated';
+    p.dischargeOrder = null;
+    p.dischargeClearances = null;
+
+    // Log the print event in WristbandRecord
+    window.state.wristbandRecords = window.state.wristbandRecords || [];
+    var flags = [];
+    if (_wizAllergyFlag) flags.push('allergy');
+    if (_wizFallRiskFlag) flags.push('fall_risk');
+    if (_wizDnrFlag) flags.push('dnr');
+    if (_wizLimbPrecautionFlag) flags.push('limb_precaution');
+
+    window.state.wristbandRecords.push({
+      wristband_id: 'WB-' + Date.now(),
+      admission_id: _generatedAdmNo,
+      barcode_value: ipdNo,
+      color_flags: flags,
+      printed_at: new Date().toISOString(),
+      printed_by: window._ipdActiveRole || 'ATD Coordinator'
+    });
+    localStorage.setItem('saronil_wristbandRecords', JSON.stringify(window.state.wristbandRecords));
+
+    // Create audit log for wristband print event
+    window.state.auditLogs = window.state.auditLogs || [];
+    window.state.auditLogs.push({
+      timestamp: new Date().toISOString(),
+      action: 'WRISTBAND_PRINT',
+      user: window._ipdActiveRole || 'ATD Coordinator',
+      details: `Wristband printed for ${p.name} (${p.uhid}). Barcode: ${ipdNo}. Flags: ${flags.join(',') || 'None'}`
+    });
 
     window.state.logBedMovement({
       patientId: p.uhid,

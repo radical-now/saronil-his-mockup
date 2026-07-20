@@ -114,32 +114,53 @@
         </div>
 
         <!-- ZONE 1 — STAT STRIP -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div class="admin-kpi-scroll-row">
           <!-- Card 1: Queries This Shift -->
-          <div class="info-card" style="display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
-            <span style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Queries This Shift</span>
-            <strong style="font-size:1.5rem; color:#0f172a; margin-top:4px;">${124 + window.state.infoQueriesLog.length}</strong>
-            <span style="font-size:0.65rem; color:#94a3b8; font-weight:600;">Handled this shift</span>
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Queries This Shift</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${124 + window.state.infoQueriesLog.length}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Handled this shift</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Active Response
+              </span>
+            </div>
           </div>
 
           <!-- Card 2: Visitor Passes Active -->
-          <div class="info-card" style="display:flex; flex-direction:column; justify-content:space-between; min-height:85px; position:relative; cursor:pointer;" title="ICU: restricted to 1 visitor · General: open hours">
-            <span style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Visitor Passes Active</span>
-            <strong style="font-size:1.5rem; color:#16803d; margin-top:4px;">${window.state.activeVisitorPasses.length} Active</strong>
-            <span style="font-size:0.65rem; color:#15803d; font-weight:700;">Hover to see ward breakdown</span>
-            
-            <!-- Tooltip Hover details block -->
-            <div class="hover-breakdown" style="display:none; position:absolute; bottom:-75px; left:0; right:0; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:10px; color:#334155; z-index:50; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-              <div>• ICU/CCU: 1 Visitor restriction</div>
-              <div>• General Wards: Open hours max 2</div>
+          <div class="admin-kpi-card status-normal" style="cursor: pointer; position: relative;" title="ICU: restricted to 1 visitor · General: open hours">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Visitor Passes Active</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: #16803d; letter-spacing: -0.02em;">${window.state.activeVisitorPasses.length} Active</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Hover to see ward breakdown</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Compliance OK
+              </span>
             </div>
           </div>
 
           <!-- Card 3: Vacant Beds -->
-          <div class="info-card" style="display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer; border-left:4px solid #3b82f6;" onclick="window.scrollToBeds()">
-            <span style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Vacant Beds</span>
-            <strong style="font-size:1.5rem; color:#1d4ed8; margin-top:4px;">18 Available</strong>
-            <span style="font-size:0.65rem; color:#1d4ed8; font-weight:700;">Tap to see ward breakdown →</span>
+          <div class="admin-kpi-card status-normal" style="cursor: pointer;" onclick="window.scrollToBeds()">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Vacant Beds</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: #1d4ed8; letter-spacing: -0.02em;">18 Available</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Tap to see ward breakdown →</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Capacity OK
+              </span>
+            </div>
           </div>
         </div>
 
@@ -635,8 +656,8 @@
     }
   };
 
-  window.checkUnidentifiedED = function() {
-    alert("Opening Emergency unidentified patient list.");
+  window.checkUnidentifiedED = async function() {
+    await customAlert("Opening Emergency unidentified patient list.");
     // Simulate redirection hash route
     window.location.hash = 'emergency?uhid=SH-2026-04999';
   };

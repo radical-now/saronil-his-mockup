@@ -156,6 +156,23 @@ window.views.patients = function(container, subAnchor, params) {
   }
 };
 
+window.prShowToast = function(message) {
+  const old = document.getElementById('pr-toast-notification');
+  if (old) old.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'pr-toast-notification';
+  toast.className = 'pr-toast';
+  toast.innerHTML = `<span>🔔</span> <span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.25s';
+    setTimeout(() => toast.remove(), 250);
+  }, 2800);
+};
+
 function randomRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -179,13 +196,13 @@ function ensurePatientEMRInitialized(patient) {
 // --------------------------------------------------------------------------
 function ensure307PatientsExist() {
   const state = window.state || {};
-  if (state.patients && state.patients.length === 100) {
+  if (state.patients && state.patients.length > 0) {
     return;
   }
   const localData = localStorage.getItem('saronil_patients');
   if (localData) {
     const parsed = JSON.parse(localData);
-    if (parsed && parsed.length === 100) {
+    if (parsed && parsed.length > 0) {
       state.patients = parsed;
       return;
     }
@@ -220,10 +237,10 @@ function renderMasterPatientRegistry(container) {
     window.activePatientsTab = 'All';
   }
   if (window.patientsFilters === undefined) {
-    window.patientsFilters = { dept: 'All', doctor: 'All', ward: 'All', payer: 'All', service: 'All', dateRange: 'All Patients', fromDate: '', toDate: '', singleDate: '' };
+    window.patientsFilters = { dept: 'All', doctor: 'All', ward: 'All', payer: 'All', service: 'All', status: 'All', dateRange: 'Today', fromDate: '', toDate: '', singleDate: '' };
   }
   if (window.patientsSort === undefined) {
-    window.patientsSort = 'Admission Time ↓';
+    window.patientsSort = 'Name A–Z';
   }
   if (window.patientsSearchQuery === undefined) {
     window.patientsSearchQuery = '';
@@ -240,469 +257,7 @@ function renderMasterPatientRegistry(container) {
 
   // Inject styles to override container layout cleanly
   const workspaceStyles = `
-    <style>
-      .pr-wrap {
-        --bg: var(--bg-base, #f8fafc);
-        --surface: var(--bg-surface, #ffffff);
-        --surface2: var(--bg-surface-elevated, #f1f5f9);
-        --border: var(--border-color, #e2e8f0);
-        --text: var(--text-primary, #0f172a);
-        --text2: var(--text-secondary, #475569);
-        --text3: var(--text-muted, #94a3b8);
-        --blue: var(--primary, #2563eb);
-        --blue-light: var(--primary-glow, #eff6ff);
-        --green: var(--color-success, #10b981);
-        --green-light: var(--color-success-bg, #ecfdf5);
-        --amber: var(--color-warning, #f59e0b);
-        --amber-light: var(--color-warning-bg, #fef3c7);
-        --red: var(--color-danger, #ef4444);
-        --red-light: var(--color-danger-bg, #fef2f2);
-        --purple: var(--color-purple, #8b5cf6);
-        --purple-light: var(--color-purple-bg, #f5f3ff);
-        --cyan: #06b6d4;
-        --cyan-light: #ecfeff;
-
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 13px;
-        color: var(--text);
-        background: var(--bg);
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px;
-      }
-      .pr-wrap .mono {
-        font-family: 'JetBrains Mono', 'Courier New', monospace;
-      }
-      .pr-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-      }
-      
-      /* Stats Row */
-      .pr-stats-row {
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        scrollbar-width: none; /* Firefox */
-        padding-bottom: 4px;
-      }
-      .pr-stats-row::-webkit-scrollbar {
-        display: none; /* Chrome/Safari */
-      }
-      .pr-stat-card {
-        flex: 0 0 160px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 12px 14px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.15s ease-in-out;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .pr-stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--accent-color, var(--blue));
-      }
-      .pr-stat-card:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        border-color: #cbd5e1;
-      }
-      .pr-stat-card.active {
-        background: var(--accent-light, var(--blue-light));
-        border-color: var(--accent-color, var(--blue));
-      }
-      .pr-stat-val {
-        font-size: 24px;
-        font-weight: 600;
-        color: var(--accent-color, var(--blue));
-        font-family: monospace;
-        line-height: 1.1;
-      }
-      .pr-stat-label {
-        font-size: 11px;
-        color: var(--text3);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 500;
-      }
-      .pr-stat-dimmed {
-        opacity: 0.5;
-      }
-
-      /* Filter Tabs */
-      .pr-tabs-strip {
-        display: flex;
-        border-bottom: 1px solid var(--border);
-        overflow-x: auto;
-        scrollbar-width: none;
-        gap: 4px;
-      }
-      .pr-tabs-strip::-webkit-scrollbar {
-        display: none;
-      }
-      .pr-tab {
-        padding: 8px 16px;
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--text2);
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.15s;
-      }
-      .pr-tab:hover {
-        background: var(--surface2);
-      }
-      .pr-tab.active {
-        border-bottom-color: var(--blue);
-        color: var(--blue);
-        background: var(--blue-light);
-      }
-      .pr-tab.dimmed {
-        color: var(--text3);
-      }
-      .pr-dot-red { color: var(--red); }
-      .pr-dot-amber { color: var(--amber); }
-
-      /* Search & Action */
-      .pr-search-row {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        position: relative;
-      }
-      .pr-search-wrapper {
-        flex: 1;
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-      .pr-search-icon {
-        position: absolute;
-        left: 10px;
-        color: var(--text3);
-        pointer-events: none;
-      }
-      .pr-search-clear {
-        position: absolute;
-        right: 10px;
-        color: var(--text3);
-        cursor: pointer;
-        font-size: 16px;
-        user-select: none;
-      }
-      .pr-search-clear:hover {
-        color: var(--text);
-      }
-      .pr-search-input {
-        width: 100%;
-        padding: 8px 10px 8px 30px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        outline: none;
-        font-size: 13px;
-        transition: border-color 0.15s;
-      }
-      .pr-search-input:focus {
-        border-color: var(--blue);
-      }
-      .pr-btn-add {
-        background: var(--blue);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        white-space: nowrap;
-        height: 34px;
-      }
-      .pr-btn-add:hover {
-        background: #082d6b;
-      }
-
-      /* Suggestive Dropdown */
-      .pr-search-dropdown {
-        position: absolute;
-        top: 36px;
-        left: 0;
-        right: 0;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        z-index: 100;
-        max-height: 280px;
-        overflow-y: auto;
-      }
-      .pr-search-result-row {
-        padding: 8px 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        border-bottom: 1px solid var(--border);
-      }
-      .pr-search-result-row:last-child {
-        border-bottom: none;
-      }
-      .pr-search-result-row.selected, .pr-search-result-row:hover {
-        background: var(--blue-light);
-      }
-      .pr-avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--blue-light);
-        color: var(--blue);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 11px;
-      }
-      .pr-dropdown-view-all {
-        text-align: center;
-        padding: 8px;
-        font-weight: 600;
-        color: var(--blue);
-        cursor: pointer;
-        background: var(--surface2);
-        font-size: 12px;
-      }
-      .pr-dropdown-view-all:hover {
-        background: #e2e8f0;
-      }
-
-      /* Secondary Filters */
-      .pr-filters-row {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .pr-filter-select {
-        height: 32px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface);
-        padding: 0 8px;
-        font-size: 13px;
-        outline: none;
-        color: var(--text2);
-        cursor: pointer;
-      }
-      .pr-filter-select.active {
-        border-color: var(--blue);
-        background: var(--blue-light);
-        color: var(--blue);
-        font-weight: 500;
-      }
-      .pr-clear-link {
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--blue);
-        cursor: pointer;
-        text-decoration: none;
-        margin-left: auto;
-        user-select: none;
-      }
-      .pr-clear-link:hover {
-        text-decoration: underline;
-      }
-
-      /* Results & Sort */
-      .pr-results-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 12px;
-        color: var(--text2);
-        font-weight: 500;
-      }
-
-      /* Table */
-      .pr-table-container {
-        overflow-x: auto;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface);
-      }
-      .pr-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-      }
-      .pr-table th {
-        background: var(--surface2);
-        padding: 10px 12px;
-        font-weight: 600;
-        color: var(--text2);
-        border-bottom: 1px solid var(--border);
-      }
-      .pr-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-      }
-      .pr-table tbody tr {
-        cursor: pointer;
-        background: var(--surface);
-        transition: background 0.1s;
-      }
-      .pr-table tbody tr:nth-child(even) {
-        background: var(--surface);
-      }
-      .pr-table tbody tr:nth-child(odd) {
-        background: var(--surface2);
-      }
-      .pr-table tbody tr:hover {
-        background: var(--blue-light) !important;
-      }
-      
-      /* Badges */
-      .pr-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-      }
-      .badge-ipd { background: var(--purple-light); color: var(--purple); }
-      .badge-opd { background: var(--blue-light); color: var(--blue); }
-      .badge-emergency { background: var(--red-light); color: var(--red); }
-      .badge-daycare { background: #ecfeff; color: #0891b2; }
-
-      .status-admitted { background: var(--green-light); color: var(--green); }
-      .status-consultation { background: var(--blue-light); color: var(--blue); }
-      .status-observation { background: var(--amber-light); color: var(--amber); }
-      .status-preop { background: var(--purple-light); color: var(--purple); }
-      .status-postop { background: var(--purple-light); color: var(--purple); }
-      .status-discharged { background: #f1f5f9; color: var(--text3); }
-      .status-pending { background: var(--amber-light); color: var(--amber); }
-      .status-critical { background: var(--red-light); color: var(--red); }
-      .status-lama { background: var(--red-light); color: var(--red); }
-
-      .flag-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 600;
-      }
-      .flag-critical { background: var(--red-light); color: var(--red); }
-      .flag-mlc { background: var(--amber-light); color: var(--amber); }
-      .flag-dnr { background: #f1f5f9; color: var(--text2); }
-      .flag-lama { background: var(--amber-light); color: var(--amber); }
-
-      .btn-view {
-        background: transparent;
-        border: 1px solid var(--blue);
-        color: var(--blue);
-        padding: 2px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 600;
-      }
-      .btn-view:hover {
-        background: var(--blue-light);
-      }
-      
-      /* Dropdown Actions */
-      .kebab-trigger {
-        background: transparent;
-        border: none;
-        color: var(--text2);
-        cursor: pointer;
-        font-size: 16px;
-        padding: 4px 8px;
-      }
-      .kebab-menu {
-        position: absolute;
-        right: 12px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        z-index: 110;
-        display: flex;
-        flex-direction: column;
-        width: 140px;
-      }
-      .kebab-item {
-        padding: 6px 12px;
-        text-align: left;
-        font-size: 12px;
-        border: none;
-        background: transparent;
-        color: var(--text2);
-        cursor: pointer;
-      }
-      .kebab-item:hover {
-        background: var(--surface2);
-        color: var(--text);
-      }
-
-      /* Toast notifications */
-      .pr-toast {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        background: #0f172a;
-        color: #fff;
-        padding: 10px 18px;
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        font-size: 13px;
-        font-weight: 500;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        animation: slideUp 0.2s ease-out;
-      }
-      @keyframes slideUp {
-        from { transform: translateY(12px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-
-      /* Empty State */
-      .pr-empty-state {
-        padding: 48px 16px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        background: var(--surface);
-        border-radius: 8px;
-      }
-    </style>
+    
   `;
 
   function draw() {
@@ -721,20 +276,20 @@ function renderMasterPatientRegistry(container) {
     const countDischargedToday = data.filter(p => p.status === 'Discharged').length;
     const countCritical = data.filter(p => p.status === 'Critical' || (p.flags && p.flags.includes('Critical'))).length;
     const countMlcActive = data.filter(p => (p.flags && p.flags.includes('MLC')) && p.status !== 'Discharged').length;
-    const countDischargePending = data.filter(p => p.status === 'Discharge Pending').length;
+    const countDischargePending = data.filter(p => p.dischargeStatus === 'In Progress — Clearances Pending' || p.status === 'Discharge Pending').length;
 
     // Filter logic
     let filtered = data;
 
     // Tab filtering
     if (activeTab === 'IPD') {
-      filtered = filtered.filter(p => p.type === 'IPD' && p.status !== 'Discharged');
+      filtered = filtered.filter(p => p.type === 'IPD');
     } else if (activeTab === 'OPD') {
       filtered = filtered.filter(p => p.type === 'OPD');
     } else if (activeTab === 'Emergency') {
-      filtered = filtered.filter(p => p.type === 'Emergency' && p.status !== 'Discharged');
+      filtered = filtered.filter(p => p.type === 'Emergency');
     } else if (activeTab === 'Daycare') {
-      filtered = filtered.filter(p => p.type === 'Daycare' && p.status !== 'Discharged');
+      filtered = filtered.filter(p => p.type === 'Daycare');
     } else if (activeTab === 'Discharged Today') {
       filtered = filtered.filter(p => p.status === 'Discharged');
     } else if (activeTab === 'Critical') {
@@ -742,7 +297,7 @@ function renderMasterPatientRegistry(container) {
     } else if (activeTab === 'MLC') {
       filtered = filtered.filter(p => p.flags && p.flags.includes('MLC'));
     } else if (activeTab === 'Discharge Pending') {
-      filtered = filtered.filter(p => p.status === 'Discharge Pending');
+      filtered = filtered.filter(p => p.dischargeStatus === 'In Progress — Clearances Pending' || p.status === 'Discharge Pending');
     }
 
     // Secondary filters
@@ -771,65 +326,199 @@ function renderMasterPatientRegistry(container) {
         filtered = filtered.filter(p => p.type === typeKey);
       }
     }
+    // Status filter (IPD only — other tabs use their own tab-level filter)
+    if (filters.status && filters.status !== 'All') {
+      filtered = filtered.filter(p => p.status === filters.status);
+    }
+
+    const parseAdmitted = (s) => {
+      if (!s) return 0;
+      try {
+        const datePart = s.split(' · ')[0];
+        const parts = datePart.split(' ');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0]);
+          let month = parseInt(parts[1]) - 1;
+          if (isNaN(month)) {
+            const months = { 'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11 };
+            month = months[parts[1]] || 0;
+          }
+          const year = parseInt(parts[2]);
+          return new Date(year, month, day).getTime() || 0;
+        }
+        return new Date(s.replace(' · ', ' ')).getTime() || 0;
+      } catch(e) { return 0; }
+    };
+
     // Date filtering
-    if (filters.dateRange === 'Custom Range' && filters.fromDate && filters.toDate) {
-      const from = new Date(filters.fromDate);
-      const to = new Date(filters.toDate);
-      filtered = filtered.filter(p => {
-        if (!p.admitted) return false;
-        const parts = p.admitted.split(' · ')[0].split(' ');
-        const months = { 'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11 };
-        const pDate = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
-        return pDate >= from && pDate <= to;
-      });
-    } else if (filters.dateRange === 'Single Date' && filters.singleDate) {
-      const targetDatePretty = new Date(filters.singleDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      filtered = filtered.filter(p => p.admitted && p.admitted.includes(targetDatePretty));
-    } else if (filters.dateRange === 'Yesterday') {
-      filtered = filtered.filter(p => p.admitted && (p.admitted.includes('27 Jun 2026') || p.admitted.includes(new Date(Date.now() - 86400000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }))));
-    } else if (filters.dateRange === 'Today') {
-      filtered = filtered.filter(p => p.admitted && (p.admitted.includes('28 Jun 2026') || p.admitted.includes(new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }))));
-    } else if (filters.dateRange === 'Last 7 Days') {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      filtered = filtered.filter(p => {
-        if (!p.admitted) return false;
-        const parts = p.admitted.split(' · ')[0].split(' ');
-        const months = { 'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11 };
-        const pDate = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
-        return pDate >= cutoff;
-      });
-    } else if (filters.dateRange === 'This Month') {
-      const cutoff = new Date();
-      cutoff.setDate(1);
-      filtered = filtered.filter(p => {
-        if (!p.admitted) return false;
-        const parts = p.admitted.split(' · ')[0].split(' ');
-        const months = { 'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11 };
-        const pDate = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
-        return pDate >= cutoff;
-      });
+    const anchorDate = new Date(window._HIS_ANCHOR + 'T00:00:00');
+    if (activeTab === 'OPD') {
+      if (filters.dateRange === 'All Time' || filters.dateRange === 'All') {
+        // No filtering
+      } else if (filters.dateRange === 'Today') {
+        const todayStart = new Date(anchorDate);
+        todayStart.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= todayStart && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Tomorrow') {
+        const tomStart = new Date(anchorDate);
+        tomStart.setDate(tomStart.getDate() + 1);
+        tomStart.setHours(0,0,0,0);
+        const tomEnd = new Date(anchorDate);
+        tomEnd.setDate(tomEnd.getDate() + 1);
+        tomEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= tomStart && pDate <= tomEnd;
+        });
+      } else if (filters.dateRange === 'Next 3 Days') {
+        const todayStart = new Date(anchorDate);
+        todayStart.setHours(0,0,0,0);
+        const futEnd = new Date(anchorDate);
+        futEnd.setDate(futEnd.getDate() + 2);
+        futEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= todayStart && pDate <= futEnd;
+        });
+      } else if (filters.dateRange === 'Next 7 Days') {
+        const todayStart = new Date(anchorDate);
+        todayStart.setHours(0,0,0,0);
+        const futEnd = new Date(anchorDate);
+        futEnd.setDate(futEnd.getDate() + 6);
+        futEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= todayStart && pDate <= futEnd;
+        });
+      } else if (filters.dateRange === 'Yesterday') {
+        const yesterdayStart = new Date(anchorDate);
+        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+        yesterdayStart.setHours(0,0,0,0);
+        const yesterdayEnd = new Date(anchorDate);
+        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+        yesterdayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= yesterdayStart && pDate <= yesterdayEnd;
+        });
+      } else if (filters.dateRange === 'Last 3 Days') {
+        const cutoff = new Date(anchorDate);
+        cutoff.setDate(cutoff.getDate() - 2);
+        cutoff.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= cutoff && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Last 7 Days') {
+        const cutoff = new Date(anchorDate);
+        cutoff.setDate(cutoff.getDate() - 6);
+        cutoff.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= cutoff && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Custom' && filters.fromDate && filters.toDate) {
+        const from = new Date(filters.fromDate + 'T00:00:00');
+        const to = new Date(filters.toDate + 'T23:59:59.999');
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= from && pDate <= to;
+        });
+      }
+    } else {
+      if (filters.dateRange === 'Custom' && filters.fromDate && filters.toDate) {
+        const from = new Date(filters.fromDate + 'T00:00:00');
+        const to = new Date(filters.toDate + 'T23:59:59.999');
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= from && pDate <= to;
+        });
+      } else if (filters.dateRange === 'Yesterday') {
+        const yesterdayStart = new Date(anchorDate);
+        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+        yesterdayStart.setHours(0,0,0,0);
+        const yesterdayEnd = new Date(anchorDate);
+        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+        yesterdayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= yesterdayStart && pDate <= yesterdayEnd;
+        });
+      } else if (filters.dateRange === 'Today') {
+        const todayStart = new Date(anchorDate);
+        todayStart.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= todayStart && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Last 3 Days') {
+        const cutoff = new Date(anchorDate);
+        cutoff.setDate(cutoff.getDate() - 2);
+        cutoff.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= cutoff && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Last 7 Days') {
+        const cutoff = new Date(anchorDate);
+        cutoff.setDate(cutoff.getDate() - 6);
+        cutoff.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= cutoff && pDate <= todayEnd;
+        });
+      } else if (filters.dateRange === 'Last 30 Days') {
+        const cutoff = new Date(anchorDate);
+        cutoff.setDate(cutoff.getDate() - 29);
+        cutoff.setHours(0,0,0,0);
+        const todayEnd = new Date(anchorDate);
+        todayEnd.setHours(23,59,59,999);
+        filtered = filtered.filter(p => {
+          if (!p.admitted) return false;
+          const pDate = new Date(parseAdmitted(p.admitted));
+          return pDate >= cutoff && pDate <= todayEnd;
+        });
+      }
     }
 
     // Search Query
     if (query.trim().length >= 2) {
       const q = query.toLowerCase().trim();
       filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(q) ||
-        p.uhid.toLowerCase().includes(q) ||
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.uhid && p.uhid.toLowerCase().includes(q)) ||
         (p.mobile && p.mobile.includes(q)) ||
         (p.bed && p.bed.toLowerCase().includes(q))
       );
     }
-
-    // Sort — Default: active OPD/IPD/Daycare on top (most recent first), discharged/completed after
-    const parseAdmitted = (s) => {
-      if (!s) return 0;
-      try {
-        const clean = s.replace(' · ', ' ').replace(/\./g, ':');
-        return new Date(clean).getTime() || 0;
-      } catch(e) { return 0; }
-    };
 
     const sortByAdmittedDesc = (a, b) => parseAdmitted(b.admitted) - parseAdmitted(a.admitted);
 
@@ -931,43 +620,76 @@ function renderMasterPatientRegistry(container) {
       </div>
     `;
 
-    const filtersActive = filters.dept !== 'All' || filters.doctor !== 'All' || filters.ward !== 'All' || filters.payer !== 'All' || (filters.service && filters.service !== 'All') || filters.dateRange !== 'All Patients' || query.trim().length >= 2;
+    const showDept = true;
+    const showDoctor = true;
+    const showWard = ['All', 'IPD', 'Critical', 'MLC', 'Discharge Pending'].includes(activeTab);
+    const showPayer = true;
+    const showService = activeTab === 'All';
+    const showDateRange = true;
 
     const depts = ["All Departments", "General Medicine", "Orthopaedics", "Psychiatry", "Cardiology", "Neurology", "Paediatrics", "Gynaecology", "Surgery", "ENT", "Dermatology", "ICU"];
     const doctors = ["All Doctors", "Dr. Srinivasan", "Dr. Mehta", "Dr. Krishnamurthy", "Dr. Anand", "Dr. Fatima Sheikh", "Dr. Ramesh Iyer", "Dr. Priya Nair"];
-    const wardsList = ["All Wards", "General Ward", "Semi-Private", "Private", "ICU", "HDU", "Daycare Bay", "Emergency Bay"];
+    const wardsList = ["All Wards", "General Ward (Male)", "General Ward (Female)", "Semi-Private Ward", "Private Room", "Deluxe Suite", "High Dependency Unit (HDU)", "ICU / Critical Care Unit", "Critical Care Unit", "Intensive Cardiac Care Unit", "Emergency Ward", "Daycare Unit"];
     const payersList = ["All Payers", "Self Pay", "Star Health", "HDFC ERGO", "New India Assurance", "United India", "ECHS", "CGHS", "PMJAY", "ESI", "Corporate"];
-    const dateRanges = ["All Patients", "Today", "Yesterday", "Single Date", "Custom Range", "Last 7 Days", "This Month"];
+    
+    let dateRanges;
+    if (activeTab === 'OPD') {
+      dateRanges = ["All", "All Time", "Today", "Tomorrow", "Next 3 Days", "Next 7 Days", "Yesterday", "Last 3 Days", "Last 7 Days", "Custom"];
+    } else {
+      dateRanges = ["All", "Today", "Yesterday", "Last 3 Days", "Last 7 Days", "Last 30 Days", "Custom"];
+    }
+    const generalStatusList = ["All Statuses", "Checked In", "Waiting", "In Consultation", "Called", "Admitted", "Critical", "Under Observation", "Pre-Op", "Post-Op", "Discharge Pending", "Discharged"];
     const servicesList = ["All Services", "OPD Consultation", "IPD Admission", "Daycare Procedure", "Emergency Admission"];
+
+    const showStatus = true;
+    const filtersActive = filters.dept !== 'All' || 
+                          filters.doctor !== 'All' || 
+                          (showWard && filters.ward !== 'All') || 
+                          filters.payer !== 'All' || 
+                          (filters.status && filters.status !== 'All') || 
+                          (showService && filters.service && filters.service !== 'All') || 
+                          (filters.dateRange !== 'Today' && filters.dateRange !== 'All Time' && filters.dateRange !== 'All') || 
+                          query.trim().length >= 2;
 
     const dropdownsHtml = `
       <div class="pr-filters-row">
-        <select class="pr-filter-select ${filters.dept !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('dept', this.value)">
-          ${depts.map(d => `<option value="${d === 'All Departments' ? 'All' : d}" ${filters.dept === (d === 'All Departments' ? 'All' : d) ? 'selected' : ''}>${d}</option>`).join('')}
-        </select>
-        <select class="pr-filter-select ${filters.doctor !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('doctor', this.value)">
-          ${doctors.map(d => `<option value="${d === 'All Doctors' ? 'All' : d}" ${filters.doctor === (d === 'All Doctors' ? 'All' : d) ? 'selected' : ''}>${d}</option>`).join('')}
-        </select>
-        <select class="pr-filter-select ${filters.ward !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('ward', this.value)">
-          ${wardsList.map(w => `<option value="${w === 'All Wards' ? 'All' : w}" ${filters.ward === (w === 'All Wards' ? 'All' : w) ? 'selected' : ''}>${w}</option>`).join('')}
-        </select>
-        <select class="pr-filter-select ${filters.payer !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('payer', this.value)">
-          ${payersList.map(p => `<option value="${p === 'All Payers' ? 'All' : p}" ${filters.payer === (p === 'All Payers' ? 'All' : p) ? 'selected' : ''}>${p}</option>`).join('')}
-        </select>
-        <select class="pr-filter-select ${filters.service && filters.service !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('service', this.value)">
-          ${servicesList.map(s => `<option value="${s === 'All Services' ? 'All' : s}" ${filters.service === (s === 'All Services' ? 'All' : s) ? 'selected' : ''}>${s}</option>`).join('')}
-        </select>
-        <select class="pr-filter-select ${filters.dateRange !== 'All Patients' ? 'active' : ''}" onchange="window.prSetFilter('dateRange', this.value)">
-          ${dateRanges.map(dr => `<option value="${dr}" ${filters.dateRange === dr ? 'selected' : ''}>${dr}</option>`).join('')}
-        </select>
-
-        ${filters.dateRange === 'Single Date' ? `
-          <div style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">
-            <input type="date" class="pr-filter-select" style="height:32px;" value="${filters.singleDate || ''}" onchange="window.prSetFilter('singleDate', this.value)">
-          </div>
+        ${showDept ? `
+          <select class="pr-filter-select ${filters.dept !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('dept', this.value)">
+            ${depts.map(d => `<option value="${d === 'All Departments' ? 'All' : d}" ${filters.dept === (d === 'All Departments' ? 'All' : d) ? 'selected' : ''}>${d}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showDoctor ? `
+          <select class="pr-filter-select ${filters.doctor !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('doctor', this.value)">
+            ${doctors.map(d => `<option value="${d === 'All Doctors' ? 'All' : d}" ${filters.doctor === (d === 'All Doctors' ? 'All' : d) ? 'selected' : ''}>${d}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showWard ? `
+          <select class="pr-filter-select ${filters.ward !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('ward', this.value)">
+            ${wardsList.map(w => `<option value="${w === 'All Wards' ? 'All' : w}" ${filters.ward === (w === 'All Wards' ? 'All' : w) ? 'selected' : ''}>${w}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showPayer ? `
+          <select class="pr-filter-select ${filters.payer !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('payer', this.value)">
+            ${payersList.map(p => `<option value="${p === 'All Payers' ? 'All' : p}" ${filters.payer === (p === 'All Payers' ? 'All' : p) ? 'selected' : ''}>${p}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showStatus ? `
+          <select class="pr-filter-select ${filters.status && filters.status !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('status', this.value)">
+            ${generalStatusList.map(s => `<option value="${s === 'All Statuses' ? 'All' : s}" ${filters.status === (s === 'All Statuses' ? 'All' : s) ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showService ? `
+          <select class="pr-filter-select ${filters.service && filters.service !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('service', this.value)">
+            ${servicesList.map(s => `<option value="${s === 'All Services' ? 'All' : s}" ${filters.service === (s === 'All Services' ? 'All' : s) ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        ` : ''}
+        ${showDateRange ? `
+          <select class="pr-filter-select ${filters.dateRange !== 'Today' && filters.dateRange !== 'All Time' && filters.dateRange !== 'All' ? 'active' : ''}" onchange="window.prSetFilter('dateRange', this.value)">
+            ${dateRanges.map(dr => `<option value="${dr}" ${filters.dateRange === dr ? 'selected' : ''}>${dr}</option>`).join('')}
+          </select>
         ` : ''}
 
-        ${filters.dateRange === 'Custom Range' ? `
+        ${showDateRange && filters.dateRange === 'Custom' ? `
           <div style="display:inline-flex; align-items:center; gap:4px; font-size:12px;">
             <input type="date" class="pr-filter-select" style="height:32px;" value="${filters.fromDate || ''}" onchange="window.prSetFilter('fromDate', this.value)">
             <span style="color:var(--text3);">to</span>
@@ -1005,30 +727,40 @@ function renderMasterPatientRegistry(container) {
         if (isDischarged || isOpdCompleted) {
           tBadge = '';
         } else {
-          if (p.type === 'IPD') tBadge = '<span class="pr-badge badge-ipd">IPD</span>';
+          const isIPDAdmitted = p.type === 'IPD' && (p.status === 'Admitted' || p.status === 'Critical' || p.status === 'Under Observation' || p.status === 'Pre-Op' || p.status === 'Post-Op');
+          if (isIPDAdmitted) tBadge = '<span class="pr-badge badge-ipd" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-weight:700;">🏥 Active IPD</span>';
+          else if (p.type === 'IPD') tBadge = '<span class="pr-badge badge-ipd">IPD</span>';
           else if (p.type === 'OPD') tBadge = '<span class="pr-badge badge-opd">OPD</span>';
           else if (p.type === 'Emergency') tBadge = '<span class="pr-badge badge-emergency">Emergency</span>';
           else if (p.type === 'Daycare') tBadge = '<span class="pr-badge badge-daycare">Daycare</span>';
         }
 
+        let displayStatus = p.status;
         let sClass = '';
-        if (p.status === 'Admitted') sClass = 'status-admitted';
-        else if (p.status === 'In Consultation') sClass = 'status-consultation';
-        else if (p.status === 'Under Observation') sClass = 'status-observation';
-        else if (p.status === 'Pre-Op') sClass = 'status-preop';
-        else if (p.status === 'Post-Op') sClass = 'status-postop';
-        else if (p.status === 'Discharged') sClass = 'status-discharged';
-        else if (p.status === 'Discharge Pending') sClass = 'status-pending';
-        else if (p.status === 'Critical') sClass = 'status-critical';
-        else if (p.status === 'LAMA') sClass = 'status-lama';
+        if (p.dischargeStatus === 'In Progress — Clearances Pending') {
+          displayStatus = 'Discharge in Progress';
+          sClass = 'status-pending';
+        } else {
+          if (p.status === 'Admitted') sClass = 'status-admitted';
+          else if (p.status === 'In Consultation') sClass = 'status-consultation';
+          else if (p.status === 'Under Observation') sClass = 'status-observation';
+          else if (p.status === 'Pre-Op') sClass = 'status-preop';
+          else if (p.status === 'Post-Op') sClass = 'status-postop';
+          else if (p.status === 'Discharged') sClass = 'status-discharged';
+          else if (p.status === 'Discharge Pending') sClass = 'status-pending';
+          else if (p.status === 'Critical') sClass = 'status-critical';
+          else if (p.status === 'LAMA') sClass = 'status-lama';
+        }
 
-        const flagHtml = (p.flags || []).map(f => {
-          if (f === 'Critical') return '<span class="flag-pill flag-critical">🔴 Critical</span>';
-          if (f === 'MLC') return '<span class="flag-pill flag-mlc">⚖️ MLC</span>';
-          if (f === 'DNR') return '<span class="flag-pill flag-dnr">DNR</span>';
-          if (f === 'LAMA') return '<span class="flag-pill flag-lama">LAMA</span>';
-          return '';
-        }).join(' ');
+        const flagHtml = [
+          ...(p.flags || []).map(f => {
+            if (f === 'Critical') return '<span class="flag-pill flag-critical">🔴 Critical</span>';
+            if (f === 'MLC') return '<span class="flag-pill flag-mlc">⚖️ MLC</span>';
+            if (f === 'DNR') return '<span class="flag-pill flag-dnr">DNR</span>';
+            if (f === 'LAMA') return '<span class="flag-pill flag-lama">LAMA</span>';
+            return '';
+          })
+        ].join(' ');
 
         return `
           <tr onclick="window.prOpenRecord('${p.uhid}', '${p.name}')">
@@ -1051,7 +783,7 @@ function renderMasterPatientRegistry(container) {
               <div class="mono" style="font-size:11px; color:var(--text3);">${p.bed}</div>
             </td>
             <td style="font-weight:500; color:var(--text2);">${p.payer}</td>
-            <td><span class="pr-badge ${sClass}">${p.status}</span></td>
+            <td><span class="pr-badge ${sClass}">${displayStatus}</span></td>
             <td class="mono" style="font-size:11px; color:var(--text2);">${p.admitted || '—'}</td>
             <td>${flagHtml || '—'}</td>
             <td onclick="event.stopPropagation()">
@@ -1108,9 +840,27 @@ function renderMasterPatientRegistry(container) {
       }
     }
 
-    container.innerHTML = `
+    window.ipdSafeRender(container, `
       ${workspaceStyles}
       <div class="pr-wrap">
+        <!-- Page Title & Header CTAs -->
+        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05); margin-bottom:16px;">
+          <div>
+            <h3 style="margin:0; font-size:16px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:8px;">
+              <span>🗂️</span> Patients Directory & Admission Register
+            </h3>
+            <span style="font-size:11px; color:#64748b; margin-top:2px; display:block;">Centralized Electronic Medical Records & Patient Census</span>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button onclick="window.prAddPatient()" class="btn btn-secondary" style="padding:8px 16px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              ➕ Add New Patient
+            </button>
+            <button onclick="router.navigate('bookAppointment')" class="btn btn-primary" style="background:#1b3a5c; border-color:#1b3a5c; color:#fff; padding:8px 16px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              ➕ Book Appointment
+            </button>
+          </div>
+        </div>
+
         <!-- Summary Dashboard row -->
         ${statsHtml}
 
@@ -1125,7 +875,6 @@ function renderMasterPatientRegistry(container) {
             ${query ? `<span class="pr-search-clear" onclick="window.prClearSearch()">×</span>` : ''}
             ${dropdownHtml}
           </div>
-          <button class="pr-btn-add" onclick="window.prAddPatient()">+ Add New Patient</button>
         </div>
 
         <!-- Secondary Filters Row -->
@@ -1137,7 +886,7 @@ function renderMasterPatientRegistry(container) {
           <div style="display:flex; align-items:center; gap:6px;">
             <span>Sort:</span>
             <select class="pr-filter-select" style="height:28px; padding:0 4px; font-size:12px;" onchange="window.prSetSort(this.value)">
-              ${['Admission Time ↓', 'Name A–Z', 'UHID', 'Criticality', 'Discharge Time'].map(s => `<option value="${s}" ${sort === s ? 'selected' : ''}>${s}</option>`).join('')}
+              ${['Name A–Z', 'UHID', 'Criticality', 'Discharge Time'].map(s => `<option value="${s}" ${sort === s ? 'selected' : ''}>${s}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -1175,7 +924,7 @@ function renderMasterPatientRegistry(container) {
           </table>
         </div>
       </div>
-    `;
+    `);
 
     // Keyboard handling inside search input
     const searchEl = document.getElementById('pr-search');
@@ -1218,6 +967,22 @@ function renderMasterPatientRegistry(container) {
   // Bind actions
   window.prSelectTab = function(tabName) {
     window.activePatientsTab = tabName;
+    window.patientsFilters.status = 'All';
+    window.patientsFilters.dateRange = 'All';
+
+    // Tab specific filter resets
+    if (tabName === 'OPD') {
+      window.patientsFilters.ward = 'All';
+      window.patientsFilters.service = 'All';
+    } else if (tabName === 'IPD') {
+      window.patientsFilters.service = 'All';
+    } else if (tabName === 'Emergency' || tabName === 'Daycare') {
+      window.patientsFilters.ward = 'All';
+      window.patientsFilters.service = 'All';
+    } else if (tabName === 'Discharged Today' || tabName === 'Discharge Pending') {
+      window.patientsFilters.ward = 'All';
+      window.patientsFilters.service = 'All';
+    }
     draw();
   };
 
@@ -1227,7 +992,7 @@ function renderMasterPatientRegistry(container) {
   };
 
   window.prClearAllFilters = function() {
-    window.patientsFilters = { dept: 'All', doctor: 'All', ward: 'All', payer: 'All', service: 'All', dateRange: 'All Patients', fromDate: '', toDate: '', singleDate: '' };
+    window.patientsFilters = { dept: 'All', doctor: 'All', ward: 'All', payer: 'All', service: 'All', status: 'All', dateRange: 'Today', fromDate: '', toDate: '', singleDate: '' };
     window.activePatientsTab = 'All';
     window.patientsSearchQuery = '';
     draw();
@@ -1259,7 +1024,7 @@ function renderMasterPatientRegistry(container) {
   };
 
   window.prAddPatient = function() {
-    window.prShowToast("Opening registration form...");
+    window.prShowToast("Opening Registry Verification Gate...");
     setTimeout(() => {
       window.router.navigate('registration?action=new');
     }, 400);
@@ -1303,6 +1068,12 @@ function renderMasterPatientRegistry(container) {
         return;
       }
       window.showUniversalDischargeWorkflow(uhid);
+    } else if (action === 'Print Summary') {
+      if (pat.dischargeOrder) {
+        window.prPrintDischargeSummary(uhid);
+      } else {
+        alert("⚠️ Discharge Summary not found. Please initiate and complete discharge first.");
+      }
     } else {
       window.prShowToast(`${action} for ${name}...`);
     }
@@ -1311,22 +1082,7 @@ function renderMasterPatientRegistry(container) {
     });
   };
 
-  window.prShowToast = function(message) {
-    const old = document.getElementById('pr-toast-notification');
-    if (old) old.remove();
 
-    const toast = document.createElement('div');
-    toast.id = 'pr-toast-notification';
-    toast.className = 'pr-toast';
-    toast.innerHTML = `<span>🔔</span> <span>${message}</span>`;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.25s';
-      setTimeout(() => toast.remove(), 250);
-    }, 2800);
-  };
 
   // Close kebabs on click outside
   document.addEventListener('click', function() {
@@ -1355,9 +1111,10 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
   }
 
   const mappedRole = getCurrentPatient360Role();
-  if (window.patient360Role !== mappedRole) {
+  if (window.patient360Role === undefined || window.lastMappedGlobalRole !== mappedRole) {
     window.patient360Role = mappedRole;
-    window.patient360ActiveTab = 'Summary & Timeline';
+    window.lastMappedGlobalRole = mappedRole;
+    window.patient360ActiveTab = activeTab || 'Summary & Timeline';
   }
 
   if (activeTab && activeTab !== '') {
@@ -1439,6 +1196,33 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
     if (!patient.patient360Diagnoses) {
       patient.patient360Diagnoses = patient.icdCode ? [patient.icdCode + " " + (patient.clinicalData?.diagnosis || "Evaluation")] : ["D64.9 Anaemia, unspecified"];
     }
+
+    if (!patient.timelineEvents || patient.timelineEvents.length === 0) {
+      patient.timelineEvents = [
+        {
+          date: new Date(new Date().getTime() - 4 * 3600000).toISOString(),
+          title: `📝 Clinical Note: PROGRESS NOTE`,
+          desc: `<strong>Title:</strong> Initial progress note<br><strong>Note:</strong> Subjective: ${patient.clinicalData?.complaint || "Patient presented for follow-up."} | Assessment: ${patient.clinicalData?.diagnosis || "Under evaluation."}`,
+          type: 'note',
+          icon: '📝'
+        },
+        {
+          date: new Date(new Date().getTime() - 6 * 3600000).toISOString(),
+          title: '📊 Vitals Recorded',
+          desc: `Vitals logged: BP: ${patient.vitals?.bp || '120/80'}, HR: ${patient.vitals?.hr || 72} bpm, Temp: ${patient.vitals?.temp || 98.4}°F. NEWS2 Score: 0.`,
+          type: 'clinical',
+          icon: '📊'
+        },
+        {
+          date: new Date(new Date().getTime() - 24 * 3600000).toISOString(),
+          title: patient.type === 'IPD' ? '🏥 IPD Admission Registered' : '🎫 OPD Registration Complete',
+          desc: `${patient.type === 'IPD' ? 'Admitted to ward ' + (patient.ward || 'General') : 'Registered for OPD consultant ' + (patient.primaryConsultant || 'Dr. Priya Nair')}.`,
+          type: 'registration',
+          icon: '🏥'
+        }
+      ];
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
     
     if (!patient.patient360DischargeClearances) {
       patient.patient360DischargeClearances = {
@@ -1489,62 +1273,62 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
   // Production-ready Laboratory test catalog (30 items)
   if (window.patient360LabCatalog === undefined) {
     window.patient360LabCatalog = [
-      { name: "Complete Blood Count (CBC)", type: "Panel", sample: "Whole Blood EDTA", price: 450 },
-      { name: "Liver Function Test (LFT)", type: "Panel", sample: "Serum", price: 950 },
-      { name: "Renal Function Test (RFT)", type: "Panel", sample: "Serum", price: 850 },
-      { name: "Thyroid Profile (T3, T4, TSH)", type: "Panel", sample: "Serum", price: 1200 },
-      { name: "Lipid Profile", type: "Panel", sample: "Serum", price: 1000 },
-      { name: "HbA1c", type: "Test", sample: "Whole Blood EDTA", price: 600 },
-      { name: "Urine Routine & Microscopy", type: "Test", sample: "Urine Spot", price: 250 },
-      { name: "Blood Culture & Sensitivity", type: "Test", sample: "Whole Blood Culture", price: 1500 },
-      { name: "Dengue Serology (NS1, IgG, IgM)", type: "Panel", sample: "Serum", price: 1100 },
-      { name: "Vitamin D (25-Hydroxy)", type: "Test", sample: "Serum", price: 1600 },
-      { name: "Serum Electrolytes (Na, K, Cl)", type: "Panel", sample: "Serum", price: 650 },
-      { name: "Serum Ferritin", type: "Test", sample: "Serum", price: 900 },
-      { name: "Vitamin B12", type: "Test", sample: "Serum", price: 1200 },
-      { name: "Fasting Blood Sugar (FBS)", type: "Test", sample: "Fluoride Blood", price: 150 },
-      { name: "Post Prandial Blood Sugar (PPBS)", type: "Test", sample: "Fluoride Blood", price: 150 },
-      { name: "Random Blood Sugar (RBS)", type: "Test", sample: "Fluoride Blood", price: 150 },
-      { name: "Uric Acid", type: "Test", sample: "Serum", price: 300 },
-      { name: "Serum Calcium", type: "Test", sample: "Serum", price: 350 },
-      { name: "Cardiac Enzymes (Troponin T)", type: "Panel", sample: "Serum", price: 2000 },
-      { name: "C-Reactive Protein (CRP)", type: "Test", sample: "Serum", price: 600 },
-      { name: "Erythrocyte Sedimentation Rate (ESR)", type: "Test", sample: "Whole Blood EDTA", price: 200 },
-      { name: "Coagulation Profile (PT/INR)", type: "Panel", sample: "Plasma Citrate", price: 800 },
-      { name: "Amylase & Lipase", type: "Panel", sample: "Serum", price: 1200 },
-      { name: "Rheumatoid Factor (RF)", type: "Test", sample: "Serum", price: 700 },
-      { name: "Widal Test", type: "Test", sample: "Serum", price: 400 },
-      { name: "Hepatitis B Surface Antigen (HBsAg)", type: "Test", sample: "Serum", price: 500 },
-      { name: "HIV 1 & 2 Antibody", type: "Test", sample: "Serum", price: 600 },
-      { name: "Urine Culture & Sensitivity", type: "Test", sample: "Urine Clean Catch", price: 950 },
-      { name: "Stool Routine Examination", type: "Test", sample: "Stool Spot", price: 250 },
-      { name: "Arterial Blood Gas (ABG)", type: "Panel", sample: "Heparinized Blood", price: 1200 }
+      { name: "Complete Blood Count (CBC)", type: "Panel", sample: "Whole Blood EDTA", price: 450, icd10: "D64.9" },
+      { name: "Liver Function Test (LFT)", type: "Panel", sample: "Serum", price: 950, icd10: "K21.9" },
+      { name: "Renal Function Test (RFT)", type: "Panel", sample: "Serum", price: 850, icd10: "E11.9" },
+      { name: "Thyroid Profile (T3, T4, TSH)", type: "Panel", sample: "Serum", price: 1200, icd10: "I10" },
+      { name: "Lipid Profile", type: "Panel", sample: "Serum", price: 1000, icd10: "I10" },
+      { name: "HbA1c", type: "Test", sample: "Whole Blood EDTA", price: 600, icd10: "E11.9" },
+      { name: "Urine Routine & Microscopy", type: "Test", sample: "Urine Spot", price: 250, icd10: "E11.9" },
+      { name: "Blood Culture & Sensitivity", type: "Test", sample: "Whole Blood Culture", price: 1500, icd10: "A49" },
+      { name: "Dengue Serology (NS1, IgG, IgM)", type: "Panel", sample: "Serum", price: 1100, icd10: "A90" },
+      { name: "Vitamin D (25-Hydroxy)", type: "Test", sample: "Serum", price: 1600, icd10: "E63" },
+      { name: "Serum Electrolytes (Na, K, Cl)", type: "Panel", sample: "Serum", price: 650, icd10: "I10" },
+      { name: "Serum Ferritin", type: "Test", sample: "Serum", price: 900, icd10: "D64.9" },
+      { name: "Vitamin B12", type: "Test", sample: "Serum", price: 1200, icd10: "D64.9" },
+      { name: "Fasting Blood Sugar (FBS)", type: "Test", sample: "Fluoride Blood", price: 150, icd10: "E11.9" },
+      { name: "Post Prandial Blood Sugar (PPBS)", type: "Test", sample: "Fluoride Blood", price: 150, icd10: "E11.9" },
+      { name: "Random Blood Sugar (RBS)", type: "Test", sample: "Fluoride Blood", price: 150, icd10: "E11.9" },
+      { name: "Uric Acid", type: "Test", sample: "Serum", price: 300, icd10: "I10" },
+      { name: "Serum Calcium", type: "Test", sample: "Serum", price: 350, icd10: "E63" },
+      { name: "Cardiac Enzymes (Troponin T)", type: "Panel", sample: "Serum", price: 2000, icd10: "I25.1" },
+      { name: "C-Reactive Protein (CRP)", type: "Test", sample: "Serum", price: 600, icd10: "I25.1" },
+      { name: "Erythrocyte Sedimentation Rate (ESR)", type: "Test", sample: "Whole Blood EDTA", price: 200, icd10: "D64.9" },
+      { name: "Coagulation Profile (PT/INR)", type: "Panel", sample: "Plasma Citrate", price: 800, icd10: "I25.1" },
+      { name: "Amylase & Lipase", type: "Panel", sample: "Serum", price: 1200, icd10: "K21.9" },
+      { name: "Rheumatoid Factor (RF)", type: "Test", sample: "Serum", price: 700, icd10: "M06.9" },
+      { name: "Widal Test", type: "Test", sample: "Serum", price: 400, icd10: "A01.0" },
+      { name: "Hepatitis B Surface Antigen (HBsAg)", type: "Test", sample: "Serum", price: 500, icd10: "B18.1" },
+      { name: "HIV 1 & 2 Antibody", type: "Test", sample: "Serum", price: 600, icd10: "B20" },
+      { name: "Urine Culture & Sensitivity", type: "Test", sample: "Urine Clean Catch", price: 950, icd10: "N92.0" },
+      { name: "Stool Routine Examination", type: "Test", sample: "Stool Spot", price: 250, icd10: "K21.9" },
+      { name: "Arterial Blood Gas (ABG)", type: "Panel", sample: "Heparinized Blood", price: 1200, icd10: "I25.1" }
     ];
   }
 
   // Production-ready Radiology test catalog (20 items)
   if (window.patient360RadiologyCatalog === undefined) {
     window.patient360RadiologyCatalog = [
-      { name: "Chest X-Ray PA View", type: "X-Ray", modality: "CR", price: 400 },
-      { name: "MRI Brain Contrast", type: "MRI", modality: "MR", price: 7500 },
-      { name: "CT Abdomen & Pelvis", type: "CT", modality: "CT", price: 6500 },
-      { name: "USG Whole Abdomen", type: "Ultrasound", modality: "US", price: 1500 },
-      { name: "X-Ray Knee AP/LAT", type: "X-Ray", modality: "CR", price: 500 },
-      { name: "MRI Lumbar Spine", type: "MRI", modality: "MR", price: 6000 },
-      { name: "CT Chest HRCT", type: "CT", modality: "CT", price: 5500 },
-      { name: "USG Pelvis (Gynec)", type: "Ultrasound", modality: "US", price: 1200 },
-      { name: "USG Obstetric (Anomalies)", type: "Ultrasound", modality: "US", price: 2200 },
-      { name: "X-Ray Spine AP/LAT", type: "X-Ray", modality: "CR", price: 600 },
-      { name: "CT Brain Plain", type: "CT", modality: "CT", price: 2500 },
-      { name: "Mammography Bilateral", type: "Mammography", modality: "MG", price: 2000 },
-      { name: "HRCT Temporal Bone", type: "CT", modality: "CT", price: 4000 },
-      { name: "MRI Cervical Spine", type: "MRI", modality: "MR", price: 6000 },
-      { name: "MRI Shoulder Joint", type: "MRI", modality: "MR", price: 7000 },
-      { name: "USG KUB (Kidney, Ureter, Bladder)", type: "Ultrasound", modality: "US", price: 1200 },
-      { name: "USG Neck & Thyroid", type: "Ultrasound", modality: "US", price: 1500 },
-      { name: "USG Breast Bilateral", type: "Ultrasound", modality: "US", price: 1800 },
-      { name: "CT Paranasal Sinuses (PNS)", type: "CT", modality: "CT", price: 3000 },
-      { name: "USG Color Doppler Arterial", type: "Doppler", modality: "US", price: 3500 }
+      { name: "Chest X-Ray PA View", type: "X-Ray", modality: "CR", price: 400, icd10: "I25.1" },
+      { name: "MRI Brain Contrast", type: "MRI", modality: "MR", price: 7500, icd10: "I25.1" },
+      { name: "CT Abdomen & Pelvis", type: "CT", modality: "CT", price: 6500, icd10: "K21.9" },
+      { name: "USG Whole Abdomen", type: "Ultrasound", modality: "US", price: 1500, icd10: "K21.9" },
+      { name: "X-Ray Knee AP/LAT", type: "X-Ray", modality: "CR", price: 500, icd10: "M17.9" },
+      { name: "MRI Lumbar Spine", type: "MRI", modality: "MR", price: 6000, icd10: "M54.5" },
+      { name: "CT Chest HRCT", type: "CT", modality: "CT", price: 5500, icd10: "I25.1" },
+      { name: "USG Pelvis (Gynec)", type: "Ultrasound", modality: "US", price: 1200, icd10: "N92.0" },
+      { name: "USG Obstetric (Anomalies)", type: "Ultrasound", modality: "US", price: 2200, icd10: "N92.0" },
+      { name: "X-Ray Spine AP/LAT", type: "X-Ray", modality: "CR", price: 600, icd10: "M54.5" },
+      { name: "CT Brain Plain", type: "CT", modality: "CT", price: 2500, icd10: "I25.1" },
+      { name: "Mammography Bilateral", type: "Mammography", modality: "MG", price: 2000, icd10: "N92.0" },
+      { name: "HRCT Temporal Bone", type: "CT", modality: "CT", price: 4000, icd10: "I25.1" },
+      { name: "MRI Cervical Spine", type: "MRI", modality: "MR", price: 6000, icd10: "M54.5" },
+      { name: "MRI Shoulder Joint", type: "MRI", modality: "MR", price: 7000, icd10: "M54.5" },
+      { name: "USG KUB (Kidney, Ureter, Bladder)", type: "Ultrasound", modality: "US", price: 1200, icd10: "E11.9" },
+      { name: "USG Neck & Thyroid", type: "Ultrasound", modality: "US", price: 1500, icd10: "I10" },
+      { name: "USG Breast Bilateral", type: "Ultrasound", modality: "US", price: 1800, icd10: "N92.0" },
+      { name: "CT Paranasal Sinuses (PNS)", type: "CT", modality: "CT", price: 3000, icd10: "I25.1" },
+      { name: "USG Color Doppler Arterial", type: "Doppler", modality: "US", price: 3500, icd10: "I25.1" }
     ];
   }
 
@@ -1600,7 +1384,11 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       { name: "Tab. Hydrochlorothiazide 12.5mg", type: "Tablet", route: "Oral", stock: true },
       { name: "Tab. Calcium Carbonate 500mg", type: "Tablet", route: "Oral", stock: true },
       { name: "Tab. Multivitamin", type: "Tablet", route: "Oral", stock: true },
-      { name: "Tab. Folic Acid 5mg", type: "Tablet", route: "Oral", stock: true }
+      { name: "Tab. Folic Acid 5mg", type: "Tablet", route: "Oral", stock: true },
+      { name: "Tab. Febrex Plus", type: "Tablet", route: "Oral", stock: false },
+      { name: "Tab. Sinarest", type: "Tablet", route: "Oral", stock: true },
+      { name: "Tab. Cheston Cold", type: "Tablet", route: "Oral", stock: true },
+      { name: "Tab. Colgin Plus", type: "Tablet", route: "Oral", stock: true }
     ];
   }
   if (window.prescribeSearchQuery === undefined) {
@@ -1740,676 +1528,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
 
   // Styling block
   const p360Styles = `
-    <style>
-      .p360-wrap {
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 13px;
-        color: var(--text-secondary, #475569);
-        background: var(--bg-base, #f8fafc);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-      }
-      .p360-wrap .mono {
-        font-family: 'JetBrains Mono', 'Courier New', monospace;
-      }
-      .p360-card {
-        background: var(--bg-surface, #ffffff);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 8px;
-        padding: 14px;
-      }
-      
-      /* Top bar */
-      .p360-topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--bg-surface, #ffffff);
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-        padding: 8px 16px;
-      }
-      .p360-breadcrumb {
-        font-size: 12px;
-        color: var(--text-muted, #94a3b8);
-        font-weight: 500;
-      }
-      .p360-breadcrumb b {
-        color: var(--text-primary, #0f172a);
-      }
-      .p360-back-btn {
-        background: transparent;
-        border: 1px solid var(--border-color, #e2e8f0);
-        color: var(--primary, #2563eb);
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .p360-back-btn:hover {
-        background: var(--primary-glow, #eff6ff);
-      }
-      
-      /* Grid has been replaced with stacked full-width container flow */
-      .p360-divider {
-        height: 1px;
-        background: var(--border-color, #e2e8f0);
-        margin: 6px 0;
-      }
-      .p360-label-val {
-        display: grid;
-        grid-template-columns: 85px 1fr;
-        gap: 4px;
-        font-size: 11px;
-        line-height: 1.4;
-      }
-      .p360-label {
-        color: var(--text-muted, #94a3b8);
-        font-weight: 500;
-      }
-      .p360-val {
-        color: var(--text-primary, #0f172a);
-        font-weight: 600;
-      }
-      
-      /* Right Column - Side Tabs Layout */
-      .p360-right-workspace {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: row;
-        gap: 16px;
-        overflow: hidden;
-      }
-      
-      .p360-side-tab {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-secondary, #475569);
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.15s;
-      }
-      .p360-side-tab:hover {
-        background: var(--bg-surface-elevated, #f1f5f9);
-        color: var(--text-primary, #0f172a);
-      }
-      .p360-side-tab.active {
-        background: var(--primary-glow, #eff6ff);
-        color: var(--primary, #2563eb);
-      }
-      
-      /* Tabs bar */
-      .p360-tabs-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-        background: var(--bg-surface, #ffffff);
-        padding: 0 16px;
-        flex-shrink: 0;
-      }
-      .p360-tabs-list {
-        display: flex;
-        gap: 20px;
-      }
-      .p360-tab-item {
-        padding: 10px 0;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-secondary, #475569);
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        transition: all 0.15s;
-        white-space: nowrap;
-      }
-      .p360-tab-item.active {
-        color: var(--primary, #2563eb);
-        border-bottom-color: var(--primary, #2563eb);
-      }
-      
-      /* Right Workspace Content Viewport */
-      .p360-viewport {
-        flex: 1;
-        overflow-y: auto;
-        background: var(--bg-surface, #ffffff);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 8px;
-        padding: 16px;
-      }
-
-      /* Badges */
-      .badge-type {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 4px;
-        display: inline-block;
-        letter-spacing: 0.5px;
-      }
-      .badge-dc { background: #ecfeff; color: #0891b2; }
-      .badge-ipd { background: #f5f3ff; color: #7c3aed; }
-      .badge-status-active { background: #d1fae5; color: #059669; }
-      .badge-status-discharged { background: #f1f5f9; color: #64748b; }
-      
-      /* Safety flag chips */
-      .flag-chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        margin-right: 4px;
-        margin-bottom: 4px;
-      }
-      
-      /* Quick actions list */
-      .actions-container {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .btn-qa-primary {
-        background: var(--primary, #2563eb);
-        color: #ffffff;
-        border: none;
-        border-radius: 6px;
-        padding: 7px 12px;
-        font-weight: 600;
-        cursor: pointer;
-        width: auto;
-        text-align: center;
-      }
-      .btn-qa-primary:hover {
-        background: var(--primary-hover, #1d4ed8);
-      }
-      .btn-qa-secondary {
-        background: var(--bg-surface-elevated, #f1f5f9);
-        color: var(--text-primary, #0f172a);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 11px;
-        text-align: center;
-      }
-      .btn-qa-secondary:hover {
-        background: #e2e8f0;
-      }
-      .btn-qa-ghost {
-        background: transparent;
-        color: var(--primary, #2563eb);
-        border: 1px solid var(--primary, #2563eb);
-        border-radius: 6px;
-        padding: 5px 10px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 11px;
-        text-align: center;
-      }
-      .btn-qa-ghost:hover {
-        background: var(--primary-glow, #eff6ff);
-      }
-      
-      /* Activity Digest */
-      .digest-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .digest-item {
-        display: flex;
-        gap: 6px;
-        font-size: 11px;
-        align-items: flex-start;
-      }
-      
-      /* Wide modal overrides for 2-column forms */
-      .p360-modal-content-wide {
-        width: 960px !important;
-        max-width: 95vw !important;
-      }
-      .modal-cols {
-        display: flex;
-        gap: 16px;
-        flex: 1;
-        overflow: hidden;
-      }
-      .modal-left-col {
-        flex: 1.3;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        overflow-y: auto;
-        padding-right: 4px;
-      }
-      .modal-right-col {
-        width: 340px;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        border-left: 1px solid var(--border-color, #e2e8f0);
-        padding-left: 16px;
-        overflow-y: auto;
-      }
-      .chip-list {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-      .quick-chip {
-        background: var(--bg-surface-elevated, #f1f5f9);
-        color: var(--text-secondary, #475569);
-        padding: 4px 10px;
-        font-size: 11px;
-        font-weight: 600;
-        border-radius: 20px;
-        border: 1px solid var(--border-color, #e2e8f0);
-        cursor: pointer;
-        transition: all 0.1s;
-      }
-      .quick-chip:hover {
-        background: var(--primary-glow, #eff6ff);
-        color: var(--primary, #2563eb);
-        border-color: var(--primary, #2563eb);
-      }
-      .selected-box {
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 8px;
-        background: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      .selected-box-header {
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-        background: #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-primary, #0f172a);
-      }
-      .selected-box-body {
-        padding: 0;
-        max-height: 180px;
-        overflow-y: auto;
-      }
-      .selected-box-footer {
-        padding: 6px 12px;
-        border-top: 1px solid var(--border-color, #e2e8f0);
-        background: #f1f5f9;
-        display: flex;
-        justify-content: flex-start;
-      }
-
-      /* Modal Styles */
-      .p360-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-      }
-      .p360-modal-content {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        width: 520px;
-        max-width: 95%;
-        max-height: 85vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        border: 1px solid var(--border-color, #e2e8f0);
-        animation: modalFadeIn 0.15s ease-out;
-      }
-      @keyframes modalFadeIn {
-        from { opacity: 0; transform: scale(0.96); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      .p360-modal-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--bg-surface-elevated, #f1f5f9);
-      }
-      .p360-modal-header h3 {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-primary, #0f172a);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .p360-modal-close {
-        font-size: 20px;
-        font-weight: bold;
-        color: var(--text-muted, #94a3b8);
-        cursor: pointer;
-        background: transparent;
-        border: none;
-        outline: none;
-      }
-      .p360-modal-close:hover {
-        color: var(--text-primary, #0f172a);
-      }
-      .p360-modal-body {
-        padding: 16px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .p360-modal-footer {
-        padding: 12px 16px;
-        border-top: 1px solid var(--border-color, #e2e8f0);
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        background: var(--bg-surface-elevated, #f1f5f9);
-      }
-
-      /* Timeline styles */
-      .timeline-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        position: relative;
-        padding-left: 20px;
-        margin-top: 10px;
-      }
-      .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: 6px;
-        top: 4px;
-        bottom: 4px;
-        width: 2px;
-        background: var(--border-color, #e2e8f0);
-      }
-      .timeline-item {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .timeline-dot {
-        position: absolute;
-        left: -20px;
-        top: 2px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid var(--primary, #2563eb);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-      }
-      .timeline-time {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--text-muted, #94a3b8);
-        font-family: 'JetBrains Mono', monospace;
-      }
-      .timeline-title {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text-primary, #0f172a);
-      }
-      .timeline-desc {
-        font-size: 11px;
-        color: var(--text-secondary, #475569);
-        line-height: 1.4;
-      }
-
-      /* SOAP Composer layout */
-      .clinical-notes-layout {
-        display: flex;
-        gap: 16px;
-        height: 100%;
-        overflow: hidden;
-      }
-      .note-composer-panel {
-        width: 55%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        overflow-y: auto;
-        padding-right: 6px;
-      }
-      .note-history-panel {
-        width: 45%;
-        border-left: 1px solid var(--border-color, #e2e8f0);
-        padding-left: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        overflow-y: auto;
-      }
-      
-      /* Sub-tabs */
-      .composer-subtabs {
-        display: flex;
-        gap: 8px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-        padding-bottom: 4px;
-      }
-      .subtab-item {
-        padding: 4px 10px;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        border-radius: 4px;
-        background: var(--bg-surface-elevated, #f1f5f9);
-        color: var(--text-secondary, #475569);
-      }
-      .subtab-item.active {
-        background: var(--primary, #2563eb);
-        color: #ffffff;
-      }
-      
-      /* Critical lab alert strip */
-      .critical-alert-strip {
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        color: #b91c1c;
-        border-radius: 6px;
-        padding: 8px 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .btn-ack {
-        background: #ef4444;
-        color: #ffffff;
-        border: none;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 10px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .btn-ack:hover {
-        background: #dc2626;
-      }
-      
-      /* Forms */
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .form-group label {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-primary, #0f172a);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .form-control {
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 13px;
-        outline: none;
-      }
-      .form-control:focus {
-        border-color: var(--primary, #2563eb);
-      }
-      
-      /* Vitals strip in SOAP */
-      .vitals-data-strip {
-        background: var(--bg-surface-elevated, #f1f5f9);
-        border-radius: 6px;
-        padding: 8px 12px;
-        display: flex;
-        justify-content: space-between;
-        font-size: 11px;
-        color: var(--text-secondary, #475569);
-      }
-      .vitals-data-strip b {
-        color: var(--text-primary, #0f172a);
-      }
-
-      /* Note History Cards */
-      .note-card {
-        background: var(--bg-surface, #ffffff);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 6px;
-        padding: 10px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .note-card-consultant {
-        background: var(--primary-glow, #eff6ff);
-        border-left: 3px solid var(--primary, #2563eb);
-      }
-      
-      /* Tables */
-      .p360-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-        text-align: left;
-      }
-      .p360-table th {
-        background: var(--bg-surface-elevated, #f1f5f9);
-        color: var(--text-primary, #0f172a);
-        font-weight: 600;
-        padding: 8px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-      }
-      .p360-table td {
-        padding: 8px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-      }
-      
-      /* Diagnosis search wrapper */
-      .diag-search-wrapper {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-      }
-      .diag-dropdown {
-        position: absolute;
-        top: 36px;
-        left: 0;
-        right: 0;
-        background: var(--bg-surface, #ffffff);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        z-index: 200;
-        max-height: 150px;
-        overflow-y: auto;
-      }
-      .diag-option {
-        padding: 6px 10px;
-        cursor: pointer;
-      }
-      .diag-option:hover {
-        background: var(--primary-glow, #eff6ff);
-      }
-      .diag-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: var(--bg-surface-elevated, #f1f5f9);
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 4px;
-        padding: 2px 6px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-right: 4px;
-        margin-top: 4px;
-      }
-      .diag-chip-remove {
-        cursor: pointer;
-        color: var(--color-danger, #ef4444);
-        font-weight: bold;
-      }
-      
-      /* Document card */
-      .doc-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 12px;
-      }
-      .doc-card {
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 6px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        gap: 6px;
-        background: var(--bg-surface, #ffffff);
-      }
-      
-      /* Discharge Checklist */
-      .chk-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        padding: 4px 0;
-      }
-    </style>
+    
   `;
 
   // Draw Patient 360 Workspace
@@ -2433,6 +1552,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       } else {
         let actionButtons = `
           <button class="btn-qa-primary" onclick="window.prTriggerAction('✏ Write Note')">✏ Write Note</button>
+          <button class="btn-qa-secondary" onclick="window.prTriggerAction('📊 Record Vitals')">📊 Add Vitals</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('💊 Prescribe')">💊 Prescribe</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('🔬 Order Lab')">🔬 Order Lab</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('🩻 Order Radiology')">🩻 Radiology</button>
@@ -2440,14 +1560,39 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         `;
 
         if (patient.type === 'OPD') {
-          quickActionsHtml = `
-            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-              <button class="btn-qa-primary" style="background:#4f46e5; border-color:#4f46e5; color:white;" onclick="window.prTriggerAction('📅 Book Appointment')">📅 Book Appointment</button>
-              <button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white;" onclick="window.router.navigate('emr?uhid=${patient.uhid}&start=true')">🩺 Start Consultation</button>
-              <button class="btn-qa-primary" style="background:#059669; border-color:#059669; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'IPD')">🏥 Admit IPD</button>
-              <button class="btn-qa-primary" style="background:#0d9488; border-color:#0d9488; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'Daycare')">🏥 Admit Daycare</button>
-            </div>
-          `;
+          const patientAppt = (window.state.appointments || []).find(a => a.uhid === patient.uhid);
+          const apptStatus = patientAppt ? patientAppt.status : (patient.status || 'Scheduled');
+          const isArrived = apptStatus === 'Arrived' || apptStatus === 'Checked In' || apptStatus === 'Waiting' || apptStatus === 'In Consultation';
+
+          if (isArrived) {
+            quickActionsHtml = `
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <button class="btn-qa-primary" style="background:#4f46e5; border-color:#4f46e5; color:white;" onclick="window.prTriggerAction('📅 Book Appointment')">📅 Book Appointment</button>
+                <button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white;" onclick="window.router.navigate('emr?uhid=${patient.uhid}&start=true')">🩺 Start Consultation</button>
+                <button class="btn-qa-secondary" onclick="window.prTriggerAction('📊 Record Vitals')">📊 Add Vitals</button>
+                <button class="btn-qa-primary" style="background:#059669; border-color:#059669; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'IPD')">🏥 Admit IPD</button>
+                <button class="btn-qa-primary" style="background:#0d9488; border-color:#0d9488; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'Daycare')">🏥 Admit Daycare</button>
+              </div>
+            `;
+          } else {
+            const displayTime = patientAppt ? patientAppt.time : '10:45 AM';
+            const displayDoc = patientAppt ? patientAppt.doctorName : (patient.primaryConsultant || 'Dr. Amit Verma');
+            quickActionsHtml = `
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; width:100%;">
+                <button class="btn-qa-primary" style="background:#4f46e5; border-color:#4f46e5; color:white;" onclick="window.prTriggerAction('📅 Book Appointment')">📅 Book Appointment</button>
+                <button class="btn-qa-secondary" onclick="window.prTriggerAction('📊 Record Vitals')">📊 Add Vitals</button>
+                <button class="btn-qa-primary" style="background:#059669; border-color:#059669; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'IPD')">🏥 Admit IPD</button>
+                <button class="btn-qa-primary" style="background:#0d9488; border-color:#0d9488; color:white;" onclick="window.prAdmitOPDPatient('${patient.uhid}', 'Daycare')">🏥 Admit Daycare</button>
+                
+                <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:6px 12px; font-size:11px; display:inline-flex; align-items:center; gap:8px; color:#475569; margin-left:auto;">
+                  <span>📅 <strong>Appt:</strong> ${displayTime}</span>
+                  <span>👨‍⚕️ <strong>Doc:</strong> ${displayDoc}</span>
+                  <span class="reg-badge" style="background:#fee2e2; color:#b91c1c; font-weight:700; font-size:9px; padding:1px 4px; margin:0; border-radius:4px;">${apptStatus}</span>
+                </div>
+                <button class="btn-qa-primary" style="background:#2563eb; border-color:#2563eb; color:white; font-weight:700; border-radius:6px;" onclick="window.router.navigate('emr?uhid=${patient.uhid}')">🩺 Go to Consultation Room</button>
+              </div>
+            `;
+          }
         } else if (patient.type === 'Daycare') {
           var isDischarging = patient.dischargeStatus === 'In Progress — Clearances Pending';
           quickActionsHtml = `
@@ -2475,23 +1620,109 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         }
       }
     } else if (role === 'Nurse') {
+      var isDischarging = patient.dischargeStatus === 'In Progress — Clearances Pending';
+      var isNursingCleared = patient.dischargeClearances?.nursing?.cleared;
+
       quickActionsHtml = `
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-          <button class="btn-qa-primary" onclick="window.prTriggerAction('📊 Record Vitals')">📊 Record Vitals</button>
+          <button class="btn-qa-primary" onclick="window.prTriggerAction('📊 Record Vitals')">📊 Add Vitals</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('✅ Acknowledge Order')">✅ Ack Order</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('📝 Nursing Note')">📝 Nurse Note</button>
           <button class="btn-qa-ghost" onclick="window.prTriggerAction('🤝 Shift Handover')">🤝 Handover</button>
           <button class="btn-qa-ghost" onclick="window.prTriggerAction('⚠ Report Incident')">⚠ Incident</button>
+          ${isDischarging
+            ? (isNursingCleared
+                ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#dcfce7; border:1px solid #86efac; border-radius:6px; font-size:11px; font-weight:700; color:#15803d;">✓ Discharge Cleared</span>`
+                : `<button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white;" onclick="window.showUniversalDischargeWorkflow('${patient.uhid}')">🚪 Discharge Clearance</button>`
+              )
+            : ''
+          }
         </div>
       `;
     } else if (role === 'Billing') {
+      var isDischarging = patient.dischargeStatus === 'In Progress — Clearances Pending';
+      var isBillingCleared = patient.dischargeClearances?.billing?.cleared;
+
+      // Calculate dynamic base charges
+      let bedRate = 1200;
+      let bedDays = patient.los || 6;
+      let bedAmt = bedRate * bedDays;
+      if (patient.type === 'Daycare') {
+        bedAmt = 3500;
+      } else if (patient.type === 'Emergency') {
+        bedAmt = 2500;
+      }
+      
+      const priceMaster = {};
+      if (window.state && window.state.lisTestMaster) {
+        window.state.lisTestMaster.forEach(t => {
+          priceMaster[t.code.toUpperCase()] = t.price;
+          priceMaster[t.name.toUpperCase()] = t.price;
+        });
+      }
+      if (window.state && window.state.risTestMaster) {
+        window.state.risTestMaster.forEach(t => {
+          priceMaster[t.code.toUpperCase()] = t.price;
+          priceMaster[t.name.toUpperCase()] = t.price;
+        });
+      }
+
+      const patOrders = (window.state.orders || []).filter(o => o.uhid === patient.uhid && o.type === 'Laboratory');
+      const labItems = patOrders.length > 0 ? patOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 350;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { price: price };
+      }) : [{ price: 750 }, { price: 350 }];
+
+      const patRadOrders = (window.state.orders || []).filter(o => o.uhid === patient.uhid && o.type === 'Radiology');
+      const radItems = patRadOrders.length > 0 ? patRadOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 450;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { price: price };
+      }) : [{ price: 450 }];
+
+      const labAmt = labItems.reduce((sum, item) => sum + item.price, 0);
+      const radAmt = radItems.reduce((sum, item) => sum + item.price, 0);
+      const pharmacyAmt = 1200;
+      const consultantAmt = 1600;
+      const nursingAmt = (patient.type === 'Daycare') ? 1000 : (patient.type === 'Emergency') ? 1500 : 3000;
+      
+      const grossTotal = bedAmt + consultantAmt + nursingAmt + labAmt + radAmt + pharmacyAmt;
+      const isTpa = (patient.payerType && patient.payerType !== 'Cash' && patient.payerType !== 'Self Pay');
+      const patientShare = isTpa ? 0 : grossTotal;
+
+      patient.paymentReceipts = patient.paymentReceipts || [
+        { date: "24 Jun 2026", mode: "Cash", amount: 10000, receiptNo: "REC-2026-00441", collectedBy: "Billing Clerk Anand" }
+      ];
+      const totalPaid = patient.paymentReceipts.reduce((sum, r) => sum + r.amount, 0);
+      const refundAvailable = totalPaid > patientShare;
+
       quickActionsHtml = `
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           <button class="btn-qa-primary" onclick="window.prTriggerAction('💰 View Bill')">💰 View Bill</button>
-          <button class="btn-qa-secondary" onclick="window.prTriggerAction('💳 Collect Payment')">💳 Pay</button>
+          <button class="btn-qa-secondary" onclick="window.prTriggerAction('💳 Collect Payment')">💳 Payment</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('📄 Generate Receipt')">📄 Receipt</button>
-          <button class="btn-qa-ghost" onclick="window.prTriggerAction('↩ Process Refund')">↩ Refund</button>
+          ${refundAvailable ? `<button class="btn-qa-ghost" onclick="window.prTriggerAction('↩ Process Refund')">↩ Refund</button>` : ''}
           <button class="btn-qa-ghost" onclick="window.prTriggerAction('📤 Send Bill')">📤 Send Bill</button>
+          ${isDischarging
+            ? (isBillingCleared
+                ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#dcfce7; border:1px solid #86efac; border-radius:6px; font-size:11px; font-weight:700; color:#15803d;">✓ Discharge Cleared</span>`
+                : `<button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white;" onclick="window.showUniversalDischargeWorkflow('${patient.uhid}')">🚪 Discharge Clearance</button>`
+              )
+            : ''
+          }
         </div>
       `;
     } else if (role === 'Admission') {
@@ -2504,22 +1735,61 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       ` : `
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           ${isUnallocated 
-            ? `<button class="btn-qa-primary" style="background:#1b3a5c; border-color:#1b3a5c; color:white;" onclick="window.triggerAllocateBedWorkflow('${patient.uhid}')">🛏️ Allocate Bed</button>` 
+            ? `<button class="btn-qa-primary" style="background:#1b3a5c; border-color:#1b3a5c; color:white;" onclick="window.router.navigate('ipdAdmit?uhid=${patient.uhid}')">🏥 Admit Patient</button>` 
             : `<button class="btn-qa-primary" onclick="window.prTriggerAction('🛏 Change Bed')">🛏 Change Bed</button>`}
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('📋 Edit Admission')">📋 Edit Admission</button>
           ${isDischarging || isUnallocated ? '' : `<button class="btn-qa-secondary" onclick="window.prTriggerAction('↔ Transfer Ward')">↔ Transfer</button>`}
           ${isDischarging
-            ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#fef9c3; border:1px solid #fbbf24; border-radius:6px; font-size:11px; font-weight:700; color:#854d0e;">⏳ Discharge In Progress</span>`
+            ? (() => {
+                const cl = patient.dischargeClearances || {};
+                const nursingOk = cl.nursing?.cleared;
+                const billingOk = cl.billing?.cleared;
+                const pharmacyOk = cl.pharmacy?.cleared;
+                const tpaOk = !cl.tpa || cl.tpa.cleared;
+                const labOk = !cl.lab || cl.lab.cleared;
+                const isClear = nursingOk && billingOk && pharmacyOk && tpaOk && labOk;
+
+                if (patient.gatePassIssued) {
+                  return `
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#dcfce7; border:1px solid #86efac; border-radius:6px; font-size:11px; font-weight:700; color:#15803d;">✓ Gate Pass Issued (${patient.gatePassCode})</span>
+                    <button class="btn-qa-secondary" onclick="window.printPatientGatePass('${patient.uhid}')" style="padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer;">🖨 Print Slip</button>
+                  `;
+                } else if (isClear) {
+                  return `<button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white; font-weight:700;" onclick="window.issuePatientGatePass('${patient.uhid}')">🎫 Issue Exit Gate Pass</button>`;
+                } else {
+                  return `
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#fef9c3; border:1px solid #fbbf24; border-radius:6px; font-size:11px; font-weight:700; color:#854d0e;">⏳ Clearances Pending</span>
+                    <button class="btn-qa-primary" style="background:#cbd5e1; border-color:#cbd5e1; color:#94a3b8; cursor:pointer;" onclick="(() => {
+                      var pending = [];
+                      if (!${nursingOk}) pending.push('Nursing');
+                      if (!${billingOk}) pending.push('Billing & Finance');
+                      if (!${pharmacyOk}) pending.push('Pharmacy');
+                      if (!${tpaOk}) pending.push('TPA / Insurance');
+                      if (!${labOk}) pending.push('Laboratory');
+                      alert('⚠️ Cannot Issue Gate Pass!\\n\\nClearances are pending from the following departments:\\n• ' + pending.join('\\n• ') + '\\n\\nPlease complete all pending clearances first.');
+                    })()">🎫 Issue Gate Pass</button>
+                  `;
+                }
+              })()
             : (isUnallocated ? '' : `<button class="btn-qa-ghost" onclick="window.prTriggerAction('🚪 Initiate Discharge')">🚪 Discharge</button>`)
           }
         </div>
       `;
     } else if (role === 'Pharmacy') {
+      var isDischarging = patient.dischargeStatus === 'In Progress — Clearances Pending';
+      var isPharmacyCleared = patient.dischargeClearances?.pharmacy?.cleared;
       quickActionsHtml = `
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
           <button class="btn-qa-primary" onclick="window.prTriggerAction('💊 View Prescriptions')">💊 Prescriptions</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('✅ Mark Dispensed')">✅ Dispense</button>
           <button class="btn-qa-secondary" onclick="window.prTriggerAction('↩ Process Return')">↩ Return</button>
+          ${isDischarging
+            ? (isPharmacyCleared
+                ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#dcfce7; border:1px solid #86efac; border-radius:6px; font-size:11px; font-weight:700; color:#15803d;">✓ Discharge Cleared</span>`
+                : `<button class="btn-qa-primary" style="background:#10b981; border-color:#10b981; color:white;" onclick="window.showUniversalDischargeWorkflow('${patient.uhid}')">🚪 Discharge Clearance</button>`
+              )
+            : ''
+          }
         </div>
       `;
     } else if (role === 'Front Desk') {
@@ -2537,8 +1807,14 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
     let visibleTabs = [];
     if (role === 'Doctor') {
       visibleTabs = ['Summary & Timeline', 'Clinical Notes', 'Vitals', 'Labs', 'Imaging', 'Medications', 'Prescriptions', 'Documents', 'Complaints', 'ATD'];
+      if (patient && patient.type === 'IPD') {
+        visibleTabs.splice(1, 0, 'IPD Consultation');
+      }
     } else if (role === 'Nurse') {
       visibleTabs = ['Summary & Timeline', 'Clinical Notes', 'Vitals', 'Labs', 'Imaging', 'Medications', 'Prescriptions', 'Nursing Notes', 'Documents', 'Complaints', 'ATD'];
+      if (patient && patient.type === 'IPD') {
+        visibleTabs.splice(1, 0, 'IPD Consultation');
+      }
     } else if (role === 'Billing') {
       visibleTabs = ['Summary & Timeline', 'Billing', 'Documents', 'Complaints', 'ATD'];
     } else if (role === 'Pharmacy') {
@@ -2620,7 +1896,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
               return `
                 <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding: 4px 0;">
                   <span style="font-size:12px; font-weight: 500; color:#475569;">🛏️ Pending bed allocation</span>
-                  <button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; cursor:pointer;" onclick="window.triggerAllocateBedWorkflow('${patient.uhid}')">Allocate Bed</button>
+                  <button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; cursor:pointer;" onclick="window.router.navigate('ipdAdmit?uhid=${patient.uhid}')">Admit Patient</button>
                 </div>
               `;
             }
@@ -2633,7 +1909,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           ? `
             <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding: 4px 0;">
               <span style="font-size:12px; font-weight: 500; color:#475569;">🛏️ Pending bed allocation</span>
-              <button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; cursor:pointer;" onclick="window.triggerAllocateBedWorkflow('${patient.uhid}')">Allocate Bed</button>
+              <button class="btn btn-primary" style="padding:4px 10px; font-size:11px; background:#1b3a5c; border-color:#1b3a5c; font-weight:700; cursor:pointer;" onclick="window.router.navigate('ipdAdmit?uhid=${patient.uhid}')">Admit Patient</button>
             </div>
           `
           : `
@@ -2678,6 +1954,38 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
               </div>
             </div>
 
+            <!-- Clinical Notes History Card -->
+            <div class="p360-card" style="margin:0; padding:14px;">
+              <h5 style="margin:0 0 10px 0; font-size:12px; font-weight:700; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+                <span>📝 CLINICAL NOTES HISTORY</span>
+              </h5>
+              <div style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:4px;">
+                ${(window.patient360Notes && window.patient360Notes.length > 0) ? window.patient360Notes.map(n => {
+                  let preview = '';
+                  if (n.content) {
+                    preview = n.content;
+                  } else if (n.s || n.a) {
+                    preview = `S: ${n.s || '—'} | A: ${n.a || '—'}`;
+                  } else if (n.reviewStatus || n.reviewPlan) {
+                    preview = `Status: ${n.reviewStatus || '—'} | Plan: ${n.reviewPlan || '—'}`;
+                  } else {
+                    preview = n.referralSummary || n.dischargeCourse || n.preopProcedure || '';
+                  }
+                  return `
+                    <div style="font-size:12px; border-bottom:1px dashed #cbd5e1; padding-bottom:8px; margin-bottom:4px; text-align:left;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                        <span class="badge-type" style="background:#eff6ff; color:#1e40af; font-weight:800; font-size:9px; padding:2px 6px; border-radius:4px; margin:0;">${n.type}</span>
+                        <span style="font-size:10px; color:var(--text-muted);">${n.time}</span>
+                      </div>
+                      ${n.title ? `<div style="font-weight:700; margin-top:2px; color:#1e293b;">${n.title}</div>` : ''}
+                      <div style="color:#475569; line-height:1.4; margin-top:2px;">${preview}</div>
+                      <div style="font-size:10px; color:var(--text-muted); margin-top:4px; text-align:right;">By ${n.author} ${n.dept ? '(' + n.dept + ')' : ''}</div>
+                    </div>
+                  `;
+                }).join('') : '<div style="font-size:12px; color:var(--text-muted);">No clinical notes recorded.</div>'}
+              </div>
+            </div>
+
           </div>
 
           <!-- Right Column: Timeline -->
@@ -2688,7 +1996,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
             </h5>
             
             <div class="timeline-container">
-              ${(patient.timelineEvents && patient.timelineEvents.length > 0) ? patient.timelineEvents.map(event => {
+              ${(patient.timelineEvents && patient.timelineEvents.length > 0) ? [...patient.timelineEvents].sort((a, b) => new Date(b.date) - new Date(a.date)).map(event => {
                 let color = '#3b82f6', bg = '#dbeafe';
                 if (event.type === 'pharmacy' || event.title.includes('Medication') || event.title.includes('Prescription') || event.title.includes('Rx') || event.title.includes('Dispensed')) {
                   color = '#10b981'; bg = '#d1fae5';
@@ -2700,6 +2008,8 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
                   color = '#ef4444'; bg = '#fee2e2';
                 } else if (event.type === 'registration' || event.title.includes('Admission') || event.title.includes('Admitted') || event.title.includes('Transfer') || event.title.includes('Registered')) {
                   color = '#8b5cf6'; bg = '#f3e8ff';
+                } else if (event.type === 'note' || event.title.includes('Note') || event.title.includes('SOAP')) {
+                  color = '#4f46e5'; bg = '#e0e7ff';
                 }
                 
                 let timeStr = event.date || 'Today';
@@ -2741,6 +2051,12 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           
         </div>
       `;
+    } else if (tab === 'IPD Consultation') {
+      if (typeof window.renderIPDConsultationTab === 'function') {
+        tabContentHtml = window.renderIPDConsultationTab(patient);
+      } else {
+        tabContentHtml = `<div style="padding: 20px; color: var(--text-muted);">IPD Consultation view is not initialized.</div>`;
+      }
     } else if (tab === 'Clinical Notes') {
       const activeSubtab = window.patient360ActiveClinicalNoteSubtab || 'Progress Note';
       const subTabs = ['Progress Note', 'Review Note', 'Pre-op Note', 'Post-op Note', 'Referral Note', 'Discharge Note'];
@@ -2995,6 +2311,11 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
             ${n.dischargeInstructions ? `<div><b>Follow-up:</b> ${n.dischargeInstructions}</div>` : ''}
             ${n.dischargeMeds ? `<div><b>Meds:</b> ${n.dischargeMeds}</div>` : ''}
           `;
+        } else if (n.title || n.content) {
+          detailsHtml = `
+            ${n.title ? `<div><b>Subject:</b> ${n.title}</div>` : ''}
+            ${n.content ? `<div><b>Note:</b> ${n.content}</div>` : ''}
+          `;
         } else {
           detailsHtml = `
             <div><b>S:</b> ${n.s || ''}</div>
@@ -3058,7 +2379,12 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
 
       tabContentHtml = `
         <div>
-          <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">LATEST VITALS</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:var(--text-muted); font-weight:700;">LATEST VITALS</span>
+            ${(role === 'Doctor' || role === 'Nurse') ? `
+              <button class="btn btn-primary" onclick="window.prTriggerAction('📊 Record Vitals')" style="padding:4px 10px; font-size:11px; height:auto; background:#10b981; border:none; border-radius:4px; font-weight:700; color:#fff; cursor:pointer;">📊 Add Vitals</button>
+            ` : ''}
+          </div>
           <div class="vitals-data-strip" style="margin-bottom:12px;">
             <span>BP: <b>${patient.vitals?.bp || '—'}</b></span>
             <span>HR: <b>${patient.vitals?.hr || '—'} bpm</b></span>
@@ -3578,16 +2904,30 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
 
       tabContentHtml = `
         <div style="display:flex; flex-direction:column; gap:16px;">
-          <!-- Admission Details -->
+          <!-- Admission/Visit Details -->
           <div>
-            <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">ADMISSION DETAILS</span>
+            <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">
+              ${patient.type === 'OPD' ? 'VISIT DETAILS' : 'ADMISSION DETAILS'}
+            </span>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;" class="p360-card">
-              <div class="p360-label-val"><span class="p360-label">Admission Type</span><span class="p360-val">${patient.type || 'IPD'}</span></div>
-              <div class="p360-label-val"><span class="p360-label">Admitted</span><span class="p360-val mono">${patient.admissionDate || '24 Jun 2026 • 10:15 AM'}</span></div>
-              <div class="p360-label-val"><span class="p360-label">Admitting Doc</span><span class="p360-val">${patient.primaryConsultant || 'Dr. Priya Nair'}</span></div>
+              <div class="p360-label-val">
+                <span class="p360-label">${patient.type === 'OPD' ? 'Visit Type' : 'Admission Type'}</span>
+                <span class="p360-val">${patient.type || 'IPD'}</span>
+              </div>
+              <div class="p360-label-val">
+                <span class="p360-label">${patient.type === 'OPD' ? 'Visit Date' : 'Admitted'}</span>
+                <span class="p360-val mono">${patient.admitted || patient.admissionDate || '24 Jun 2026 • 10:15 AM'}</span>
+              </div>
+              <div class="p360-label-val">
+                <span class="p360-label">${patient.type === 'OPD' ? 'Consultant' : 'Admitting Doc'}</span>
+                <span class="p360-val">${patient.primaryConsultant || 'Dr. Priya Nair'}</span>
+              </div>
               ${patient.status === 'Discharged'
                 ? `<div class="p360-label-val"><span class="p360-label" style="color:#15803d; font-weight:700;">Date of Discharge</span><span class="p360-val mono" style="color:#15803d; font-weight:700;">${patient.dischargeDate || 'N/A'}</span></div>`
-                : `<div class="p360-label-val"><span class="p360-label">Ward / Bed</span><span class="p360-val">${patient.bed ? patient.bed + ' (' + patient.ward + ')' : 'No Bed Assigned'}</span></div>`
+                : `<div class="p360-label-val">
+                    <span class="p360-label">${patient.type === 'OPD' ? 'Room' : 'Ward / Bed'}</span>
+                    <span class="p360-val">${patient.type === 'OPD' ? (patient.ward || 'No Room Assigned') : (patient.bed ? patient.bed + ' (' + patient.ward + ')' : 'No Bed Assigned')}</span>
+                   </div>`
               }
               <div class="p360-label-val"><span class="p360-label">Reason</span><span class="p360-val">${patient.provisionalDiagnosis || 'General evaluation'}</span></div>
               <div class="p360-label-val"><span class="p360-label">MLC Case</span><span class="p360-val">${isMlc ? '🚨 Medico-Legal Case' : 'No'}</span></div>
@@ -3665,8 +3005,77 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
                   ` : ''}
                 </div>
 
-                <div style="margin-top:12px; border-t: 1px solid #f1f5f9;" class="pt-3">
-                  <button class="py-2 px-5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer text-xs" onclick="window.showUniversalDischargeWorkflow('${patient.uhid}')">
+                <!-- Gate Pass Issuance Section -->
+                <div style="margin-top:12px; padding-top:12px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
+                  ${patient.gatePassIssued ? `
+                    <div style="border: 2px dashed #94a3b8; border-radius: 6px; padding: 12px; background: #f8fafc; color: #1e293b; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+                      <div style="text-align: center; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 4px;">
+                        <h4 style="margin: 0; font-size: 11px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; text-transform: uppercase;">Saronil Exit Gate Pass</h4>
+                        <span style="font-size: 9px; color: #64748b; font-weight: 600;">Authorized Discharge Exit Slip</span>
+                      </div>
+                      
+                      <div style="display: flex; flex-direction: column; gap: 3px; font-size: 10.5px;">
+                        <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">Patient:</span><strong style="color: #0f172a;">${patient.name}</strong></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">UHID:</span><strong class="admin-mono" style="color: #0f172a;">${patient.uhid}</strong></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">Bed:</span><strong style="color: #0f172a;">${patient.bed || '—'}</strong></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: #64748b;">Issued:</span><strong style="color: #0f172a;">${patient.gatePassTime || 'Just Now'}</strong></div>
+                      </div>
+
+                      <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; text-align: center; margin: 4px 0;">
+                        <span style="font-size: 8.5px; color: #475569; font-weight: 700; text-transform: uppercase; display: block;">Auth Code</span>
+                        <strong class="admin-mono" style="font-size: 14px; color: #0f172a; letter-spacing: 1px;">${patient.gatePassCode}</strong>
+                      </div>
+
+                      <div style="display: flex; justify-content: center; gap: 1px; height: 18px; opacity: 0.8; margin-top: 2px;">
+                        <div style="background: #0f172a; width: 2px;"></div>
+                        <div style="background: #0f172a; width: 1px;"></div>
+                        <div style="background: #0f172a; width: 3px;"></div>
+                        <div style="background: #0f172a; width: 1px;"></div>
+                        <div style="background: #0f172a; width: 2px;"></div>
+                        <div style="background: #0f172a; width: 1px;"></div>
+                        <div style="background: #0f172a; width: 3px;"></div>
+                        <div style="background: #0f172a; width: 1px;"></div>
+                        <div style="background: #0f172a; width: 2px;"></div>
+                      </div>
+
+                      <button class="py-1.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg cursor-pointer text-xs" style="width: 100%; text-align: center; margin-top: 4px;" onclick="window.printPatientGatePass('${patient.uhid}')">
+                        🖨 Print Gate Pass Slip
+                      </button>
+                    </div>
+                  ` : `
+                    ${(() => {
+                      const nursingOk = clearances.nursing?.cleared;
+                      const billingOk = clearances.billing?.cleared;
+                      const pharmacyOk = clearances.pharmacy?.cleared;
+                      const tpaOk = !clearances.tpa || clearances.tpa.cleared;
+                      const labOk = !clearances.lab || clearances.lab.cleared;
+                      const isClear = nursingOk && billingOk && pharmacyOk && tpaOk && labOk;
+
+                      if (isClear) {
+                        return `
+                          <button class="py-2 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg cursor-pointer text-xs" style="width: 100%; text-align: center;" onclick="window.issuePatientGatePass('${patient.uhid}')">
+                            🎫 Issue Exit Gate Pass
+                          </button>
+                        `;
+                      } else {
+                        return `
+                          <button class="py-2 px-5 bg-slate-200 text-slate-400 font-bold rounded-lg cursor-pointer text-xs" style="width: 100%; text-align: center;" onclick="(() => {
+                            var pending = [];
+                            if (!${nursingOk}) pending.push('Nursing');
+                            if (!${billingOk}) pending.push('Billing & Finance');
+                            if (!${pharmacyOk}) pending.push('Pharmacy');
+                            if (!${tpaOk}) pending.push('TPA / Insurance');
+                            if (!${labOk}) pending.push('Laboratory');
+                            alert('⚠️ Cannot Issue Gate Pass!\\n\\nClearances are pending from the following departments:\\n• ' + pending.join('\\n• ') + '\\n\\nPlease complete all pending clearances first.');
+                          })()">
+                            🎫 Issue Exit Gate Pass (Pending Clearances)
+                          </button>
+                        `;
+                      }
+                    })()}
+                  `}
+                  
+                  <button class="py-2 px-5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer text-xs" style="width: 100%;" onclick="window.showUniversalDischargeWorkflow('${patient.uhid}')">
                     Open Department Clearance Checklist ➡️
                   </button>
                 </div>
@@ -3813,95 +3222,295 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         radChargeRows.push({ cat: "Radiology Charges", desc: "USG Abdomen / Chest X-Ray", qty: "1", rate: "₹1,650", amt: "₹1,650", numericAmt: 1650 });
       }
 
-      const chargeDetails = [
-        { cat: "Bed Charges", desc: "Daycare Bay &bull; 1 day", qty: "1", rate: "₹3,500", amt: "₹3,500", numericAmt: 3500 },
-        { cat: "Consultant Fee", desc: patient.primaryConsultant || "Dr. Priya Nair", qty: "1", rate: "₹2,000", amt: "₹2,000", numericAmt: 2000 },
-        ...labChargeRows,
-        ...radChargeRows,
-        { cat: "Pharmacy", desc: "Various medications", qty: "—", rate: "—", amt: "₹1,800", numericAmt: 1800 },
-        { cat: "Procedures", desc: "IV Infusion &bull; Normal Saline", qty: "2", rate: "₹500", amt: "₹1,000", numericAmt: 1000 }
+      let bedRate = 1200;
+      let bedDays = patient.los || 6;
+      let bedAmt = bedRate * bedDays;
+      let bedDesc = `General Ward Bed rent - ${bedDays} Days @ ₹${bedRate.toLocaleString('en-IN')}/day`;
+      let nursingAmt = 3000;
+      let nursingDesc = `General Ward Nursing Professional Charges & Care (${bedDays} days)`;
+
+      if (patient.type === 'Daycare') {
+        bedRate = 3500;
+        bedDays = 1;
+        bedAmt = 3500;
+        bedDesc = `Daycare Bay &bull; 1 day @ ₹3,500/day`;
+        nursingAmt = 1000;
+        nursingDesc = `Daycare Nursing Professional Charges & Care`;
+      } else if (patient.type === 'Emergency') {
+        bedRate = 2500;
+        bedDays = 1;
+        bedAmt = 2500;
+        bedDesc = `Emergency Bay &bull; 1 day @ ₹2,500/day`;
+        nursingAmt = 1500;
+        nursingDesc = `Emergency Nursing Professional Charges & Care`;
+      }
+
+      const labItems = patOrders.length > 0 ? patOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 350;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { name: o.name, price: price };
+      }) : [
+        { name: "LFT (Liver Function Test)", price: 750 },
+        { name: "CBC (Complete Blood Count)", price: 350 }
       ];
 
-      const realSubTotal = chargeDetails.reduce((sum, c) => sum + (c.numericAmt || 0), 0);
+      const radItems = patRadOrders.length > 0 ? patRadOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 450;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { name: o.name, price: price };
+      }) : [
+        { name: "X-Ray Chest PA View", price: 450 }
+      ];
+
+      const labAmt = labItems.reduce((sum, item) => sum + item.price, 0);
+      const radAmt = radItems.reduce((sum, item) => sum + item.price, 0);
+      const pharmacyAmt = 1200;
+      const consultantAmt = 1600;
+      const consultantDesc = `${patient.primaryConsultant || "Dr. Priya Nair"} (Medicine) - 2 Visits @ ₹800.00`;
+      
+      const grossTotal = bedAmt + consultantAmt + nursingAmt + labAmt + radAmt + pharmacyAmt;
+      const realSubTotal = grossTotal;
       const isTpa = (patient.payerType && patient.payerType !== 'Cash' && patient.payerType !== 'Self Pay');
       const tpaDeduction = isTpa ? realSubTotal : 0;
       const patientShare = isTpa ? 0 : realSubTotal;
-      const outstanding = Math.max(0, patientShare - 10000);
+
+      patient.paymentReceipts = patient.paymentReceipts || [
+        { date: "24 Jun 2026", mode: "Cash", amount: 10000, receiptNo: "REC-2026-00441", collectedBy: "Billing Clerk Anand" }
+      ];
+
+      const totalPaid = patient.paymentReceipts.reduce((sum, r) => sum + r.amount, 0);
+      const outstanding = Math.max(0, patientShare - totalPaid);
+      const tariffOption = isTpa ? `${patient.payer || 'Star Health Insurance'} Approved Tariff` : `Self Pay Cash Tariff (${patient.bed ? patient.bed + ' - ' + (patient.ward || 'General Bed') : 'General Bed'})`;
 
       tabContentHtml = `
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <!-- Financial summary strip -->
-          <div class="vitals-data-strip" style="background:#fffbeb; border:1px solid #fef3c7;">
-            <span>Estimated Bill: <b class="mono">₹${realSubTotal.toLocaleString('en-IN')}</b></span>
-            <span>TPA Covered: <b class="mono">₹${tpaDeduction.toLocaleString('en-IN')}</b></span>
-            <span>Deposit Paid: <b class="mono">₹10,000</b></span>
-            <span>Outstanding Share: <b class="mono" style="color:#d97706;">₹${outstanding.toLocaleString('en-IN')}</b></span>
-          </div>
+        <style>
+          .p360-bill-card {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+          }
+          .p360-bill-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .p360-bill-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #475569;
+          }
+          .p360-bill-row strong {
+            color: #0f172a;
+          }
+        </style>
 
-          <!-- Charge details table -->
-          <div>
-            <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">CHARGE ITEMS</span>
-            <table class="p360-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th>Qty</th>
-                  <th>Rate</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${chargeDetails.map(c => `
-                  <tr>
-                    <td><b>${c.cat}</b></td>
-                    <td>${c.desc}</td>
-                    <td class="mono">${c.qty}</td>
-                    <td class="mono">${c.rate}</td>
-                    <td class="mono" style="font-weight:600;">${c.amt}</td>
+        <!-- Payment history & Payment collection box (2-Column Grid) -->
+        <div style="display: grid; grid-template-columns: 2fr 1.1fr; gap: 16px; align-items: start;">
+          <!-- Left side: Sponsor details, category cards, and receipts -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- SPONSOR SCHEME DETAILS -->
+            <div style="background-color:#f8fafc; border-left:4px solid #7c3aed; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; border-radius:6px; padding:12px;">
+              <h4 style="margin:0 0 4px 0; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#7c3aed; letter-spacing:0.5px;">SPONSOR SCHEME DETAILS</h4>
+              <div style="font-size:0.78rem; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#475569;">Tariff Option: <strong style="color:#1e293b;">${tariffOption}</strong></span>
+                <span style="color:#475569;">Active Deposits: <strong style="color:#10b981; font-family:monospace; font-weight:700;">₹${totalPaid.toLocaleString('en-IN')}.00</strong></span>
+              </div>
+            </div>
+
+            <!-- Ward Room & Bed Charges -->
+            <div class="p360-bill-card">
+              <h4><span>🛌</span> Ward Room & Bed Charges</h4>
+              <div class="p360-bill-row">
+                <span>${bedDesc}</span>
+                <strong class="mono">₹${bedAmt.toLocaleString('en-IN')}.00</strong>
+              </div>
+            </div>
+
+            <!-- Consultant & Visiting Doctor Fees -->
+            <div class="p360-bill-card">
+              <h4><span>🩺</span> Consultant & Visiting Doctor Fees</h4>
+              <div class="p360-bill-row">
+                <span>${consultantDesc}</span>
+                <strong class="mono">₹${consultantAmt.toLocaleString('en-IN')}.00</strong>
+              </div>
+            </div>
+
+            <!-- Nursing / Professional Charges -->
+            <div class="p360-bill-card">
+              <h4><span>👩‍⚕️</span> Nursing / Professional Charges</h4>
+              <div class="p360-bill-row">
+                <span>${nursingDesc}</span>
+                <strong class="mono">₹${nursingAmt.toLocaleString('en-IN')}.00</strong>
+              </div>
+            </div>
+
+            <!-- Laboratory Investigations (Read-Only from LIS) -->
+            <div class="p360-bill-card">
+              <h4><span>🔬</span> Laboratory Investigations (Read-Only from LIS)</h4>
+              <table style="width:100%; font-size:0.78rem; color:#475569; border-collapse:collapse;">
+                ${labItems.map(item => `
+                  <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:4px 0; color:#475569;">${item.name}</td>
+                    <td class="mono" style="text-align:right; font-weight:bold; color:#0f172a;">₹${item.price.toLocaleString('en-IN')}.00</td>
                   </tr>
                 `).join('')}
-                <tr style="background:var(--bg-surface-elevated, #f1f5f9); font-weight:700;">
-                  <td colspan="4" style="text-align:right;">Sub-total:</td>
-                  <td class="mono">₹${realSubTotal.toLocaleString('en-IN')}</td>
-                </tr>
-                <tr style="background:#ecfdf5; font-weight:700; color:#059669;">
-                  <td colspan="4" style="text-align:right;">TPA Approved Deduction:</td>
-                  <td class="mono">-₹${tpaDeduction.toLocaleString('en-IN')}</td>
-                </tr>
-                <tr style="background:var(--bg-surface-elevated, #f1f5f9); font-weight:700;">
-                  <td colspan="4" style="text-align:right;">Patient Out-of-Pocket Share:</td>
-                  <td class="mono">₹${patientShare.toLocaleString('en-IN')}</td>
-                </tr>
-              </tbody>
-            </table>
+              </table>
+              <div style="font-size:0.65rem; color:#64748b; font-style:italic; margin-top:6px;">
+                *Note: Investigation charges are pulled directly from LIS master data. Corrective credits require lab supervisor authorization.
+              </div>
+            </div>
+
+            <!-- Radiology Investigations (Read-Only from RIS) -->
+            <div class="p360-bill-card">
+              <h4><span>📡</span> Radiology Investigations (Read-Only from RIS)</h4>
+              <table style="width:100%; font-size:0.78rem; color:#475569; border-collapse:collapse;">
+                ${radItems.map(item => `
+                  <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:4px 0; color:#475569;">${item.name}</td>
+                    <td class="mono" style="text-align:right; font-weight:bold; color:#0f172a;">₹${item.price.toLocaleString('en-IN')}.00</td>
+                  </tr>
+                `).join('')}
+              </table>
+              <div style="font-size:0.65rem; color:#64748b; font-style:italic; margin-top:6px;">
+                *Note: Investigation charges are pulled directly from RIS master data.
+              </div>
+            </div>
+
+            <!-- Pharmacy & Medicines (IPD Dispense Log) -->
+            <div class="p360-bill-card">
+              <h4><span>💊</span> Pharmacy & Medicines (IPD Dispense Log)</h4>
+              <div class="p360-bill-row">
+                <span>Surgical Injection Kit + I.V. Fluids dispenses</span>
+                <strong class="mono">₹${pharmacyAmt.toLocaleString('en-IN')}.00</strong>
+              </div>
+            </div>
+
+            <!-- PAYMENT RECEIPTS Table -->
+            <div style="margin-top:4px;">
+              <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Payment Receipts History</span>
+              <table class="p360-table" style="margin-bottom: 0;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Mode</th>
+                    <th>Amount</th>
+                    <th>Receipt No</th>
+                    <th>Collected By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${patient.paymentReceipts.map(r => `
+                    <tr>
+                      <td class="mono">${r.date}</td>
+                      <td>${r.mode}</td>
+                      <td class="mono" style="font-weight:600;">₹${r.amount.toLocaleString('en-IN')}</td>
+                      <td class="mono">${r.receiptNo}</td>
+                      <td>${r.collectedBy}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Payment history -->
-          <div>
-            <span style="font-size:11px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">PAYMENT RECEIPTS</span>
-            <table class="p360-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Mode</th>
-                  <th>Amount</th>
-                  <th>Receipt No</th>
-                  <th>Collected By</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="mono">24 Jun 2026</td>
-                  <td>Cash</td>
-                  <td class="mono" style="font-weight:600;">₹10,000</td>
-                  <td class="mono">REC-2026-00441</td>
-                  <td>Billing Clerk Anand</td>
-                </tr>
-          <!-- Actions -->
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button class="btn-qa-primary" style="width:auto; height:34px; padding:0 20px;" onclick="window.prTriggerAction('Collect Payment')">Collect Payment</button>
-            <button class="btn-qa-secondary" style="height:34px;" onclick="window.prTriggerAction('Generate Final Bill')">Generate Final Bill</button>
+          <!-- Right side: Calculations and Payments -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="background:white; border:1px solid #cbd5e1; border-top:4px solid #10b981; border-radius:6px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+              <h4 style="margin:0 0 10px 0; font-size:0.85rem; font-weight:700; text-transform:uppercase; color:#1e293b; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+                Bill Calculations Panel
+              </h4>
+              
+              <div style="font-size:0.78rem; display:flex; flex-direction:column; gap:6px; line-height:1.7;">
+                <div style="display:flex; justify-content:space-between; color:#475569;">
+                  <span>Gross Accrued Bill:</span>
+                  <strong class="mono">₹${grossTotal.toLocaleString('en-IN')}.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; color:#4f46e5; border-top:1px dashed #cbd5e1; padding-top:4px;">
+                  <span>(+) GST / Tax Amount:</span>
+                  <strong class="mono">+₹0.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-weight:700; border-top:1.5px solid #cbd5e1; padding-top:4px; margin-top:2px;">
+                  <span>Net Bill Amount:</span>
+                  <strong class="mono">₹${grossTotal.toLocaleString('en-IN')}.00</strong>
+                </div>
+                ${isTpa ? `
+                  <div style="display:flex; justify-content:space-between; color:#059669; font-weight:700;">
+                    <span>(-) TPA Approved Deduction:</span>
+                    <strong class="mono">-₹${tpaDeduction.toLocaleString('en-IN')}.00</strong>
+                  </div>
+                ` : ''}
+                <div style="display:flex; justify-content:space-between; color:#475569; font-weight:700;">
+                  <span>(-) Deposit Adjusted:</span>
+                  <strong class="mono">-₹${totalPaid.toLocaleString('en-IN')}.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top:2px solid #cbd5e1; padding-top:6px; margin-top:4px; align-items:center;">
+                  <span style="font-size:0.8rem; font-weight:800; color:#ef4444;">Patient Payable (Cash):</span>
+                  <strong style="font-size:1.15rem; color:#ef4444; font-family:monospace; font-weight:900;">₹${outstanding.toLocaleString('en-IN')}.00</strong>
+                </div>
+              </div>
+
+              ${outstanding === 0 ? `
+                <div style="background-color:#ecfdf5; border:1px solid #10b981; border-radius:6px; padding:12px; margin-top:12px; color:#065f46; display:flex; flex-direction:column; gap:4px;">
+                  <div style="display:flex; align-items:center; gap:6px; font-weight:700; font-size:0.82rem; color:#059669;">
+                    <span>✓</span> Bill Paid
+                  </div>
+                  <div style="font-size:0.72rem; color:#065f46;">
+                    <strong>Date/Time:</strong> ${patient.paymentReceipts[patient.paymentReceipts.length - 1]?.date || 'Today'} at 11:30 AM
+                  </div>
+                  <div style="font-size:0.72rem; color:#065f46;">
+                    <strong>Payment Mode:</strong> ${patient.paymentReceipts[patient.paymentReceipts.length - 1]?.mode || 'UPI'}
+                  </div>
+                </div>
+              ` : `
+                <!-- Collect Payment Form directly in this calculations panel -->
+                <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; background-color: #f8fafc; display: flex; flex-direction: column; gap: 10px; margin-top:12px;">
+                  <h4 style="margin: 0; font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; display:flex; align-items:center; gap:4px;">💰 Collect Payment</h4>
+                  
+                  <div>
+                    <label style="display: block; font-size: 9.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">Collection Amount (₹)</label>
+                    <input type="number" id="p360-collect-amount" value="${outstanding}" style="width: 100%; padding: 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: monospace; font-weight: 700;" />
+                  </div>
+
+                  <div>
+                    <label style="display: block; font-size: 9.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">Payment Mode</label>
+                    <select id="p360-collect-mode" style="width: 100%; padding: 6px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600; background-color: white;">
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Net Banking">Net Banking</option>
+                    </select>
+                  </div>
+
+                  <button class="btn-qa-primary" style="width: 100%; height: 32px; padding: 0 10px; font-size: 11px; font-weight: 700; margin-top: 4px; background: #0284c7; border-color: #0284c7; color: white;" onclick="window.postP360Payment('${patient.uhid}')">
+                    Collect &amp; Post Receipt
+                  </button>
+                </div>
+              `}
+
+              <!-- Print Bill Button -->
+              <button class="btn-qa-secondary" style="width: 100%; height: 32px; padding: 0 10px; font-size: 11px; font-weight: 700; margin-top: 12px; background: white; border: 1px solid #cbd5e1; color: #475569; display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="window.prTriggerAction('Generate Final Bill')">
+                🖨️ Print Bill
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -3915,6 +3524,91 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       let bodyHtml = "";
       let footerHtml = "";
       
+      let bedRate = 1200;
+      let bedDays = patient.los || 6;
+      let bedAmt = bedRate * bedDays;
+      let bedDesc = `General Ward Bed rent - ${bedDays} Days @ ₹${bedRate.toLocaleString('en-IN')}/day`;
+      let nursingAmt = 3000;
+      let nursingDesc = `General Ward Nursing Professional Charges & Care (${bedDays} days)`;
+
+      if (patient.type === 'Daycare') {
+        bedRate = 3500;
+        bedDays = 1;
+        bedAmt = 3500;
+        bedDesc = `Daycare Bay &bull; 1 day @ ₹3,500/day`;
+        nursingAmt = 1000;
+        nursingDesc = `Daycare Nursing Professional Charges & Care`;
+      } else if (patient.type === 'Emergency') {
+        bedRate = 2500;
+        bedDays = 1;
+        bedAmt = 2500;
+        bedDesc = `Emergency Bay &bull; 1 day @ ₹2,500/day`;
+        nursingAmt = 1500;
+        nursingDesc = `Emergency Nursing Professional Charges & Care`;
+      }
+
+      var priceMaster = {};
+      if (state && state.lisTestMaster) {
+        state.lisTestMaster.forEach(t => {
+          priceMaster[t.code.toUpperCase()] = t.price;
+          priceMaster[t.name.toUpperCase()] = t.price;
+        });
+      }
+      if (state && state.risTestMaster) {
+        state.risTestMaster.forEach(t => {
+          priceMaster[t.code.toUpperCase()] = t.price;
+          priceMaster[t.name.toUpperCase()] = t.price;
+        });
+      }
+
+      const patOrders = (state && state.orders) ? state.orders.filter(o => o.uhid === patient.uhid && o.type === 'Laboratory') : [];
+      const labItems = patOrders.length > 0 ? patOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 350;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { name: o.name, price: price };
+      }) : [
+        { name: "LFT (Liver Function Test)", price: 750 },
+        { name: "CBC (Complete Blood Count)", price: 350 }
+      ];
+
+      const patRadOrders = (state && state.orders) ? state.orders.filter(o => o.uhid === patient.uhid && o.type === 'Radiology') : [];
+      const radItems = patRadOrders.length > 0 ? patRadOrders.map(o => {
+        const nameUpper = o.name.toUpperCase();
+        let price = 450;
+        if (priceMaster[nameUpper]) {
+          price = priceMaster[nameUpper];
+        } else {
+          const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+          if (foundKey) price = priceMaster[foundKey];
+        }
+        return { name: o.name, price: price };
+      }) : [
+        { name: "X-Ray Chest PA View", price: 450 }
+      ];
+
+      const labAmt = labItems.reduce((sum, item) => sum + item.price, 0);
+      const radAmt = radItems.reduce((sum, item) => sum + item.price, 0);
+      const pharmacyAmt = 1200;
+      const consultantAmt = 1600;
+      const consultantDesc = `${patient.primaryConsultant || "Dr. Priya Nair"} (Medicine) - 2 Visits @ ₹800.00`;
+      
+      const grossTotal = bedAmt + consultantAmt + nursingAmt + labAmt + radAmt + pharmacyAmt;
+      const isTpa = (patient.payerType && patient.payerType !== 'Cash' && patient.payerType !== 'Self Pay');
+      const patientShare = isTpa ? 0 : grossTotal;
+
+      patient.paymentReceipts = patient.paymentReceipts || [
+        { date: "24 Jun 2026", mode: "Cash", amount: 10000, receiptNo: "REC-2026-00441", collectedBy: "Billing Clerk Anand" }
+      ];
+
+      const totalPaid = patient.paymentReceipts.reduce((sum, r) => sum + r.amount, 0);
+      const outstanding = Math.max(0, patientShare - totalPaid);
+      const tariffOption = isTpa ? `${patient.payer || 'Star Health Insurance'} Approved Tariff` : `Self Pay Cash Tariff (${patient.bed ? patient.bed + ' - ' + (patient.ward || 'General Bed') : 'General Bed'})`;
       const todayStr = new Date().toLocaleDateString('en-GB') + ", " + new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
 
       if (activeModal === 'Order Lab') {
@@ -3940,9 +3634,23 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           `;
         }
 
+        const activeDiags = (window.patient360Diagnoses || []).map(d => d.split(' ')[0]);
+        const recommendedLabs = window.patient360LabCatalog.filter(t => activeDiags.includes(t.icd10));
+
         bodyHtml = `
           <div class="modal-cols">
             <div class="modal-left-col">
+              ${recommendedLabs.length > 0 ? `
+                <div class="form-group" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; margin-bottom:12px;">
+                  <label style="font-size:10px; color:#1e40af; font-weight:800; display:flex; align-items:center; gap:4px; margin-bottom:6px;">
+                    🎯 RECOMMENDED BASED ON ICD-10 (${activeDiags.join(', ')})
+                  </label>
+                  <div class="chip-list" style="display:flex; flex-wrap:wrap; gap:6px;">
+                    ${recommendedLabs.map(t => `<span class="quick-chip" style="background:#ffffff; border-color:#3b82f6; color:#1d4ed8; font-weight:600;" onclick="window.prAddLabTest('${t.name}')">+ ${t.name}</span>`).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
               <div class="form-group" style="position: relative;">
                 <label>Search & Add Investigations</label>
                 <input type="text" id="p360-lab-search-input" class="form-control" placeholder="Search lab tests, panels, profiles, or test codes..." value="${window.labSearchQuery}" oninput="window.prSearchLabQuery(this.value)">
@@ -4090,9 +3798,23 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
 
         const frequentlyOrderedRad = ["Chest X-Ray PA View", "MRI Brain Contrast", "CT Abdomen & Pelvis", "USG Whole Abdomen", "X-Ray Knee AP/LAT", "MRI Lumbar Spine", "CT Chest HRCT"];
 
+        const activeDiags = (window.patient360Diagnoses || []).map(d => d.split(' ')[0]);
+        const recommendedRad = window.patient360RadiologyCatalog.filter(t => activeDiags.includes(t.icd10));
+
         bodyHtml = `
           <div class="modal-cols">
             <div class="modal-left-col">
+              ${recommendedRad.length > 0 ? `
+                <div class="form-group" style="background:#fdf2f8; border:1px solid #fbcfe8; border-radius:8px; padding:10px; margin-bottom:12px;">
+                  <label style="font-size:10px; color:#9d174d; font-weight:800; display:flex; align-items:center; gap:4px; margin-bottom:6px;">
+                    🎯 RECOMMENDED BASED ON ICD-10 (${activeDiags.join(', ')})
+                  </label>
+                  <div class="chip-list" style="display:flex; flex-wrap:wrap; gap:6px;">
+                    ${recommendedRad.map(t => `<span class="quick-chip" style="background:#ffffff; border-color:#ec4899; color:#be185d; font-weight:600;" onclick="window.prAddRadiologyTest('${t.name}')">+ ${t.name}</span>`).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
               <div class="form-group" style="position: relative;">
                 <label>Search & Add Imaging Studies</label>
                 <input type="text" id="p360-rad-search-input" class="form-control" placeholder="Search radiology tests, body sites, or codes..." value="${window.radSearchQuery}" oninput="window.prSearchRadQuery(this.value)">
@@ -4242,22 +3964,51 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           `;
         }
 
+        let showAlternativesMenuHtml = "";
+        if (window.p360ShowAlternativesFor) {
+          const altNames = window.prGetMedicineAlternatives(window.p360ShowAlternativesFor);
+          showAlternativesMenuHtml = `
+            <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; max-height:200px; overflow-y:auto; position:absolute; z-index:2100; width:100%; top:58px; left:0; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);">
+              <div style="padding:6px 12px; font-size:11px; color:var(--text-muted); background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <span>Alternatives for <b>${window.p360ShowAlternativesFor}</b></span>
+                <span style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="window.p360ShowAlternativesFor=null; window.prDrawModal();">✕</span>
+              </div>
+              ${altNames.map(altName => {
+                const altMed = window.patient360MedicineCatalog.find(m => m.name === altName);
+                const stockText = altMed && altMed.stock > 0 ? `<span style="color:#059669; font-size:10px;">In Stock (${altMed.stock})</span>` : `<span style="color:#ef4444; font-size:10px;">Out of Stock</span>`;
+                return `<div style="padding:8px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;" onclick="window.prAddMedPrescription('${altName}')">
+                  <span>${altName}</span>
+                  ${stockText}
+                </div>`;
+              }).join('')}
+            </div>
+          `;
+        }
+
         bodyHtml = `
           <div class="modal-cols">
             <div class="modal-left-col">
               <div class="form-group" style="position: relative;">
                 <label>Search & Add Medicine</label>
-                <input type="text" id="p360-med-search-input" class="form-control" placeholder="Search pharmacy catalog, brands, generics, or codes..." value="${window.medSearchQuery}" oninput="window.prSearchMedQuery(this.value)">
-                ${medMatches.length > 0 ? `
+                <input type="text" id="p360-med-search-input" class="form-control" placeholder="Search pharmacy catalog, brands, generics, or codes..." value="${window.medSearchQuery}" oninput="window.p360ShowAlternativesFor = null; window.prSearchMedQuery(this.value)">
+                ${window.p360ShowAlternativesFor ? showAlternativesMenuHtml : (medMatches.length > 0 ? `
                   <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; max-height:150px; overflow-y:auto; position:absolute; z-index:2100; width:100%; top:58px; left:0; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);">
                     ${medMatches.map(m => {
-                      return `<div style="padding:6px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;" onclick="window.prAddMedPrescription('${m.name}')">
+                      const isOos = !m.stock;
+                      const oosCta = isOos ? `
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                          <span style="color:#ef4444; font-weight:700; font-size:10px;">Out of Stock</span>
+                          <span style="color:#2563eb; font-size:11px; text-decoration:underline; font-weight:500; cursor:pointer;" onclick="event.stopPropagation(); window.p360ShowAlternativesFor='${m.name.replace(/'/g, "\\'")}'; window.prDrawModal();">See Alternative</span>
+                        </div>
+                      ` : `<span style="color:#059669; font-size:10px;">In Stock</span>`;
+                      const clickAction = isOos ? `window.p360ShowAlternativesFor='${m.name.replace(/'/g, "\\'")}'; window.prDrawModal();` : `window.prAddMedPrescription('${m.name.replace(/'/g, "\\'")}')`;
+                      return `<div style="padding:6px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;" onclick="${clickAction}">
                         <span>${m.name}</span>
-                        ${m.stock ? '<span style="color:#059669; font-size:10px;">In Stock</span>' : '<span style="color:#ef4444; font-size:10px;">Out of Stock</span>'}
+                        ${oosCta}
                       </div>`;
                     }).join('')}
                   </div>
-                ` : ''}
+                ` : '')}
               </div>
 
               <div class="form-group">
@@ -4425,25 +4176,31 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         `;
       }
       else if (activeModal === 'Write Note') {
-        title = "📝 Write SOAP Progress Note";
+        title = "📝 Write Clinical Note";
         isWide = false;
         bodyHtml = `
           <div class="form-group">
-            <label>S — Subjective *</label>
-            <textarea class="form-control" id="ms-s" rows="3" placeholder="Chief complaints and patient descriptions..."></textarea>
+            <label>Note Type *</label>
+            <select class="form-control" id="mn-type" style="height:32px;">
+              <option value="Progress Note">Progress Note</option>
+              <option value="Clinical Observation">Clinical Observation</option>
+              <option value="Consultation Note">Consultation Note</option>
+              <option value="Referral Note">Referral Note</option>
+              <option value="Shift Handover Note">Shift Handover Note</option>
+            </select>
           </div>
           <div class="form-group">
-            <label>O — Objective</label>
-            <textarea class="form-control" id="ms-o" rows="2" placeholder="Clinical exam findings..."></textarea>
+            <label>Subject / Title *</label>
+            <input type="text" class="form-control" id="mn-title" placeholder="e.g. Post-op recovery status, Pain management update">
           </div>
           <div class="form-group">
-            <label>A — Assessment & Clinical Diagnosis *</label>
-            <textarea class="form-control" id="ms-a" rows="2" placeholder="Primary evaluation assessment..."></textarea>
+            <label>Note Content *</label>
+            <textarea class="form-control" id="mn-content" rows="4" placeholder="Enter detailed clinical notes and findings here..."></textarea>
           </div>
         `;
         footerHtml = `
           <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Cancel</button>
-          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto;" onclick="window.prSaveModalSOAP()">Save Note</button>
+          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto;" onclick="window.prSaveModalClinicalNote()">Save Note</button>
         `;
       }
       else if (activeModal === 'Nursing Note') {
@@ -4632,13 +4389,243 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
           <button class="btn-qa-primary" style="height:32px; padding:0 12px; font-size:12px; background:#4f46e5; border-color:#4f46e5; width:auto;" onclick="window.prSubmitDietFromModal('${patient.uhid}')">Save Diet Order</button>
         `;
       }
+      else if (activeModal === 'View Bill') {
+        title = "💰 View Detailed Bill - Patient: " + patient.name;
+        isWide = true;
+        bodyHtml = `
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:12px;">
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>Tariff Option:</strong> ${tariffOption}<br>
+                <strong>UHID:</strong> ${patient.uhid} | <strong>Visit:</strong> IPD Admission
+              </div>
+              <div style="text-align:right;">
+                <strong>Date:</strong> ${todayStr}
+              </div>
+            </div>
+
+            <table class="p360-table" style="font-size:11px; width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f1f5f9; font-weight:700;">
+                  <th style="padding:6px; text-align:left;">Category</th>
+                  <th style="padding:6px; text-align:left;">Description</th>
+                  <th style="padding:6px; text-align:right; width:100px;">Rate</th>
+                  <th style="padding:6px; text-align:right; width:100px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px;">Bed Charges</td>
+                  <td style="padding:6px;">${bedDesc}</td>
+                  <td style="padding:6px; text-align:right;" class="mono">₹${bedRate.toLocaleString('en-IN')}.00</td>
+                  <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${bedAmt.toLocaleString('en-IN')}.00</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px;">Consultant Fee</td>
+                  <td style="padding:6px;">${consultantDesc}</td>
+                  <td style="padding:6px; text-align:right;" class="mono">₹800.00</td>
+                  <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${consultantAmt.toLocaleString('en-IN')}.00</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px;">Nursing Charges</td>
+                  <td style="padding:6px;">${nursingDesc}</td>
+                  <td style="padding:6px; text-align:right;" class="mono">—</td>
+                  <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${nursingAmt.toLocaleString('en-IN')}.00</td>
+                </tr>
+                ${labItems.map(item => `
+                  <tr>
+                    <td style="padding:6px;">Lab Investigations</td>
+                    <td style="padding:6px;">${item.name}</td>
+                    <td style="padding:6px; text-align:right;" class="mono">₹${item.price.toLocaleString('en-IN')}.00</td>
+                    <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${item.price.toLocaleString('en-IN')}.00</td>
+                  </tr>
+                `).join('')}
+                ${radItems.map(item => `
+                  <tr>
+                    <td style="padding:6px;">Radiology Investigations</td>
+                    <td style="padding:6px;">${item.name}</td>
+                    <td style="padding:6px; text-align:right;" class="mono">₹${item.price.toLocaleString('en-IN')}.00</td>
+                    <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${item.price.toLocaleString('en-IN')}.00</td>
+                  </tr>
+                `).join('')}
+                <tr>
+                  <td style="padding:6px;">Pharmacy</td>
+                  <td style="padding:6px;">Surgical Injection Kit + I.V. Fluids dispenses</td>
+                  <td style="padding:6px; text-align:right;" class="mono">—</td>
+                  <td style="padding:6px; text-align:right; font-weight:600;" class="mono">₹${pharmacyAmt.toLocaleString('en-IN')}.00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="align-self:flex-end; width:300px; display:flex; flex-direction:column; gap:4px; font-size:11px; margin-top:10px; border-top:2px solid #cbd5e1; padding-top:6px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span>Gross Accrued Bill:</span>
+                <strong class="mono">₹${grossTotal.toLocaleString('en-IN')}.00</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; color:#4f46e5;">
+                <span>(+) GST / Tax:</span>
+                <strong class="mono">+₹0.00</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-weight:700; border-top:1px solid #e2e8f0; padding-top:4px;">
+                <span>Net Bill Amount:</span>
+                <strong class="mono">₹${grossTotal.toLocaleString('en-IN')}.00</strong>
+              </div>
+              ${isTpa ? `
+                <div style="display:flex; justify-content:space-between; color:#059669; font-weight:700;">
+                  <span>(-) TPA Approved:</span>
+                  <strong class="mono">-₹${grossTotal.toLocaleString('en-IN')}.00</strong>
+                </div>
+              ` : ''}
+              <div style="display:flex; justify-content:space-between; color:#475569;">
+                <span>(-) Deposit Adjusted:</span>
+                <strong class="mono">-₹${totalPaid.toLocaleString('en-IN')}.00</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-top:1.5px solid #cbd5e1; padding-top:4px; font-weight:800; color:#ef4444;">
+                <span>Outstanding Payable:</span>
+                <strong class="mono">₹${outstanding.toLocaleString('en-IN')}.00</strong>
+              </div>
+            </div>
+          </div>
+        `;
+        footerHtml = `
+          <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Close</button>
+          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto;" onclick="window.print()">🖨 Print Bill Summary</button>
+        `;
+      }
+      else if (activeModal === 'Collect Payment') {
+        title = "💳 Collect Payment - Patient: " + patient.name;
+        isWide = false;
+        bodyHtml = `
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:12px;">
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; padding:10px; color:#065f46;">
+              <strong>Outstanding Payable:</strong> <span class="mono" style="font-weight:700;">₹${outstanding.toLocaleString('en-IN')}.00</span>
+            </div>
+            
+            <div class="form-group">
+              <label style="font-weight:700;">Collection Amount (₹)</label>
+              <input type="number" id="modal-collect-amount" class="form-control" value="${outstanding}" style="font-family:monospace; font-weight:700;">
+            </div>
+
+            <div class="form-group">
+              <label style="font-weight:700;">Payment Mode</label>
+              <select id="modal-collect-mode" class="form-control" style="background-color:white; font-weight:600;">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="UPI">UPI</option>
+                <option value="Net Banking">Net Banking</option>
+              </select>
+            </div>
+          </div>
+        `;
+        footerHtml = `
+          <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Cancel</button>
+          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto;" onclick="window.prSubmitModalPayment('${patient.uhid}')">Confirm Payment</button>
+        `;
+      }
+      else if (activeModal === 'Receipt') {
+        title = "📄 Payment Receipts Log - Patient: " + patient.name;
+        isWide = true;
+        bodyHtml = `
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span>Total Deposit Collected: <strong class="mono" style="color:#10b981;">₹${totalPaid.toLocaleString('en-IN')}.00</strong></span>
+              <button class="btn-qa-secondary" style="height:26px; padding:0 8px; font-size:10px;" onclick="window.prTriggerAction('💳 Collect Payment')">+ Collect New Payment</button>
+            </div>
+            
+            <table class="p360-table" style="font-size:11px; width:100%;">
+              <thead>
+                <tr>
+                  <th>Receipt Date</th>
+                  <th>Receipt No</th>
+                  <th>Payment Mode</th>
+                  <th style="text-align:right;">Amount</th>
+                  <th>Collected By</th>
+                  <th style="width:70px; text-align:center;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${patient.paymentReceipts.map((r, idx) => `
+                  <tr>
+                    <td class="mono">${r.date}</td>
+                    <td class="mono">${r.receiptNo}</td>
+                    <td>${r.mode}</td>
+                    <td class="mono" style="text-align:right; font-weight:700;">₹${r.amount.toLocaleString('en-IN')}.00</td>
+                    <td>${r.collectedBy}</td>
+                    <td style="text-align:center;">
+                      <button class="btn-qa-secondary" style="height:20px; font-size:9px; padding:0 6px; margin:0;" onclick="window.prPrintReceipt(${idx})">🖨 Print</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        footerHtml = `
+          <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Close</button>
+        `;
+      }
+      else if (activeModal === 'Refund') {
+        const refundableAmt = totalPaid - patientShare;
+        title = "↩ Process Refund - Patient: " + patient.name;
+        isWide = false;
+        bodyHtml = `
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:12px;">
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; color:#1e40af;">
+              <strong>Refundable Credit:</strong> <span class="mono" style="font-weight:700; color:#1d4ed8;">₹${refundableAmt.toLocaleString('en-IN')}.00</span>
+            </div>
+
+            <div class="form-group">
+              <label style="font-weight:700;">Refund Amount (₹)</label>
+              <input type="number" id="modal-refund-amount" class="form-control" value="${refundableAmt}" max="${refundableAmt}" style="font-family:monospace; font-weight:700;">
+            </div>
+
+            <div class="form-group">
+              <label style="font-weight:700;">Refund Mode</label>
+              <select id="modal-refund-mode" class="form-control" style="background-color:white; font-weight:600;">
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+        `;
+        footerHtml = `
+          <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Cancel</button>
+          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto; background:#dc2626; border-color:#dc2626;" onclick="window.prSubmitModalRefund('${patient.uhid}')">Confirm Refund</button>
+        `;
+      }
+      else if (activeModal === 'Send Bill') {
+        title = "📤 Send Bill Summary - Patient: " + patient.name;
+        isWide = false;
+        bodyHtml = `
+          <div style="font-size:12px; display:flex; flex-direction:column; gap:12px;">
+            <div class="form-group">
+              <label style="font-weight:700;">Recipient Contact / Channel</label>
+              <input type="text" id="modal-send-recipient" class="form-control" value="${patient.mobile || '9845011039'}" placeholder="Mobile number or Email address...">
+            </div>
+
+            <div class="form-group">
+              <label style="font-weight:700;">Delivery Method</label>
+              <select id="modal-send-channel" class="form-control" style="background-color:white;">
+                <option value="SMS">SMS Message</option>
+                <option value="Email">Email Attachment (PDF)</option>
+                <option value="WhatsApp">WhatsApp Message</option>
+              </select>
+            </div>
+          </div>
+        `;
+        footerHtml = `
+          <button class="btn-qa-secondary" style="height:32px; font-size:11px;" onclick="window.prCloseModal()">Cancel</button>
+          <button class="btn-qa-primary" style="height:32px; font-size:11px; width:auto;" onclick="window.prSubmitModalSendBill('${patient.uhid}')">Send Bill</button>
+        `;
+      }
       else {
         // Fallback for simple actions
         title = `Action: ${activeModal}`;
         isWide = false;
         bodyHtml = `
           <div style="font-size:13px; color:var(--text-secondary);">
-            Are you sure you want to perform the <b>${activeModal}</b> action for Lakshmi Devi?
+            Are you sure you want to perform the <b>${activeModal}</b> action for ${patient.name}?
           </div>
         `;
         footerHtml = `
@@ -4706,7 +4693,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         const footerEl = document.querySelector('.p360-modal-footer');
 
         if (titleEl) titleEl.innerHTML = title;
-        if (bodyEl) bodyEl.innerHTML = bodyHtml;
+        if (bodyEl) window.ipdSafeRender(bodyEl, bodyHtml);
         if (footerEl) footerEl.innerHTML = footerHtml;
       }
 
@@ -4752,7 +4739,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
               <div>
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <h4 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary);">${patient.name}</h4>
-                  <span class="badge-type badge-dc">${patient.type.toUpperCase()}</span>
+                  <span class="badge-type badge-dc">${(patient.type || 'IPD').toUpperCase()}</span>
                   ${patient.status === 'Discharged'
                     ? `<span class="badge-type" style="background:#dcfce7; color:#15803d; font-weight:800;">✓ Discharged</span>`
                     : patient.dischargeStatus === 'In Progress — Clearances Pending'
@@ -4791,29 +4778,33 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
             <!-- Admission specifics -->
             <div style="display:flex; gap:20px; flex-wrap:wrap;">
               ${patient.status === 'Discharged' ? `
-                <div><span class="p360-label">Admitted:</span> <span class="p360-val mono">${patient.admissionDate || 'N/A'}</span></div>
+                <div><span class="p360-label">${patient.type === 'OPD' ? 'Visit Date' : 'Admitted'}:</span> <span class="p360-val mono">${patient.admitted || patient.admissionDate || 'N/A'}</span></div>
                 <div><span class="p360-label" style="color:#15803d; font-weight:700;">Discharged:</span> <span class="p360-val mono" style="color:#15803d; font-weight:700;">${patient.dischargeDate || 'N/A'}</span></div>
                 <div><span class="p360-label">Consultant:</span> <span class="p360-val">${patient.primaryConsultant}</span></div>
-                <div><span class="p360-label">Payer:</span> <span class="p360-val">${patient.payer}</span></div>
+                ${patient.type === 'OPD' ? '' : `<div><span class="p360-label">Payer:</span> <span class="p360-val">${patient.payer}</span></div>`}
               ` : `
-                <div><span class="p360-label">Ward/Bed:</span> <span class="p360-val mono">${patient.ward || '—'} &bull; ${patient.bed || '—'}</span></div>
+                <div><span class="p360-label">${patient.type === 'OPD' ? 'Room' : 'Ward/Bed'}:</span> <span class="p360-val mono">${patient.type === 'OPD' ? (patient.ward || '—') : `${patient.ward || '—'} &bull; ${patient.bed || '—'}`}</span></div>
                 <div><span class="p360-label">Consultant:</span> <span class="p360-val">${patient.primaryConsultant}</span></div>
-                <div><span class="p360-label">Admitted:</span> <span class="p360-val mono">${patient.admissionDate || '—'}</span></div>
-                <div><span class="p360-label">LOS:</span> <span class="p360-val">${patient.dischargeStatus === 'In Progress — Clearances Pending' ? '<span style="color:#854d0e; font-weight:700;">⏳ Discharge In Progress</span>' : 'Ongoing'}</span></div>
-                <div><span class="p360-label">Payer:</span> <span class="p360-val">${patient.payer}</span></div>
-                <div><span class="p360-label">LOA:</span> <span class="p360-val mono" style="color:#059669; font-weight:700;">₹80,000 Approved ✓</span></div>
+                <div><span class="p360-label">${patient.type === 'OPD' ? 'Visit Date' : 'Admitted'}:</span> <span class="p360-val mono">${patient.admitted || patient.admissionDate || '—'}</span></div>
+                ${patient.type === 'OPD' ? '' : `
+                  <div><span class="p360-label">LOS:</span> <span class="p360-val">${patient.dischargeStatus === 'In Progress — Clearances Pending' ? '<span style="color:#854d0e; font-weight:700;">⏳ Discharge In Progress</span>' : 'Ongoing'}</span></div>
+                  <div><span class="p360-label">Payer:</span> <span class="p360-val">${patient.payer}</span></div>
+                  <div><span class="p360-label">LOA:</span> <span class="p360-val mono" style="color:#059669; font-weight:700;">₹80,000 Approved ✓</span></div>
+                `}
               `}
             </div>
 
             <!-- Activity ticker (Very compact, inline) -->
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="mono" style="font-size:9px; color:var(--text-muted); font-weight:700;">LAST 12H:</span>
-              <div style="font-size:11px; display:flex; gap:12px; color:var(--text-secondary);">
-                <span>📊 NEWS2: <b>0</b></span>
-                <span>🔬 Labs: <b>3 (1 Critical)</b></span>
-                <span>💊 Meds: <b>1 New</b></span>
+            ${patient.type === 'OPD' ? '' : `
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="mono" style="font-size:9px; color:var(--text-muted); font-weight:700;">LAST 12H:</span>
+                <div style="font-size:11px; display:flex; gap:12px; color:var(--text-secondary);">
+                  <span>📊 NEWS2: <b>0</b></span>
+                  <span>🔬 Labs: <b>3 (1 Critical)</b></span>
+                  <span>💊 Meds: <b>1 New</b></span>
+                </div>
               </div>
-            </div>
+            `}
           </div>
         </div>
 
@@ -5017,6 +5008,8 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       return;
     }
     
+    const orderItems = window.p360SelectedLabs.map(t => t.name);
+
     // Push each selected lab test as an order in state.orders to sync with LIS
     window.p360SelectedLabs.forEach(lab => {
       const activeDoc = patient.primaryConsultant || "Dr. Priya Nair";
@@ -5038,8 +5031,22 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       type: 'Laboratory',
       patientName: patient.name,
       uhid: patient.uhid,
-      items: window.p360SelectedLabs.map(t => t.name)
+      items: orderItems
     };
+
+    // Log timeline event and save to localStorage
+    const patientObj = (window.state.patients || []).find(p => p.uhid === patient.uhid);
+    if (patientObj) {
+      patientObj.timelineEvents = patientObj.timelineEvents || [];
+      patientObj.timelineEvents.unshift({
+        date: new Date().toISOString(),
+        title: '🔬 Laboratory Investigation Ordered',
+        desc: `Ordered tests: ${orderItems.join(', ')}.`,
+        type: 'lab',
+        icon: '🔬'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
     
     // Clear draft and selected lists
     if (patient) patient.draftLabs = [];
@@ -5093,6 +5100,8 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       return;
     }
     
+    const studyItems = window.p360SelectedRadiology.map(t => t.name);
+
     window.p360SelectedRadiology.forEach(study => {
       const orderId = `ORD-RAD-${Math.floor(6000 + Math.random() * 3000)}`;
       window.state.orders.push({
@@ -5113,14 +5122,40 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       type: 'Radiology',
       patientName: patient.name,
       uhid: patient.uhid,
-      items: window.p360SelectedRadiology.map(t => t.name)
+      items: studyItems
     };
+
+    // Log timeline event and save to localStorage
+    const patientObj = (window.state.patients || []).find(p => p.uhid === patient.uhid);
+    if (patientObj) {
+      patientObj.timelineEvents = patientObj.timelineEvents || [];
+      patientObj.timelineEvents.unshift({
+        date: new Date().toISOString(),
+        title: '🩻 Radiology Investigation Ordered',
+        desc: `Ordered procedures: ${studyItems.join(', ')}.`,
+        type: 'lab',
+        icon: '🩻'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
+
     window.p360SelectedRadiology = [];
     window.p360ActiveModal = 'Order Placed';
     draw360();
   };
 
   // Medication Handlers
+  window.prGetMedicineAlternatives = function(name) {
+    if (name === "Tab. Febrex Plus") {
+      return ["Tab. Sinarest", "Tab. Cheston Cold", "Tab. Colgin Plus"];
+    }
+    const med = window.patient360MedicineCatalog.find(m => m.name === name);
+    if (med && med.alt) {
+      return [med.alt];
+    }
+    return [];
+  };
+
   window.prSearchMedQuery = function(val) {
     window.medSearchQuery = val;
     window.prDrawModal();
@@ -5140,6 +5175,7 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
         instructions: ""
       });
       window.medSearchQuery = "";
+      window.p360ShowAlternativesFor = null;
       window.prDrawModal();
     }
   };
@@ -5186,6 +5222,8 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       window.prShowToast(`Cannot place order. ${oos.name} is OUT OF STOCK. Swap to alternative first.`);
       return;
     }
+
+    const medNames = window.p360SelectedMeds.map(m => `${m.name} (${m.freq}, ${m.dur})`);
 
     // Insert into global patient360Meds list
     window.p360SelectedMeds.forEach(m => {
@@ -5247,8 +5285,25 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       type: 'Prescription',
       patientName: patient.name,
       uhid: patient.uhid,
-      items: window.p360SelectedMeds.map(m => `${m.name} (${m.freq}, ${m.dur})`)
+      items: medNames
     };
+
+    // Log timeline event and save to localStorage
+    const patientObj = (window.state.patients || []).find(p => p.uhid === patient.uhid);
+    if (patientObj) {
+      patientObj.patient360Meds = window.patient360Meds;
+      
+      patientObj.timelineEvents = patientObj.timelineEvents || [];
+      patientObj.timelineEvents.unshift({
+        date: new Date().toISOString(),
+        title: '💊 Medication Prescribed',
+        desc: `Prescribed: ${medNames.join(', ')}.`,
+        type: 'pharmacy',
+        icon: '💊'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
+
     window.p360SelectedMeds = [];
     window.p360ActiveModal = 'Order Placed';
     draw360();
@@ -5347,6 +5402,21 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       news: newsScore
     });
 
+    const patient = (window.state.patients || []).find(p => p.uhid === window.patient360CurrentUhid);
+    if (patient) {
+      patient.patient360Vitals = window.patient360Vitals;
+      
+      patient.timelineEvents = patient.timelineEvents || [];
+      patient.timelineEvents.unshift({
+        date: new Date().toISOString(),
+        title: '📊 Vitals Recorded',
+        desc: `Vitals logged: BP: ${sbp}/${dbp}, HR: ${hrVal} bpm, RR: ${rrVal}/min, Temp: ${temp}°F, SpO2: ${spo2}%. NEWS2 Score: ${newsScore}.`,
+        type: 'clinical',
+        icon: '📊'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
+
     window.prShowToast(`Vitals logged successfully. Computed NEWS2: ${newsScore}`);
     window.prCloseModal();
   };
@@ -5374,8 +5444,65 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
       a: a
     });
     
+    const patientObj = (window.state.patients || []).find(p => p.uhid === window.patient360CurrentUhid);
+    if (patientObj) {
+      patientObj.patient360Notes = window.patient360Notes;
+      
+      patientObj.timelineEvents = patientObj.timelineEvents || [];
+      patientObj.timelineEvents.unshift({
+        date: now.toISOString(),
+        title: '📝 SOAP Progress Note Added',
+        desc: `Subjective: ${s}<br>Assessment: ${a}`,
+        type: 'note',
+        icon: '📝'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
+
     window.prShowToast("SOAP Progress Note saved.");
     window.prCloseModal();
+  };
+
+  window.prSaveModalClinicalNote = function() {
+    const type = document.getElementById("mn-type").value;
+    const title = document.getElementById("mn-title").value.trim();
+    const content = document.getElementById("mn-content").value.trim();
+
+    if (!title || !content) {
+      window.prShowToast("⚠️ Subject and Note Content are required.");
+      return;
+    }
+
+    const now = new Date();
+    const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + " · " + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    window.patient360Notes = window.patient360Notes || [];
+    window.patient360Notes.unshift({
+      type: type.toUpperCase(),
+      author: window.state.currentUser ? window.state.currentUser.name : "Dr. Priya Nair",
+      time: timeStr,
+      title: title,
+      content: content
+    });
+
+    const patient = (window.state.patients || []).find(p => p.uhid === window.patient360CurrentUhid);
+    if (patient) {
+      patient.patient360Notes = window.patient360Notes;
+      
+      patient.timelineEvents = patient.timelineEvents || [];
+      patient.timelineEvents.unshift({
+        date: now.toISOString(),
+        title: `📝 Clinical Note: ${type}`,
+        desc: `<strong>Title:</strong> ${title}<br><strong>Note:</strong> ${content}`,
+        type: 'note'
+      });
+      
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
+
+    window.prShowToast("Clinical Note successfully saved.");
+    window.prCloseModal();
+    draw360();
   };
 
   // Clinical Notes dynamic type routing controllers
@@ -5562,16 +5689,23 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
     } else if (labelClean.includes("Transfer") || labelClean.includes("Change Bed")) {
       window.showUniversalTransferWorkflow(patient.uhid);
       return;
-    } else if (labelClean.includes("Pay") || labelClean.includes("Collect Payment")) {
+    } else if (labelClean.includes("Pay") || labelClean.includes("Collect Payment") || labelClean.includes("Payment")) {
       window.p360ActiveModal = 'Collect Payment';
     } else if (labelClean.includes("Receipt")) {
       window.p360ActiveModal = 'Receipt';
+    } else if (labelClean.includes("Refund")) {
+      window.p360ActiveModal = 'Refund';
+    } else if (labelClean.includes("View Bill")) {
+      window.p360ActiveModal = 'View Bill';
+    } else if (labelClean.includes("Send Bill")) {
+      window.p360ActiveModal = 'Send Bill';
     } else if (labelClean.includes("Dispense") || labelClean.includes("Dispensed")) {
       window.p360ActiveModal = 'Dispense';
     } else if (labelClean.includes("SMS") || labelClean.includes("Send SMS")) {
       window.p360ActiveModal = 'Send SMS';
     } else if (labelClean.includes("Appointment")) {
-      window.p360ActiveModal = 'Appointment';
+      router.navigate('bookAppointment?uhid=' + patient.uhid);
+      return;
     } else if (labelClean.includes("Print")) {
       window.print();
       return;
@@ -5698,13 +5832,44 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
   window.prAddDiagnosis = function(code) {
     if (!window.patient360Diagnoses.includes(code)) {
       window.patient360Diagnoses.push(code);
+      
+      const patient = (window.state.patients || []).find(p => p.uhid === window.patient360CurrentUhid);
+      if (patient) {
+        patient.patient360Diagnoses = window.patient360Diagnoses;
+        
+        patient.timelineEvents = patient.timelineEvents || [];
+        patient.timelineEvents.unshift({
+          date: new Date().toISOString(),
+          title: '📋 Diagnosis Added',
+          desc: `Diagnosis "${code}" added to patient profile.`,
+          type: 'clinical',
+          icon: '📋'
+        });
+        localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+      }
     }
     window.patient360SelectedDiagnosisTemp = "";
     draw360();
   };
 
   window.prRemoveDiagnosis = function(idx) {
+    const removed = window.patient360Diagnoses[idx];
     window.patient360Diagnoses.splice(idx, 1);
+    
+    const patient = (window.state.patients || []).find(p => p.uhid === window.patient360CurrentUhid);
+    if (patient) {
+      patient.patient360Diagnoses = window.patient360Diagnoses;
+      
+      patient.timelineEvents = patient.timelineEvents || [];
+      patient.timelineEvents.unshift({
+        date: new Date().toISOString(),
+        title: '📋 Diagnosis Removed',
+        desc: `Diagnosis "${removed}" removed from patient profile.`,
+        type: 'clinical',
+        icon: '📋'
+      });
+      localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+    }
     draw360();
   };
 
@@ -5806,6 +5971,500 @@ function renderPatient360Profile(container, patient, activeTab, activeVisit) {
 
   draw360();
 }
+
+window.prGiveNursingClearance = function (uhid) {
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+
+  pat.dischargeClearances = pat.dischargeClearances || {};
+  pat.dischargeClearances.nursing = {
+    cleared: true,
+    clearedBy: 'Nurse Maria',
+    clearedAt: new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
+    notes: 'Nursing clearance checked and completed'
+  };
+
+  localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+
+  if (typeof window.showToastNotification === 'function') {
+    window.showToastNotification('Nursing Clearance submitted successfully.');
+  } else if (typeof window.prShowToast === 'function') {
+    window.prShowToast('Nursing Clearance submitted successfully.');
+  }
+
+  if (window.router && window.router.currentPage && window.views[window.router.currentPage]) {
+    try {
+      window.views[window.router.currentPage](window.router.container, window.router.currentSubAnchor || '', window.router.currentParams || {});
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
+
+/* ── ISSUE EXIT GATE PASS ────────────────────────────────────────────── */
+window.issuePatientGatePass = function(uhid) {
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (pat) {
+    // Hard Validation Guard: verify all required departments have cleared
+    var cl = pat.dischargeClearances || {};
+    var nursingOk = cl.nursing?.cleared;
+    var billingOk = cl.billing?.cleared;
+    var pharmacyOk = cl.pharmacy?.cleared;
+    var tpaOk = !cl.tpa || cl.tpa.cleared;
+    var labOk = !cl.lab || cl.lab.cleared;
+    
+    var isClear = nursingOk && billingOk && pharmacyOk && tpaOk && labOk;
+    if (!isClear) {
+      var pending = [];
+      if (!nursingOk) pending.push("Nursing");
+      if (!billingOk) pending.push("Billing & Finance");
+      if (!pharmacyOk) pending.push("Pharmacy");
+      if (!tpaOk) pending.push("TPA / Insurance");
+      if (!labOk) pending.push("Laboratory");
+      
+      alert(`⚠️ Cannot Issue Gate Pass!\n\nClearances are pending from the following departments:\n• ${pending.join("\n• ")}\n\nPlease complete all pending department clearances first.`);
+      return;
+    }
+
+    var gpCode = `GP-${Math.floor(100000 + Math.random() * 900000)}`;
+    var gpTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var gpDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    pat.gatePassIssued = true;
+    pat.gatePassCode   = gpCode;
+    pat.gatePassTime   = gpTime;
+
+    /* ── Mark patient as Discharged ── */
+    pat.status        = 'Discharged';
+    pat.dischargeDate = gpDate;
+    pat.dischargeTime = gpTime;
+    pat.bed           = null;   // free the bed
+
+    alert(`🎉 Exit Gate Pass Issued Successfully!\n\nPatient: ${pat.name}\nPass Code: ${gpCode}\n\nPatient has been marked as Discharged and is authorized to exit.`);
+
+    // Sync with ATD queue & remove from discharge queue
+    if (window.state.dischargeQueue) {
+      var item = window.state.dischargeQueue.find(d => d.uhid === uhid);
+      if (item) {
+        item.gatePassIssued = true;
+        item.gatePassCode   = gpCode;
+      }
+      // Remove from queue — bed is now free
+      window.state.dischargeQueue = window.state.dischargeQueue.filter(d => d.uhid !== uhid);
+    }
+  } else {
+    alert('Exit Gate Pass issued successfully.');
+  }
+
+  // Re-draw
+  var main = document.getElementById('main-content');
+  if (main && window.views && window.views.patients) {
+    window.views.patients(main, null, { uhid: uhid });
+  }
+};
+
+window.printPatientGatePass = function(uhid) {
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) {
+    // If not found in main patients, check daycare or admissions
+    alert("Patient details not found for printing.");
+    return;
+  }
+
+  const gpCode = pat.gatePassCode || `GP-${Math.floor(100000 + Math.random() * 900000)}`;
+  const gpTime = pat.gatePassTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const gpDate = new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const printWindow = window.open('', '_blank', 'width=600,height=500');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Gate Pass - ${pat.name}</title>
+        <style>
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            padding: 40px;
+            background-color: #ffffff;
+            color: #1e293b;
+          }
+          .slip-container {
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 450px;
+            margin: 0 auto;
+            background: #fff;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          }
+          .header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+          }
+          .header p {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+          }
+          .details-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+          }
+          .label {
+            color: #64748b;
+            font-weight: 500;
+          }
+          .value {
+            color: #0f172a;
+            font-weight: 700;
+          }
+          .pass-code-box {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            margin: 20px 0;
+          }
+          .pass-code-label {
+            font-size: 11px;
+            color: #475569;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          .pass-code-val {
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 4px;
+            letter-spacing: 2px;
+          }
+          .status {
+            text-align: center;
+            color: #166534;
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            padding: 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+          }
+          .barcode {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            height: 40px;
+            margin: 20px 0 10px 0;
+          }
+          .bar {
+            background-color: #0f172a;
+            width: 2px;
+            height: 100%;
+          }
+          .bar.thick {
+            width: 4px;
+          }
+          .bar.thin {
+            width: 1px;
+          }
+          .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+          }
+          @media print {
+            body { padding: 0; }
+            .slip-container { border: 2px dashed #000; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="slip-container">
+          <div class="header">
+            <h2>SARONIL HEALTH HIS</h2>
+            <p>Admission &amp; Discharge Exit Slip</p>
+          </div>
+          
+          <div class="details-row">
+            <span class="label">Patient Name:</span>
+            <span class="value">${pat.name}</span>
+          </div>
+          <div class="details-row">
+            <span class="label">UHID:</span>
+            <span class="value" style="font-family:monospace;">${pat.uhid}</span>
+          </div>
+          <div class="details-row">
+            <span class="label">Admitting Doc:</span>
+            <span class="value">${pat.primaryConsultant || 'Dr. Joy Sen'}</span>
+          </div>
+          <div class="details-row">
+            <span class="label">Ward / Bed:</span>
+            <span class="value">${pat.bed ? pat.bed + ' (' + (pat.ward || '') + ')' : pat.ward || 'General'}</span>
+          </div>
+          <div class="details-row">
+            <span class="label">Issued On:</span>
+            <span class="value">${gpDate} &bull; ${gpTime}</span>
+          </div>
+
+          <div class="pass-code-box">
+            <div class="pass-code-label">Exit Authorization Code</div>
+            <div class="pass-code-val">${gpCode}</div>
+          </div>
+
+          <div class="barcode">
+            <div class="bar thick"></div><div class="bar"></div><div class="bar thin"></div><div class="bar thick"></div><div class="bar thin"></div><div class="bar"></div><div class="bar thick"></div><div class="bar thin"></div><div class="bar"></div><div class="bar thick"></div><div class="bar"></div><div class="bar thin"></div><div class="bar thick"></div><div class="bar thin"></div>
+          </div>
+
+          <div class="status">
+            ✅ AUTHORIZED TO EXIT
+          </div>
+
+          <div class="footer">
+            Saronil Health Inpatient Command • This slip authorizes patient discharge exit at the security gate.
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+};
+
+/* ── POST PAYMENT RECEIPT FROM EMR BILLING TAB ──────────────────────── */
+window.postP360Payment = function(uhid) {
+  var amountInput = document.getElementById('p360-collect-amount');
+  var modeSelect  = document.getElementById('p360-collect-mode');
+  if (!amountInput || !modeSelect) return;
+
+  var amtVal  = parseFloat(amountInput.value);
+  var modeVal = modeSelect.value;
+
+  if (isNaN(amtVal) || amtVal <= 0) {
+    alert('Please enter a valid payment amount.');
+    return;
+  }
+
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+
+  pat.paymentReceipts = pat.paymentReceipts || [
+    { date: '24 Jun 2026', mode: 'Cash', amount: 10000, receiptNo: 'REC-2026-00441', collectedBy: 'Billing Clerk Anand' }
+  ];
+
+  var newReceipt = {
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    mode: modeVal,
+    amount: amtVal,
+    receiptNo: 'REC-2026-' + Math.floor(10000 + Math.random() * 90000),
+    collectedBy: 'Billing Clerk Anand'
+  };
+  pat.paymentReceipts.push(newReceipt);
+
+  /* Recalculate outstanding & sync discharge clearance */
+  window.prSyncClearances(uhid);
+
+  alert('💰 ₹' + amtVal.toLocaleString('en-IN') + ' collected via ' + modeVal + '.\nReceipt ' + newReceipt.receiptNo + ' generated.');
+
+  /* Re-draw the patient detail page on the Billing tab */
+  var main = document.getElementById('main-content');
+  if (main && window.views && window.views.patients) {
+    window.views.patients(main, null, { uhid: uhid, tab: 'Billing' });
+  }
+};
+
+/* Helper to synchronize billing clearances based on payments and refunds */
+window.prSyncClearances = function(uhid) {
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+  
+  var totalPaid = pat.paymentReceipts.reduce(function(s, r) { return s + r.amount; }, 0);
+  var isTpa = pat.payerType && pat.payerType !== 'Cash' && pat.payerType !== 'Self Pay';
+  
+  var bedAmt = 7200;
+  var nursingAmt = 3000;
+  if (pat.type === 'Daycare') {
+    bedAmt = 3500;
+    nursingAmt = 1000;
+  } else if (pat.type === 'Emergency') {
+    bedAmt = 2500;
+    nursingAmt = 1500;
+  }
+
+  var priceMaster = {};
+  if (window.state && window.state.lisTestMaster) {
+    window.state.lisTestMaster.forEach(t => {
+      priceMaster[t.code.toUpperCase()] = t.price;
+      priceMaster[t.name.toUpperCase()] = t.price;
+    });
+  }
+  if (window.state && window.state.risTestMaster) {
+    window.state.risTestMaster.forEach(t => {
+      priceMaster[t.code.toUpperCase()] = t.price;
+      priceMaster[t.name.toUpperCase()] = t.price;
+    });
+  }
+
+  var patLabOrders = (window.state.labOrders || []).filter(o => o.patientUhid === uhid);
+  var labItems = patLabOrders.length > 0 ? patLabOrders.map(o => {
+    const nameUpper = o.name.toUpperCase();
+    let price = 350;
+    if (priceMaster[nameUpper]) {
+      price = priceMaster[nameUpper];
+    } else {
+      const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+      if (foundKey) price = priceMaster[foundKey];
+    }
+    return { price: price };
+  }) : [{ price: 750 }, { price: 350 }];
+
+  var patRadOrders = (window.state.radOrders || []).filter(o => o.patientUhid === uhid);
+  var radItems = patRadOrders.length > 0 ? patRadOrders.map(o => {
+    const nameUpper = o.name.toUpperCase();
+    let price = 450;
+    if (priceMaster[nameUpper]) {
+      price = priceMaster[nameUpper];
+    } else {
+      const foundKey = Object.keys(priceMaster).find(k => nameUpper.includes(k) || k.includes(nameUpper));
+      if (foundKey) price = priceMaster[foundKey];
+    }
+    return { price: price };
+  }) : [{ price: 450 }];
+
+  var labAmt = labItems.reduce((sum, item) => sum + item.price, 0);
+  var radAmt = radItems.reduce((sum, item) => sum + item.price, 0);
+  var pharmacyAmt = 1200;
+  var consultantAmt = 1600;
+
+  var baseCharges = bedAmt + consultantAmt + nursingAmt + labAmt + radAmt + pharmacyAmt;
+  var patientShare = isTpa ? 0 : baseCharges;
+
+  if (totalPaid >= patientShare) {
+    /* mark billing clearance on discharge queue */
+    if (window.state.dischargeQueue) {
+      var dq = window.state.dischargeQueue.find(function(d) { return d.uhid === uhid; });
+      if (dq) dq.billingStatus = 'Cleared';
+    }
+    /* mark billing clearance on patient profile */
+    if (!pat.dischargeClearances) pat.dischargeClearances = {};
+    if (!pat.dischargeClearances.billing) pat.dischargeClearances.billing = {};
+    pat.dischargeClearances.billing.cleared   = true;
+    pat.dischargeClearances.billing.clearedBy = 'Cashier Anand';
+  } else {
+    /* remove billing clearance */
+    if (window.state.dischargeQueue) {
+      var dq = window.state.dischargeQueue.find(function(d) { return d.uhid === uhid; });
+      if (dq) dq.billingStatus = 'Pending';
+    }
+    if (pat.dischargeClearances && pat.dischargeClearances.billing) {
+      pat.dischargeClearances.billing.cleared   = false;
+      pat.dischargeClearances.billing.clearedBy = '';
+    }
+  }
+};
+
+window.prPrintReceipt = function(idx) {
+  window.prShowToast("Opening print dialog for Receipt...");
+  window.print();
+};
+
+window.prSubmitModalPayment = function(uhid) {
+  const amtInput = document.getElementById('modal-collect-amount');
+  const modeSelect = document.getElementById('modal-collect-mode');
+  if (!amtInput || !modeSelect) return;
+  const amtVal = parseFloat(amtInput.value);
+  const modeVal = modeSelect.value;
+  if (isNaN(amtVal) || amtVal <= 0) {
+    alert('Please enter a valid payment amount.');
+    return;
+  }
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+  pat.paymentReceipts = pat.paymentReceipts || [];
+  var newReceipt = {
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    mode: modeVal,
+    amount: amtVal,
+    receiptNo: 'REC-2026-' + Math.floor(10000 + Math.random() * 90000),
+    collectedBy: 'Billing Clerk Anand'
+  };
+  pat.paymentReceipts.push(newReceipt);
+
+  window.prSyncClearances(uhid);
+  localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+  window.prShowToast(`Payment of ₹${amtVal.toLocaleString('en-IN')} successfully posted.`);
+  window.prCloseModal();
+
+  var main = document.getElementById('main-content');
+  if (main && window.views && window.views.patients) {
+    window.views.patients(main, null, { uhid: uhid, tab: 'Billing' });
+  }
+};
+
+window.prSubmitModalRefund = function(uhid) {
+  const amtInput = document.getElementById('modal-refund-amount');
+  const modeSelect = document.getElementById('modal-refund-mode');
+  if (!amtInput || !modeSelect) return;
+  const amtVal = parseFloat(amtInput.value);
+  const modeVal = modeSelect.value;
+  if (isNaN(amtVal) || amtVal <= 0) {
+    alert('Please enter a valid refund amount.');
+    return;
+  }
+  var pat = window.state.patients.find(p => p.uhid === uhid);
+  if (!pat) return;
+  pat.paymentReceipts = pat.paymentReceipts || [];
+  var newReceipt = {
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    mode: 'Refund (' + modeVal + ')',
+    amount: -amtVal,
+    receiptNo: 'REF-2026-' + Math.floor(10000 + Math.random() * 90000),
+    collectedBy: 'Billing Clerk Anand'
+  };
+  pat.paymentReceipts.push(newReceipt);
+
+  window.prSyncClearances(uhid);
+  localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
+  window.prShowToast(`Refund of ₹${amtVal.toLocaleString('en-IN')} successfully processed.`);
+  window.prCloseModal();
+
+  var main = document.getElementById('main-content');
+  if (main && window.views && window.views.patients) {
+    window.views.patients(main, null, { uhid: uhid, tab: 'Billing' });
+  }
+};
+
+window.prSubmitModalSendBill = function(uhid) {
+  const recipientInput = document.getElementById('modal-send-recipient');
+  const channelSelect = document.getElementById('modal-send-channel');
+  if (!recipientInput || !channelSelect) return;
+  const recipient = recipientInput.value.trim();
+  const channel = channelSelect.value;
+  if (recipient.length === 0) {
+    alert('Please enter a recipient contact.');
+    return;
+  }
+  window.prShowToast(`Bill successfully dispatched to ${recipient} via ${channel}.`);
+  window.prCloseModal();
+};
 
 /* ── OPD → IPD / DAYCARE ADMISSION REQUEST GATING ─────────────────────── */
 window.prAdmitOPDPatient = function(uhid, adType) {
@@ -6202,6 +6861,16 @@ window.prSubmitNewComplaint = function(uhid) {
     resolution: '',
     raisedAt: now.toISOString()
   });
+
+  pat.timelineEvents = pat.timelineEvents || [];
+  pat.timelineEvents.unshift({
+    date: now.toISOString(),
+    title: '🚩 Patient Complaint Filed',
+    desc: `Complaint ID: ${cmpId}. Category: ${category}. Severity: ${severity}. Raised by: ${raisedBy}.`,
+    type: 'general',
+    icon: '🚩'
+  });
+
   localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
 
   var el = document.getElementById('complaint-new-overlay');
@@ -6296,6 +6965,15 @@ window.prComplaintResolve = function(uhid, idx) {
   c.resolvedAt = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                + ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   c.resolvedBy = window._ipdActiveRole || 'Staff';
+
+  pat.timelineEvents = pat.timelineEvents || [];
+  pat.timelineEvents.unshift({
+    date: now.toISOString(),
+    title: '✅ Patient Complaint Resolved',
+    desc: `Complaint ID: ${c.id}. Resolution: ${resText}. Resolved by: ${c.resolvedBy}.`,
+    type: 'general',
+    icon: '✅'
+  });
 
   localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
 

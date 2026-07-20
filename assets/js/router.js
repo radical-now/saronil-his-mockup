@@ -100,7 +100,7 @@ const router = {
     // Verify view function exists, default to dashboard
     let targetPage = pageId;
     if (targetPage === 'atd') {
-      window.location.hash = 'ipdAdmission?tab=atd';
+      window.location.hash = 'ipdAdmission?tab=dashboard';
       return;
     }
     if (!window.views[targetPage]) {
@@ -113,7 +113,19 @@ const router = {
       const fullHash = window.location.hash.substring(1) || 'dashboard';
       const baseTarget = item.dataset.target ? item.dataset.target.split('?')[0] : '';
       
-      if (item.dataset.target === fullHash || (baseTarget === targetPage && !item.dataset.target.includes('?'))) {
+      const hasSubAnchor = fullHash.includes('-');
+      const itemHasSubAnchor = item.dataset.target ? item.dataset.target.includes('-') : false;
+      
+      let isActive = false;
+      if (item.dataset.target === fullHash) {
+        isActive = true;
+      } else if (baseTarget === targetPage && !item.dataset.target.includes('?')) {
+        if (hasSubAnchor === itemHasSubAnchor) {
+          isActive = true;
+        }
+      }
+      
+      if (isActive) {
         item.classList.add('active');
       } else {
         item.classList.remove('active');
@@ -137,7 +149,7 @@ const router = {
     var subIpd = document.getElementById('submenu-ipd');
     var arrowIpd = document.getElementById('arrow-ipd');
     if (subIpd && arrowIpd) {
-      if (targetPage === 'ipdAdmission') {
+      if (targetPage === 'ipdAdmission' || targetPage === 'ipdConsultation') {
         subIpd.style.display = 'flex';
         arrowIpd.style.transform = 'rotate(180deg)';
       } else {
@@ -149,7 +161,8 @@ const router = {
     // Update active page titles / breadcrumbs
     const pageTitleEl = document.getElementById('active-page-title');
     if (pageTitleEl) {
-      const formattedTitle = targetPage === 'customReports' ? 'Make Your Own Report'
+      const formattedTitle = targetPage === 'customReports' ? 'Analytics & Reports'
+        : targetPage === 'reports' ? 'Analytics & Reports'
         : targetPage === 'pantryKitchen' ? 'Pantry & Kitchen Management'
         : targetPage.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       pageTitleEl.textContent = targetPage === 'dashboard' ? 'Hospital Overview Dashboard' : (targetPage === 'daybed' ? 'Day Care' : formattedTitle);
@@ -162,13 +175,13 @@ const router = {
       }
     }
 
-    // Toggle global back button visibility
     const backBtn = document.getElementById('global-back-btn');
     if (backBtn) {
-      if (targetPage === 'dashboard') {
-        backBtn.style.display = 'none';
-      } else {
+      backBtn.onclick = function() { window.history.back(); };
+      if (targetPage === 'patients' && params && params.uhid) {
         backBtn.style.display = 'inline-flex';
+      } else {
+        backBtn.style.display = 'none';
       }
     }
 
@@ -183,6 +196,8 @@ const router = {
 
     // Render the view
     this.currentPage = targetPage;
+    this.currentSubAnchor = subAnchor;
+    this.currentParams = { ...params };
     this.container.innerHTML = `<div class="loading-view" style="padding: 3rem; text-align: center; color: var(--text-muted);">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite; margin-right: 8px; display: inline-block; vertical-align: middle;">
         <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
@@ -194,7 +209,7 @@ const router = {
     // Brief timeout to let the UI breathe and show smooth transition
     setTimeout(() => {
       try {
-        if (window.activeConsultationStarted && targetPage === 'emr') {
+        if (targetPage === 'emr') {
           if (typeof window.setDistractionFreeMode === 'function') window.setDistractionFreeMode(true);
         } else {
           if (typeof window.setDistractionFreeMode === 'function') window.setDistractionFreeMode(false);

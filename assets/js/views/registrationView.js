@@ -7,6 +7,24 @@
 (function () {
   'use strict';
 
+  var _icd10Db = [
+    { code: 'A09.9', desc: 'Gastroenteritis and colitis of unspecified infectious origin' },
+    { code: 'I10', desc: 'Essential (primary) hypertension' },
+    { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications' },
+    { code: 'J45.909', desc: 'Unspecified asthma, uncomplicated' },
+    { code: 'K35.80', desc: 'Unspecified acute appendicitis' },
+    { code: 'U07.1', desc: 'COVID-19' },
+    { code: 'M54.5', desc: 'Low back pain' },
+    { code: 'N39.0', desc: 'Urinary tract infection, site not specified' },
+    { code: 'J18.9', desc: 'Pneumonia, unspecified organism' },
+    { code: 'I21.9', desc: 'Acute myocardial infarction, unspecified' },
+    { code: 'G43.909', desc: 'Migraine, unspecified, not intractable, without status migrainosus' },
+    { code: 'K21.9', desc: 'Gastro-esophageal reflux disease without esophagitis' },
+    { code: 'F32.9', desc: 'Major depressive disorder, single episode, unspecified' },
+    { code: 'H26.9', desc: 'Unspecified cataract' },
+    { code: 'L24.9', desc: 'Irritant contact dermatitis, unspecified cause' }
+  ];
+
   var _view = 'dupCheck'; // 'dupCheck' | 'matched' | 'form' | 'payment' | 'success' | 'existingVisit'
   var _checkQuery = '';
   var _matchedPatient = null;
@@ -15,6 +33,7 @@
   var _dpdpaConsent = false;
   var _abhaNumber = '';
   var _duplicateChoice = ''; // 'merge' | 'split'
+  var _isNewRegistrationFlow = false;
 
   var _selectedBranch = 'BLR';
   var _branches = {
@@ -47,17 +66,21 @@
   var _visitType = 'OPD';
   var _payer = 'Self Pay';
   var _feeMode = 'UPI';
+  var _txnRef = '';
+  var _collectPayment = true;
   var _referredBy = '';
   var _selectedDoctor = '';
   var _selectedDept = '';
   var _preferredSlot = '';
+  var _selectedDatePill = '';
+  var _selectedTimePill = '';
   window._selectedProcedureName = 'Cataract Surgery';
   window._chiefComplaint = '';
   
   var _lastReg = null;
 
   function getTodayDateStr() {
-    return new Date().toISOString().slice(0, 10);
+    return window._HIS_TODAY || new Date().toISOString().slice(0, 10);
   }
 
   function getFormattedTime() {
@@ -181,6 +204,13 @@
       .route-card-btn .route-icon { font-size: 24px; }
       
       .dup-warning-banner { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #92400e; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+      .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+      .switch input { opacity: 0; width: 0; height: 0; }
+      .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .2s; border-radius: 22px; }
+      .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+      input:checked + .slider { background-color: #10b981; }
+      input:checked + .slider:before { transform: translateX(22px); }
+      .icd10-item:hover { background: #eff6ff; }
     `;
     document.head.appendChild(style);
   }
@@ -252,7 +282,8 @@
     if (pageTitleEl) pageTitleEl.textContent = 'Patient Desk & Registration (India)';
 
     if (params && params.action === 'new') {
-      _view = 'form';
+      _view = 'dupCheck';
+      _checkQuery = '';
       _matchedPatient = null;
       _fuzzyMatchedPatient = null;
       resetFormFields();
@@ -261,17 +292,20 @@
       _checkQuery = '';
       _matchedPatient = null;
       _fuzzyMatchedPatient = null;
+      _isNewRegistrationFlow = false;
     } else if (params && params.uhid) {
       var patient = (window.state.patients || []).find(p => p.uhid === params.uhid);
       if (patient) {
         _matchedPatient = patient;
         _view = 'existingVisit';
+        _isNewRegistrationFlow = false;
       }
     } else {
       _view = 'dupCheck';
       _checkQuery = '';
       _matchedPatient = null;
       _fuzzyMatchedPatient = null;
+      _isNewRegistrationFlow = false;
     }
 
     renderCurrentState(container);
@@ -282,6 +316,8 @@
     _visitType = 'OPD';
     _payer = 'Self Pay';
     _feeMode = 'UPI';
+    _txnRef = '';
+    _collectPayment = true;
     _selectedDoctor = '';
     _selectedDept = '';
     _preferredSlot = '';
@@ -289,9 +325,21 @@
     _dpdpaConsent = false;
     _abhaNumber = '';
     _duplicateChoice = '';
+    _isNewRegistrationFlow = true;
   }
 
   function renderCurrentState(container) {
+    var backBtn = document.getElementById('global-back-btn');
+    if (backBtn) {
+      if (_view === 'dupCheck') {
+        backBtn.style.display = 'none';
+        backBtn.onclick = function() { window.history.back(); };
+      } else {
+        backBtn.style.display = 'inline-flex';
+        backBtn.onclick = function() { window._regGoBackToCheck(); };
+      }
+    }
+
     var lookupGateHTML = renderDuplicateCheckGate();
     var sectionBelowHTML = '';
 
@@ -300,7 +348,7 @@
     } else if (_view === 'form') {
       sectionBelowHTML = renderRegistrationForm();
     } else if (_view === 'payment') {
-      sectionBelowHTML = renderPaymentOverlay();
+      sectionBelowHTML = renderPaymentStep();
     } else if (_view === 'success') {
       sectionBelowHTML = renderSuccessReceipt();
     } else if (_view === 'existingVisit' && _matchedPatient) {
@@ -309,7 +357,7 @@
 
     var showLookup = (_view === 'dupCheck' || _view === 'matched' || _view === 'form');
 
-    container.innerHTML = `
+    window.ipdSafeRender(container, `
       <div class="reg-container" style="font-family:'Inter',sans-serif; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:20px; padding:0;">
         ${showLookup ? `
           <div class="reg-body" style="padding:0;">
@@ -322,10 +370,10 @@
           </div>
         ` : ''}
       </div>
-    `;
+    `);
 
     var gateInput = document.getElementById('gate-search-input');
-    if (gateInput) {
+    if (gateInput && (!document.activeElement || (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'))) {
       gateInput.focus();
       gateInput.addEventListener('keyup', function(e) {
         if (e.key === 'Enter') {
@@ -425,8 +473,13 @@
         </div>
         
         <div style="border-top:1px solid #cbd5e1; padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <span style="font-size:11px; color:var(--text-secondary);">None of the above matches? Register a new family member under this contact.</span>
-          <button class="btn-secondary" style="background:#f1f5f9; border:1.5px solid #cbd5e1; color:#334155; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="window._regConfirmDifferentPerson()">👤 Register New Patient</button>
+          ${_matchedPatientsList.length >= 10 ? `
+            <span style="font-size:11px; color:#ef4444; font-weight:700;">⚠️ Maximum limit of 10 patients per mobile number reached.</span>
+            <button class="btn-secondary" style="background:#f1f5f9; border:1.5px solid #cbd5e1; color:#94a3b8; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:not-allowed;" disabled>👤 Add Another Patient</button>
+          ` : `
+            <span style="font-size:11px; color:var(--text-secondary);">None of the above matches? Register a new family member under this contact.</span>
+            <button class="btn-secondary" style="background:#f1f5f9; border:1.5px solid #cbd5e1; color:#334155; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="window._regConfirmDifferentPerson()">👤 Add Another Patient</button>
+          `}
         </div>
       </div>
     `;
@@ -437,6 +490,7 @@
     if (!p) return;
     _matchedPatient = p;
     _duplicateChoice = 'merge';
+    _isNewRegistrationFlow = false;
     
     // Log choice
     window.state.auditLogs = window.state.auditLogs || [];
@@ -453,6 +507,8 @@
 
   window._regConfirmDifferentPerson = function() {
     _duplicateChoice = 'split';
+    _matchedPatient = null;
+    _matchedPatientsList = [];
     window.state.auditLogs = window.state.auditLogs || [];
     window.state.auditLogs.push({
       timestamp: new Date().toISOString(),
@@ -487,7 +543,22 @@
       `;
     }
 
+    var selDay = '';
+    var selMonth = '';
+    var selYear = '';
+    if (_formFields.dob) {
+      var dobParts = _formFields.dob.split('-');
+      if (dobParts.length === 3) {
+        selYear = dobParts[0];
+        selMonth = dobParts[1];
+        selDay = dobParts[2];
+      }
+    }
+
+    var stepperHTML = renderStepper(1);
+
     return `
+      ${stepperHTML}
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; text-align:left;">
         <span style="font-size: 13px; font-weight: 700; color: #1b3a5c;">✓ Profile Onboarding Inputs</span>
         <button class="btn-secondary" style="padding: 6px 12px; font-size: 11px; cursor:pointer;" onclick="window._regGoBackToCheck()">← Clear &amp; Reset</button>
@@ -520,7 +591,29 @@
         <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
           <div class="reg-field">
             <div class="reg-label" style="font-size:12px; font-weight:700; margin-bottom:4px;">Date of Birth</div>
-            <input type="date" class="reg-input" id="form-dob" max="${getTodayDateStr()}" value="${_formFields.dob}" oninput="window._regUpdateDob(this.value)" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+            <div style="display:flex; gap:8px; width:100%;">
+              <select class="reg-select" id="form-dob-day" onchange="window._regUpdateDobParts()" style="flex:1; padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                <option value="">DD</option>
+                ${Array.from({length: 31}, (_, i) => String(i + 1).padStart(2, '0')).map(d => `
+                  <option value="${d}" ${selDay === d ? 'selected' : ''}>${d}</option>
+                `).join('')}
+              </select>
+              
+              <select class="reg-select" id="form-dob-month" onchange="window._regUpdateDobParts()" style="flex:1.2; padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                <option value="">MM</option>
+                ${['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, idx) => {
+                  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                  return `<option value="${m}" ${selMonth === m ? 'selected' : ''}>${names[idx]} (${m})</option>`;
+                }).join('')}
+              </select>
+              
+              <select class="reg-select" id="form-dob-year" onchange="window._regUpdateDobParts()" style="flex:1.5; padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:6px; font-size:13px; box-sizing:border-box;">
+                <option value="">YYYY</option>
+                ${Array.from({length: 121}, (_, i) => String(new Date().getFullYear() - i)).map(y => `
+                  <option value="${y}" ${selYear === y ? 'selected' : ''}>${y}</option>
+                `).join('')}
+              </select>
+            </div>
           </div>
           <div class="reg-field">
             <div class="reg-label" style="font-size:12px; font-weight:700; margin-bottom:4px;">Age (years)</div>
@@ -569,24 +662,14 @@
 
       <div class="btn-row">
         <button class="btn-secondary" onclick="window._regGoBackToCheck()">Cancel</button>
-        <button class="btn-primary" onclick="window._regTriggerSaveFlow()">Save Patient Profile</button>
+        <button class="btn-primary" onclick="window._regTriggerSaveFlow()">Continue</button>
       </div>
     `;
   }
 
   window._regUpdateNameField = function(field, val) {
     _formFields[field] = val;
-    
-    // Fuzzy duplicate name checking
-    var fuzzy = fuzzyNameSearch(_formFields.firstName, _formFields.lastName);
-    if (fuzzy && (!_matchedPatient || fuzzy.uhid !== _matchedPatient.uhid)) {
-      _fuzzyMatchedPatient = fuzzy;
-    } else {
-      _fuzzyMatchedPatient = null;
-    }
-    
-    var c = document.getElementById('main-content');
-    if (c) renderCurrentState(c);
+    _fuzzyMatchedPatient = null;
   };
 
   window._regAcceptFuzzyMerge = function() {
@@ -608,6 +691,7 @@
     _checkQuery = '';
     _matchedPatient = null;
     _fuzzyMatchedPatient = null;
+    _isNewRegistrationFlow = false;
     var c = document.getElementById('main-content');
     if (c) renderCurrentState(c);
   };
@@ -624,21 +708,63 @@
     _dpdpaConsent = chk;
   };
 
-  window._regUpdateDob = function(dobVal) {
-    _formFields.dob = dobVal;
-    _formFields.age = computeAgeFromDob(dobVal);
+  window._regToggleCollectPayment = function(checked) {
+    _collectPayment = checked;
+    var label = document.getElementById('reg-toggle-label');
+    if (label) {
+      label.textContent = checked ? 'ON' : 'OFF';
+      label.style.color = checked ? '#15803d' : '#64748b';
+    }
+    var sub = document.getElementById('fee-panel-subtitle');
+    if (sub) {
+      sub.textContent = checked ? '💡 Payment selection will be completed in the next step.' : '⚠️ Skipping payment collection step. Fee will be waived.';
+      sub.style.color = checked ? '#64748b' : '#b45309';
+    }
+  };
+
+  window._regUpdateDobParts = function() {
+    var day = document.getElementById('form-dob-day')?.value || '';
+    var month = document.getElementById('form-dob-month')?.value || '';
+    var year = document.getElementById('form-dob-year')?.value || '';
     
-    var ageInp = document.getElementById('form-age');
-    if (ageInp) ageInp.value = _formFields.age;
+    if (day && month && year) {
+      var dobVal = year + '-' + month + '-' + day;
+      _formFields.dob = dobVal;
+      _formFields.age = computeAgeFromDob(dobVal);
+      
+      var ageInp = document.getElementById('form-age');
+      if (ageInp) ageInp.value = _formFields.age;
+    } else {
+      _formFields.dob = '';
+      _formFields.age = '';
+      var ageInp = document.getElementById('form-age');
+      if (ageInp) ageInp.value = '';
+    }
   };
 
   window._regUpdateAge = function(ageVal) {
     var age = parseInt(ageVal);
     _formFields.age = ageVal;
-    _formFields.dob = computeDobFromAge(age);
-
-    var dobInp = document.getElementById('form-dob');
-    if (dobInp) dobInp.value = _formFields.dob;
+    if (!isNaN(age) && age >= 0) {
+      var birthYear = String(new Date().getFullYear() - age);
+      _formFields.dob = birthYear + '-01-01';
+      
+      var daySelect = document.getElementById('form-dob-day');
+      var monthSelect = document.getElementById('form-dob-month');
+      var yearSelect = document.getElementById('form-dob-year');
+      if (daySelect) daySelect.value = '01';
+      if (monthSelect) monthSelect.value = '01';
+      if (yearSelect) yearSelect.value = birthYear;
+    } else {
+      _formFields.dob = '';
+      _formFields.age = '';
+      var daySelect = document.getElementById('form-dob-day');
+      var monthSelect = document.getElementById('form-dob-month');
+      var yearSelect = document.getElementById('form-dob-year');
+      if (daySelect) daySelect.value = '';
+      if (monthSelect) monthSelect.value = '';
+      if (yearSelect) yearSelect.value = '';
+    }
   };
 
   window._regSetBranch = function(branchKey) {
@@ -681,18 +807,24 @@
     }
 
     return `
-      <div class="fee-panel">
+      <div class="fee-panel" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
         <div>
           <div class="fee-amount">₹${fee}</div>
           <div style="font-size:12px; color:#15803d; font-weight:600;">Lifetime UHID Card Registration Fee (${branchMeta.name})</div>
-        </div>
-        <div>
-          <div class="reg-label" style="color:#0f5132; margin-bottom: 5px;">Payment Mode</div>
-          <div class="fee-mode-selector">
-            ${['UPI', 'Cash', 'Card'].map(function(mode) {
-              return `<button class="fee-mode-btn ${mode === _feeMode ? 'active' : ''}" onclick="window._regSetFeeMode('${mode}')">${mode}</button>`;
-            }).join('')}
+          <div id="fee-panel-subtitle" style="font-size: 11px; color: ${_collectPayment ? '#64748b' : '#b45309'}; font-weight: 600; margin-top: 4px;">
+            ${_collectPayment ? '💡 Payment selection will be completed in the next step.' : '⚠️ Skipping payment collection step. Fee will be waived.'}
           </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 12px; background: white; padding: 6px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-align: left;">
+          <span style="font-size: 12px; font-weight: 700; color: #475569;">Collect Payment:</span>
+          <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px; margin: 0;">
+            <input type="checkbox" id="reg-collect-payment-toggle" ${_collectPayment ? 'checked' : ''} onchange="window._regToggleCollectPayment(this.checked)" style="opacity: 0; width: 0; height: 0;">
+            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .2s; border-radius: 22px;"></span>
+          </label>
+          <span id="reg-toggle-label" style="font-size: 12px; font-weight: 800; color: ${_collectPayment ? '#15803d' : '#64748b'}; width: 35px; text-align: left; display: inline-block; margin-left: 4px;">
+            ${_collectPayment ? 'ON' : 'OFF'}
+          </span>
         </div>
       </div>
     `;
@@ -703,52 +835,102 @@
     if (!_formFields.firstName.trim()) { alert('First Name is required.'); return; }
     if (!_formFields.lastName.trim()) { alert('Last Name is required.'); return; }
     if (!_formFields.mobile.trim() || _formFields.mobile.length !== 10) { alert('A valid 10-digit mobile number is required.'); return; }
+    
+    var cleanMob = _formFields.mobile.trim().replace(/[^0-9]/g, '');
+    var matches = performDuplicateCheckAll(cleanMob);
+    if (matches && matches.length >= 10) {
+      alert('⚠️ Maximum limit of 10 patients per mobile number reached. Cannot register another patient under this mobile number.');
+      return;
+    }
+    
     if (!_dpdpaConsent) { alert('DPDPA 2023 health data consent is required to register.'); return; }
 
     var branchMeta = _branches[_selectedBranch];
     var isExempt = _feePolicy.exemptPayers.indexOf(_payer) !== -1;
     var fee = isExempt ? 0 : branchMeta.fee;
 
-    if (fee > 0) {
+    if (fee > 0 && _collectPayment) {
       _view = 'payment';
     } else {
-      savePatientRecord(0, 'Exempt');
+      savePatientRecord(0, 'Skipped/Exempt');
     }
 
     var c = document.getElementById('main-content');
     if (c) renderCurrentState(c);
   };
 
-  /* ── PAYMENT COLLECTION SCREEN ──────────────────────────────── */
-  function renderPaymentOverlay() {
+  /* ── STEP 2: PAYMENT & FEE SELECTION ────────────────────────── */
+  function renderPaymentStep() {
     var branchMeta = _branches[_selectedBranch];
-    var fee = branchMeta.fee;
+    var isExempt = _feePolicy.exemptPayers.indexOf(_payer) !== -1;
+    var fee = isExempt ? 0 : branchMeta.fee;
+
+    var stepperHTML = renderStepper(2);
 
     return `
-      <div class="pay-overlay">
-        <div class="pay-modal">
-          <div class="pay-modal-hdr">🧾 Collect Registration Fee</div>
-          <div class="pay-modal-body">
-            <div style="margin-bottom:12px; font-size:13px;">
-              <strong>Patient:</strong> ${_formFields.firstName} ${_formFields.lastName} <br>
-              <strong>Mobile:</strong> ${_formFields.mobile} <br>
-              <strong>Category:</strong> ${_payer}
-            </div>
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; text-align:center; margin-bottom:16px;">
-              <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Onboarding Lifetime Fee</div>
-              <div style="font-size:32px; font-weight:900; color:#15803d; font-family:'Outfit',sans-serif; margin:4px 0;">₹${fee}</div>
-              <div class="reg-badge reg-badge-opd" style="font-size:11px; padding:4px 12px; background:#dcfce7; color:#15803d;">Mode: ${_feeMode}</div>
-            </div>
-            
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-              <button class="btn-secondary" onclick="window._regCancelPayment()">Back</button>
-              <button class="btn-primary" style="background:#15803d;" onclick="window._regCompletePayment()">Confirm & Generate UHID</button>
+      ${stepperHTML}
+
+      <div style="background: white; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px; text-align: left; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <h3 style="font-size: 16px; font-weight: 800; color: #1b3a5c; margin: 0 0 16px 0; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 8px;">
+          💳 Registration Payment &amp; Confirmation
+        </h3>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; font-size: 13px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>Patient Name: <strong>${_formFields.firstName} ${_formFields.lastName}</strong></div>
+            <div>Mobile Number: <strong>${_formFields.mobile}</strong></div>
+            <div>Payer Category: <strong>${_payer}</strong></div>
+            <div>Selected Branch: <strong>${branchMeta.name}</strong></div>
+          </div>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Onboarding Lifetime Fee</div>
+          <div style="font-size: 36px; font-weight: 900; color: #15803d; font-family: 'Outfit', sans-serif; margin: 4px 0;">
+            ₹${fee}
+          </div>
+          <div style="font-size: 12px; color: #166534; font-weight: 600;">
+            ${isExempt ? 'Fee Waived under Scheme Policy' : 'One-time registration fee for lifetime UHID access'}
+          </div>
+        </div>
+
+        ${fee > 0 ? `
+          <div style="margin-bottom: 20px;">
+            <div class="reg-label" style="margin-bottom: 6px; color: #475569;">Payment Method <span style="color:#ef4444;">*</span></div>
+            <div class="fee-mode-selector" style="display: flex; gap: 8px;">
+              ${['UPI', 'Cash', 'Card'].map(function(mode) {
+                return `
+                  <button class="fee-mode-btn ${mode === _feeMode ? 'active' : ''}" style="flex: 1; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 13px;" onclick="window._regSetFeeMode('${mode}')">
+                    ${mode === 'UPI' ? '📱 UPI' : (mode === 'Card' ? '💳 Card' : '💵 Cash')}
+                  </button>
+                `;
+              }).join('')}
             </div>
           </div>
+
+          <div style="margin-bottom: 20px;">
+            <div class="reg-label" style="margin-bottom: 6px; color: #475569;">Reference / Transaction ID</div>
+            <input type="text" id="reg-txn-ref" class="reg-input" placeholder="e.g. UPI Ref, Card Txn ID, or comments" value="${_txnRef}" style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600;" onchange="window._regUpdateTxnRef(this.value)">
+          </div>
+        ` : ''}
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; border-top: 1.5px solid #e2e8f0; padding-top: 16px;">
+          <button class="btn-secondary" style="padding: 10px 20px; font-size: 13px;" onclick="window._regCancelPayment()">Back to Profile</button>
+          <button class="btn-primary" style="padding: 10px 24px; font-size: 13px; background: #15803d; border-color: #15803d;" onclick="window._regCompletePayment()">
+            Confirm &amp; Generate UHID
+          </button>
         </div>
       </div>
     `;
   }
+
+  function renderStepper(step) {
+    return ``;
+  }
+
+  window._regUpdateTxnRef = function(val) {
+    _txnRef = val;
+  };
 
   window._regCancelPayment = function() {
     _view = 'form';
@@ -758,7 +940,9 @@
 
   window._regCompletePayment = function() {
     var branchMeta = _branches[_selectedBranch];
-    savePatientRecord(branchMeta.fee, _feeMode);
+    var isExempt = _feePolicy.exemptPayers.indexOf(_payer) !== -1;
+    var fee = isExempt ? 0 : branchMeta.fee;
+    savePatientRecord(fee, isExempt ? 'Exempt' : _feeMode);
   };
 
   function savePatientRecord(feeCollected, mode) {
@@ -778,7 +962,8 @@
       possibleDuplicateOf: _fuzzyMatchedPatient ? _fuzzyMatchedPatient.uhid : null,
       registrationFeeStatus: feeCollected > 0 ? 'Paid' : 'Waived',
       abhaNumber: _abhaNumber || null,
-      consentDPDPA: true
+      consentDPDPA: true,
+      txnRef: feeCollected > 0 ? (_txnRef || null) : null
     };
 
     // Save globally
@@ -808,7 +993,7 @@
       timestamp: new Date().toISOString(),
       action: 'PATIENT_REGISTRATION',
       user: 'Front Desk Exec',
-      details: 'Registered new patient ' + fullName + ' with UHID ' + newUhid + '. Fee: ' + feeCollected + ' (' + mode + ')'
+      details: 'Registered new patient ' + fullName + ' with UHID ' + newUhid + '. Fee: ' + feeCollected + ' (' + mode + ')' + (feeCollected > 0 && _txnRef ? ' [Txn: ' + _txnRef + ']' : '')
     });
 
     // Log to patient engagement timeline
@@ -817,7 +1002,7 @@
         type: 'registration',
         icon: '📋',
         title: 'Patient Registered',
-        desc: fullName + ' registered at ' + (_branches[_selectedBranch] ? _branches[_selectedBranch].name : 'Saronil Health') + '. Registration fee ₹' + feeCollected + ' collected via ' + mode + '.'
+        desc: fullName + ' registered at ' + (_branches[_selectedBranch] ? _branches[_selectedBranch].name : 'Saronil Health') + '. Registration fee ₹' + feeCollected + ' collected via ' + mode + '.' + (feeCollected > 0 && _txnRef ? ' (Txn Ref: ' + _txnRef + ')' : '')
       });
     }
 
@@ -830,6 +1015,7 @@
       visitType: _visitType,
       fee: feeCollected,
       feeMode: mode,
+      txnRef: feeCollected > 0 ? _txnRef : '',
       date: dateToday,
       time: getFormattedTime()
     };
@@ -840,6 +1026,7 @@
     }
 
     _view = 'success';
+    _matchedPatient = patientObj;
     var c = document.getElementById('main-content');
     if (c) renderCurrentState(c);
   }
@@ -847,8 +1034,10 @@
   /* ── SUCCESS RECEIPT & ROUTING WORKSPACE ────────────────────── */
   function renderSuccessReceipt() {
     var p = _lastReg;
+    var stepperHTML = renderStepper(3);
     return `
-      <div class="success-box">
+      ${stepperHTML}
+      <div class="success-box" style="max-width: 600px; margin: 0 auto;">
         <div class="success-icon">✨</div>
         <h2 style="color: #065f46; font-size: 20px; font-weight: 800;">UHID Onboarded Successfully!</h2>
         <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Branch: ${_branches[_selectedBranch].name}</div>
@@ -862,6 +1051,7 @@
           <div class="receipt-line"><span>Mobile</span><span>${p.mobile}</span></div>
           <div class="receipt-line"><span>DPDPA Consent</span><span style="color:#166534; font-weight:700;">Active Consent</span></div>
           <div class="receipt-line receipt-total"><span>Fee Amount</span><span>${p.fee === 0 ? 'Waived / Exempt' : '₹' + p.fee + ' (' + p.feeMode + ')'}</span></div>
+          ${p.txnRef ? `<div class="receipt-line"><span>Txn Reference</span><span class="mono" style="font-weight:700;">${p.txnRef}</span></div>` : ''}
         </div>
 
         <div style="font-size: 13px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-top: 24px;">
@@ -891,10 +1081,48 @@
     var docs = window.state.doctors || [];
 
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-        <span style="font-size: 13px; font-weight: 700; color: #1b3a5c;">Visit Intake: ${p.name} (${p.uhid})</span>
-        <button class="btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="window._regGoBackToCheck()">← Back</button>
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: left;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #1b3a5c; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 4px 10px rgba(27,58,92,0.2);">
+            ${p.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 16px; font-weight: 800; color: #1b3a5c;">${p.name}</span>
+              <span style="background: #1b3a5c; color: white; font-family: 'Outfit', monospace; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">
+                ${p.uhid}
+              </span>
+            </div>
+            <div style="font-size: 12px; color: #475569; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span>📱 ${p.mobile}</span>
+              <span style="color: #cbd5e1;">|</span>
+              <span>👤 ${p.gender || 'Not Specified'}</span>
+              ${p.age ? `
+                <span style="color: #cbd5e1;">|</span>
+                <span>🎂 ${p.age} Years</span>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+        <div>
+          <button class="btn-secondary" style="padding: 8px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; height: auto;" onclick="window._regGoBackToCheck()">
+            ← Change Patient
+          </button>
+        </div>
       </div>
+
+      <!-- Patient Search & Selection Widget -->
+      ${!_isNewRegistrationFlow ? `
+      <div style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; text-align: left;">
+        <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">🔍 Quick Registry Search (Search & Select Patient)</div>
+        <div style="display: flex; gap: 10px; position: relative; width: 100%; max-width: 500px;">
+          <input type="text" id="intake-pat-search" placeholder="Search by Mobile Number or UHID..." style="flex: 1; padding: 6px 12px; font-size: 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; width: 100%; box-sizing: border-box;" oninput="window._regUpdateIntakeSearch(this.value)">
+          <button type="button" class="btn btn-secondary" style="padding: 6px 16px; font-size: 12px; height: auto;" onclick="window._regSearchIntakePatient()">Search</button>
+          
+          <div id="intake-search-dropdown" class="pr-search-dropdown" style="display:none; position:absolute; top:35px; left:0; right:0; z-index:100; max-height:220px; overflow-y:auto; background:white; border:1px solid #cbd5e1; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border-radius:6px;"></div>
+        </div>
+      </div>
+      ` : ''}
 
       <div class="reg-section-title">Select Visit Pathway</div>
       <div class="reg-grid">
@@ -935,8 +1163,8 @@
   function renderProcedureFormFields() {
     var docs = window.state.doctors || [];
     return `
-      <div class="reg-section-title">Procedure Appointment Advice Details</div>
-      <div class="reg-grid">
+      <div class="reg-section-title">Daycare Advice & Procedure Details</div>
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
         <div class="reg-field">
           <div class="reg-label">Select Consultant / Specialist <span>*</span></div>
           <select class="reg-select" id="ext-doctor" onchange="window._regUpdateExtDoc(this.value)">
@@ -945,6 +1173,22 @@
               return `<option value="${d.id}" ${d.id === _selectedDoctor ? 'selected' : ''}>${d.name} (${d.spec})</option>`;
             }).join('')}
           </select>
+        </div>
+        <div class="reg-field">
+          <div class="reg-label">Or External Referring Doctor Name & Reg No</div>
+          <input type="text" class="reg-input" id="ext-ref-doc-name" placeholder="Dr. Name (External)" value="${_ipdRequestState.refDocName}" oninput="window._regUpdateExtRefDoc(this.value)">
+        </div>
+        <div class="reg-field">
+          <div class="reg-label">External Doctor Registration Number</div>
+          <input type="text" class="reg-input" id="ext-ref-doc-reg" placeholder="e.g. MCI-12345" value="${_ipdRequestState.refDocReg}" oninput="window._regUpdateExtRefReg(this.value)">
+        </div>
+      </div>
+      
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div class="reg-field" style="grid-column: span 2; position: relative;">
+          <div class="reg-label">Provisional Diagnosis / Reason for Daycare (ICD-10 Suggestive Search) <span>*</span></div>
+          <input type="text" class="reg-input" id="ext-reason" placeholder="Type to search ICD-10 or enter diagnosis..." value="${_ipdRequestState.reason}" oninput="window._regUpdateIPDReasonSearch(this.value)" autocomplete="off">
+          <div id="icd10-dropdown" class="pr-search-dropdown" style="display:none; position:absolute; top:58px; left:0; right:0; z-index:100; max-height:180px; overflow-y:auto; background:white; border:1.5px solid #cbd5e1; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border-radius:6px;"></div>
         </div>
         <div class="reg-field">
           <div class="reg-label">Target Daycare Procedure <span>*</span></div>
@@ -957,11 +1201,37 @@
             <option value="Laparoscopic Cholecystectomy" ${window._selectedProcedureName === 'Laparoscopic Cholecystectomy' ? 'selected' : ''}>Laparoscopic Cholecystectomy (Expected: 10h)</option>
           </select>
         </div>
+      </div>
+      
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
         <div class="reg-field">
-          <div class="reg-label">Scheduled Date/Time Slot <span>*</span></div>
-          <input type="datetime-local" class="reg-input" id="ext-slot" value="${_preferredSlot}" onchange="window._regUpdateSlot(this.value)">
+          <div class="reg-label">Attendant Name <span>*</span></div>
+          <input type="text" class="reg-input" id="ext-attendant-name" placeholder="Attendant Name" value="${_ipdRequestState.attendantName}" oninput="window._regUpdateIPDAttendantName(this.value)">
+        </div>
+        <div class="reg-field">
+          <div class="reg-label">Attendant Contact Mobile <span>*</span></div>
+          <input type="tel" class="reg-input" id="ext-attendant-phone" placeholder="Attendant Phone" maxlength="10" value="${_ipdRequestState.attendantPhone}" oninput="window._regUpdateIPDAttendantPhone(this.value)">
+        </div>
+        <div class="reg-field">
+          <div class="reg-label">Upload Doctor Prescription (PDF/Image)</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="file" id="ext-prescription-file" style="display: none;" onchange="window._regHandlePrescriptionUpload(this)">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('ext-prescription-file').click()" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; font-weight: 700; height: 38px; cursor: pointer; width: 100%; justify-content: center; box-sizing: border-box;">
+              <span>📁</span> Choose File
+            </button>
+            <span id="prescription-filename" style="font-size: 12px; color: ${_ipdRequestState.prescriptionFileName ? '#15803d' : '#64748b'}; font-weight: ${_ipdRequestState.prescriptionFileName ? 'bold' : '600'}; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${_ipdRequestState.prescriptionFileName || 'No file chosen'}
+            </span>
+          </div>
         </div>
       </div>
+      
+      ${_selectedDoctor ? `
+      <div style="margin-top: 12px; text-align:left;">
+        <div class="reg-label" style="font-size:12px; font-weight:700; margin-bottom:4px;">Scheduled Date & Time Slot (Doctor's Live Availability) <span style="color:#ef4444;">*</span></div>
+        ${renderPillSelector()}
+      </div>
+      ` : ''}
     `;
   }
 
@@ -984,15 +1254,17 @@
           <input type="text" class="reg-input" id="ext-dept" readonly placeholder="Specialty" value="${_selectedDept}">
         </div>
         <div class="reg-field">
-          <div class="reg-label">Consultation Fee (Collected at Front Desk)</div>
+          <div class="reg-label">Consultation Fee</div>
           <input type="text" class="reg-input" readonly value="₹300">
         </div>
       </div>
-      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
-        <div class="reg-field">
-          <div class="reg-label">Preferred Date/Time Slot <span>*</span></div>
-          <input type="datetime-local" class="reg-input" id="ext-slot" value="${_preferredSlot}" onchange="window._regUpdateSlot(this.value)">
-        </div>
+      ${_selectedDoctor ? `
+      <div style="margin-top: 15px; text-align:left;">
+        <div class="reg-label" style="font-size:12px; font-weight:700; margin-bottom:4px;">Preferred Date & Time Slot (Doctor's Live Availability) <span style="color:#ef4444;">*</span></div>
+        ${renderPillSelector()}
+      </div>
+      ` : ''}
+      <div class="reg-grid" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
         <div class="reg-field">
           <div class="reg-label">Referred By (Optional)</div>
           <input type="text" class="reg-input" id="ext-referred-by" placeholder="Referred Doctor Name" value="${_referredBy}" oninput="window._regUpdateReferredBy(this.value)">
@@ -1013,7 +1285,7 @@
     var docs = window.state.doctors || [];
     return `
       <div class="reg-section-title">IPD Admission Advice Details</div>
-      <div class="reg-grid">
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
         <div class="reg-field">
           <div class="reg-label">Admitting/Treating Consultant <span>*</span></div>
           <select class="reg-select" id="ext-doctor" onchange="window._regUpdateExtDoc(this.value)">
@@ -1032,10 +1304,13 @@
           <input type="text" class="reg-input" id="ext-ref-doc-reg" placeholder="e.g. MCI-12345" oninput="window._regUpdateExtRefReg(this.value)">
         </div>
       </div>
-      <div class="reg-grid">
-        <div class="reg-field" style="grid-column: span 2;">
-          <div class="reg-label">Provisional Diagnosis / Reason for Admission <span>*</span></div>
-          <input type="text" class="reg-input" id="ext-reason" placeholder="e.g. Acute Gastroenteritis, Severe Dehydration" oninput="window._regUpdateIPDReason(this.value)">
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div class="reg-field" style="grid-column: span 2; position: relative;">
+          <div class="reg-label">Provisional Diagnosis / Reason for Admission (ICD-10 Suggestive Search) <span>*</span></div>
+          <input type="text" class="reg-input" id="ext-reason" placeholder="Type to search ICD-10 or enter diagnosis..." value="${_ipdRequestState.reason}" oninput="window._regUpdateIPDReasonSearch(this.value)" autocomplete="off">
+          
+          <div id="icd10-dropdown" class="pr-search-dropdown" style="display:none; position:absolute; top:58px; left:0; right:0; z-index:100; max-height:180px; overflow-y:auto; background:white; border:1.5px solid #cbd5e1; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border-radius:6px;">
+          </div>
         </div>
         <div class="reg-field">
           <div class="reg-label">Requested Ward Room Category <span>*</span></div>
@@ -1049,14 +1324,26 @@
           </select>
         </div>
       </div>
-      <div class="reg-grid">
+      <div class="reg-grid" style="grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
         <div class="reg-field">
           <div class="reg-label">Attendant Name <span>*</span></div>
-          <input type="text" class="reg-input" id="ext-attendant-name" placeholder="Attendant Name" oninput="window._regUpdateIPDAttendantName(this.value)">
+          <input type="text" class="reg-input" id="ext-attendant-name" placeholder="Attendant Name" value="${_ipdRequestState.attendantName}" oninput="window._regUpdateIPDAttendantName(this.value)">
         </div>
         <div class="reg-field">
           <div class="reg-label">Attendant Contact Mobile <span>*</span></div>
-          <input type="tel" class="reg-input" id="ext-attendant-phone" placeholder="Attendant Phone" maxlength="10" oninput="window._regUpdateIPDAttendantPhone(this.value)">
+          <input type="tel" class="reg-input" id="ext-attendant-phone" placeholder="Attendant Phone" maxlength="10" value="${_ipdRequestState.attendantPhone}" oninput="window._regUpdateIPDAttendantPhone(this.value)">
+        </div>
+        <div class="reg-field">
+          <div class="reg-label">Upload Doctor Prescription (PDF/Image)</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="file" id="ext-prescription-file" style="display: none;" onchange="window._regHandlePrescriptionUpload(this)">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('ext-prescription-file').click()" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; font-weight: 700; height: 38px; cursor: pointer; width: 100%; justify-content: center; box-sizing: border-box;">
+              <span>📁</span> Choose File
+            </button>
+            <span id="prescription-filename" style="font-size: 12px; color: ${_ipdRequestState.prescriptionFileName ? '#15803d' : '#64748b'}; font-weight: ${_ipdRequestState.prescriptionFileName ? 'bold' : '600'}; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${_ipdRequestState.prescriptionFileName || 'No file chosen'}
+            </span>
+          </div>
         </div>
       </div>
     `;
@@ -1069,7 +1356,8 @@
     reason: '',
     ward: 'GENERAL-WARD-M',
     attendantName: '',
-    attendantPhone: ''
+    attendantPhone: '',
+    prescriptionFileName: ''
   };
 
   window._regUpdateExtRefDoc = function(val) { _ipdRequestState.refDocName = val; };
@@ -1078,6 +1366,70 @@
   window._regUpdateIPDWard = function(val) { _ipdRequestState.ward = val; };
   window._regUpdateIPDAttendantName = function(val) { _ipdRequestState.attendantName = val; };
   window._regUpdateIPDAttendantPhone = function(val) { _ipdRequestState.attendantPhone = val; };
+
+  window._regHandlePrescriptionUpload = function(input) {
+    if (input.files && input.files[0]) {
+      var fileName = input.files[0].name;
+      _ipdRequestState.prescriptionFileName = fileName;
+      var span = document.getElementById('prescription-filename');
+      if (span) {
+        span.textContent = fileName;
+        span.style.color = '#15803d';
+        span.style.fontWeight = 'bold';
+      }
+    }
+  };
+
+  window._regUpdateIPDReasonSearch = function(val) {
+    _ipdRequestState.reason = val; // Sync state
+    
+    var dropdown = document.getElementById('icd10-dropdown');
+    if (!dropdown) return;
+    
+    if (!val || val.trim().length < 2) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    
+    var cleanQ = val.trim().toLowerCase();
+    var matches = _icd10Db.filter(function(item) {
+      return item.code.toLowerCase().includes(cleanQ) || item.desc.toLowerCase().includes(cleanQ);
+    });
+    
+    if (matches.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    
+    dropdown.innerHTML = matches.map(function(item) {
+      return `
+        <div class="icd10-item" onclick="window._regSelectIcd10('${item.code}', '${item.desc.replace(/'/g, "\\'")}')" style="padding:8px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid #f1f5f9; text-align:left; transition:background 0.15s;">
+          <strong style="color:#1b3a5c;">${item.code}</strong> — <span style="color:#475569;">${item.desc}</span>
+        </div>
+      `;
+    }).join('');
+    dropdown.style.display = 'block';
+  };
+
+  window._regSelectIcd10 = function(code, desc) {
+    var val = code + ' - ' + desc;
+    _ipdRequestState.reason = val;
+    var input = document.getElementById('ext-reason');
+    if (input) {
+      input.value = val;
+    }
+    var dropdown = document.getElementById('icd10-dropdown');
+    if (dropdown) {
+      dropdown.style.display = 'none';
+    }
+  };
+
+  document.addEventListener('click', function(e) {
+    var dropdown = document.getElementById('icd10-dropdown');
+    if (dropdown && e.target.id !== 'ext-reason') {
+      dropdown.style.display = 'none';
+    }
+  });
 
   window._regUpdateExtVisit = function(val) {
     _visitType = val;
@@ -1096,7 +1448,104 @@
     
     var deptInp = document.getElementById('ext-dept');
     if (deptInp) deptInp.value = _selectedDept;
+    
+    var c = document.getElementById('main-content');
+    if (c) renderCurrentState(c);
   };
+
+  window._regSelectDatePill = function(dateIso) {
+    _selectedDatePill = dateIso;
+    updateSlotValue();
+    var c = document.getElementById('main-content');
+    if (c) renderCurrentState(c);
+  };
+
+  window._regSelectTimePill = function(timeStr) {
+    _selectedTimePill = timeStr;
+    updateSlotValue();
+    var c = document.getElementById('main-content');
+    if (c) renderCurrentState(c);
+  };
+
+  function updateSlotValue() {
+    if (_selectedDatePill && _selectedTimePill) {
+      _preferredSlot = _selectedDatePill + 'T' + convertTimeTo24h(_selectedTimePill);
+    } else {
+      _preferredSlot = '';
+    }
+  }
+
+  function convertTimeTo24h(timeStr) {
+    const parts = timeStr.split(' ');
+    const hm = parts[0].split(':');
+    let h = parseInt(hm[0]);
+    const m = hm[1];
+    const ampm = parts[1];
+
+    if (ampm === 'PM' && h < 12) {
+      h += 12;
+    } else if (ampm === 'AM' && h === 12) {
+      h = 0;
+    }
+    const hStr = h.toString().padStart(2, '0');
+    return `${hStr}:${m}`;
+  }
+
+  function renderPillSelector() {
+    const dates = [];
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      dates.push({
+        isoString: d.toISOString().split('T')[0],
+        pretty: `${weekdays[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`
+      });
+    }
+
+    if (!_selectedDatePill && dates.length > 0) {
+      _selectedDatePill = dates[0].isoString;
+    }
+
+    const timeSlots = ['08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'];
+
+    return `
+      <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:8px; padding:12px; margin-top:6px; text-align:left;">
+        <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:8px;">1. Select Date</div>
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px; scrollbar-width:thin;">
+          ${dates.map(d => {
+            const isSel = _selectedDatePill === d.isoString;
+            const bg = isSel ? 'var(--primary, #1b3a5c)' : '#ffffff';
+            const color = isSel ? '#ffffff' : '#334155';
+            const border = isSel ? '1.5px solid var(--primary, #1b3a5c)' : '1.5px solid #cbd5e1';
+            const fw = isSel ? '800' : '500';
+            return `
+              <button type="button" onclick="window._regSelectDatePill('${d.isoString}')" style="background:${bg}; color:${color}; border:${border}; font-weight:${fw}; padding:6px 12px; border-radius:30px; font-size:11px; cursor:pointer; white-space:nowrap; transition:all 0.15s ease-in-out;">
+                ${d.pretty}
+              </button>
+            `;
+          }).join('')}
+        </div>
+
+        <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:8px;">2. Select Available Slot</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(75px, 1fr)); gap:6px;">
+          ${timeSlots.map(t => {
+            const isSel = _selectedTimePill === t;
+            const bg = isSel ? '#10b981' : '#ffffff';
+            const color = isSel ? '#ffffff' : '#047857';
+            const border = isSel ? '1.5px solid #10b981' : '1.5px solid #a7f3d0';
+            const fw = isSel ? '800' : '600';
+            return `
+              <button type="button" onclick="window._regSelectTimePill('${t}')" style="background:${bg}; color:${color}; border:${border}; font-weight:${fw}; padding:6px 4px; border-radius:8px; font-size:11px; cursor:pointer; text-align:center; transition:all 0.15s ease-in-out;">
+                ${t}
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
 
   window._regUpdateSlot = function(val) { _preferredSlot = val; };
   window._regUpdateReferredBy = function(val) { _referredBy = val; };
@@ -1177,10 +1626,46 @@
       
       window._regRouteToLog();
     } else if (_visitType === 'Procedure') {
-      if (!_selectedDoctor) { alert('Please select a Consultant/Specialist Doctor for this Procedure appointment.'); return; }
-      if (!_preferredSlot) { alert('Please select a Scheduled Slot.'); return; }
+      var doctorId = _selectedDoctor;
+      var docName = '';
+      var docReg = '';
+      var docType = 'internal';
+
+      if (doctorId) {
+        var doc = (window.state.doctors || []).find(d => d.id === doctorId);
+        docName = doc.name;
+        docReg = doc.regNo || 'KMC-00000';
+      } else {
+        docName = _ipdRequestState.refDocName.trim();
+        docReg = _ipdRequestState.refDocReg.trim();
+        docType = 'external';
+      }
+
+      if (!docName) {
+        alert('Please assign an Admitting Doctor (Internal selection or External Doctor Name is mandatory).');
+        return;
+      }
+      if (!docReg) {
+        alert('Admitting doctor registration number is mandatory.');
+        return;
+      }
+      if (!_ipdRequestState.reason.trim()) {
+        alert('Provisional Diagnosis is mandatory.');
+        return;
+      }
+      if (!_ipdRequestState.attendantName.trim()) {
+        alert('Attendant Name is mandatory.');
+        return;
+      }
+      if (!_ipdRequestState.attendantPhone.trim() || _ipdRequestState.attendantPhone.length !== 10) {
+        alert('Valid 10-digit Attendant Contact is mandatory.');
+        return;
+      }
+      if (!_preferredSlot) {
+        alert('Please select a Scheduled Slot.');
+        return;
+      }
       
-      var doc = (window.state.doctors || []).find(d => d.id === _selectedDoctor);
       var procedureName = window._selectedProcedureName || 'Cataract Surgery';
       var fee = 500; // Standard Procedure Consultation/Access Fee
       
@@ -1189,12 +1674,18 @@
         appointmentId: `APT${6000 + window.state.appointments.length}`,
         uhid: p.uhid,
         patientName: p.name,
-        doctorName: doc.name,
-        deptName: doc.spec,
+        doctorName: docName,
+        doctorReg: docReg,
+        doctorType: docType,
+        deptName: doctorId ? doc.spec : 'External Daycare',
         dateTime: _preferredSlot,
         visitType: 'Procedure Appointment',
         procedureName: procedureName,
         referredBy: _referredBy || null,
+        diagnosis: _ipdRequestState.reason.trim(),
+        attendantName: _ipdRequestState.attendantName.trim(),
+        attendantContact: _ipdRequestState.attendantPhone.trim(),
+        prescriptionFile: _ipdRequestState.prescriptionFileName || null,
         consultationFeeStatus: 'Paid',
         tokenNumber: `TKN-${100 + window.state.appointments.length}`,
         mobile: p.mobile
@@ -1214,7 +1705,7 @@
         status: 'Paid',
         date: getTodayDateStr(),
         items: [
-          { desc: 'Procedure Access Fee (' + procedureName + ' - ' + doc.name + ')', qty: 1, rate: fee, total: fee }
+          { desc: 'Procedure Access Fee (' + procedureName + ' - ' + docName + ')', qty: 1, rate: fee, total: fee }
         ]
       });
 
@@ -1224,12 +1715,12 @@
         timestamp: new Date().toISOString(),
         action: 'PROCEDURE_APPOINTMENT_BOOKING',
         user: 'Front Desk Exec',
-        details: 'Booked Procedure appointment (' + procedureName + ') for ' + p.name + ' (' + p.uhid + ') with ' + doc.name + '. Access fee ₹' + fee + ' paid.'
+        details: 'Booked Daycare Procedure (' + procedureName + ') for ' + p.name + ' (' + p.uhid + ') treating doctor: ' + docName + (_ipdRequestState.prescriptionFileName ? ' [Prescription: ' + _ipdRequestState.prescriptionFileName + ']' : '')
       });
 
-      alert(`Procedure Appointment Booked!\n\nPatient: ${p.name}\nProcedure: ${procedureName}\nDoctor: ${doc.name}\nToken: ${newApt.tokenNumber}\nReceipt Generated: PRO-INV-${2000 + window.state.billing.length - 1}`);
+      alert(`Procedure Appointment Booked!\n\nPatient: ${p.name}\nProcedure: ${procedureName}\nDoctor: ${docName}\nToken: ${newApt.tokenNumber}\nReceipt Generated: PRO-INV-${2000 + window.state.billing.length - 1}`);
       
-      console.log(`[SMS/WhatsApp Notification Sent] To: ${p.mobile} | Msg: Your Daycare Procedure (${procedureName}) with ${doc.name} at Saronil Health is confirmed for ${_preferredSlot}. Token: ${newApt.tokenNumber}`);
+      console.log(`[SMS/WhatsApp Notification Sent] To: ${p.mobile} | Msg: Your Daycare Procedure (${procedureName}) with ${docName} at Saronil Health is confirmed for ${_preferredSlot}. Token: ${newApt.tokenNumber}`);
 
       // Log to patient engagement timeline
       if (window.logPatientTimeline) {
@@ -1237,7 +1728,7 @@
           type: 'appointment',
           icon: '🏥',
           title: 'Procedure Appointment Scheduled',
-          desc: procedureName + ' booked with ' + doc.name + ' (' + doc.spec + ') for ' + _preferredSlot + '. Token: ' + newApt.tokenNumber + '. Access fee ₹' + fee + ' paid.'
+          desc: procedureName + ' booked with ' + docName + ' for ' + _preferredSlot + '. Token: ' + newApt.tokenNumber + '. Access fee ₹' + fee + ' paid.'
         });
       }
       
@@ -1294,6 +1785,7 @@
         ward: _ipdRequestState.ward,
         attendantName: _ipdRequestState.attendantName.trim(),
         attendantContact: _ipdRequestState.attendantPhone.trim(),
+        prescriptionFile: _ipdRequestState.prescriptionFileName || null,
         advancePaid: false,
         status: 'Requested', // Requested -> Deposit Pending -> Confirmed -> Bed Allocated
         waitingHrs: 0,
@@ -1341,24 +1833,31 @@
 
   /* ── SUCCESS ROUTING BUTTONS ────────────────────────────────── */
   window._regRouteOPDQueue = function() {
-    _visitType = 'OPD';
-    _view = 'existingVisit';
-    var c = document.getElementById('main-content');
-    if (c) renderCurrentState(c);
+    const pat = _matchedPatient || _lastReg || {};
+    if (pat.uhid) {
+      router.navigate('bookAppointment?uhid=' + pat.uhid);
+    } else {
+      router.navigate('bookAppointment');
+    }
   };
 
   window._regRouteIPDAdmission = function() {
     _visitType = 'IPD';
+    if (!_matchedPatient && _lastReg) {
+      _matchedPatient = window.state.patients.find(p => p.uhid === _lastReg.uhid) || _lastReg;
+    }
     _view = 'existingVisit';
     var c = document.getElementById('main-content');
     if (c) renderCurrentState(c);
   };
 
   window._regRouteProcedureAppointment = function() {
-    _visitType = 'Procedure';
-    _view = 'existingVisit';
-    var c = document.getElementById('main-content');
-    if (c) renderCurrentState(c);
+    const pat = _matchedPatient || _lastReg || {};
+    if (pat.uhid) {
+      router.navigate('bookAppointment?uhid=' + pat.uhid);
+    } else {
+      router.navigate('bookAppointment');
+    }
   };
 
   window._regRouteToLog = function() {
@@ -1366,8 +1865,72 @@
     _checkQuery = '';
     _matchedPatient = null;
     _fuzzyMatchedPatient = null;
+    _isNewRegistrationFlow = false;
     var c = document.getElementById('main-content');
     if (c) renderCurrentState(c);
+  };
+
+  window._regUpdateIntakeSearch = function(val) {
+    const dropdown = document.getElementById('intake-search-dropdown');
+    if (!dropdown) return;
+
+    const q = val.toLowerCase().trim();
+    if (q.length < 2) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+      return;
+    }
+
+    const matches = (window.state.patients || []).filter(p => 
+      p.name.toLowerCase().includes(q) ||
+      p.uhid.toLowerCase().includes(q) ||
+      (p.mobile && p.mobile.includes(q))
+    ).slice(0, 5);
+
+    if (matches.length > 0) {
+      dropdown.style.display = 'block';
+      dropdown.innerHTML = matches.map(m => {
+        return `
+          <div style="padding:8px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid #f1f5f9; text-align:left; background:#ffffff;" onclick="window._regSelectIntakePatient('${m.uhid}')" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+            <div style="display:flex; justify-content:space-between; font-weight:600; color:#1e293b;">
+              <span>${m.name}</span>
+              <span class="mono" style="color:#0284c7; font-size:11px;">${m.uhid}</span>
+            </div>
+            <div style="font-size:10px; color:#64748b; margin-top:2px;">📱 ${m.mobile} | ${m.age || '—'} yrs | ${m.gender}</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      dropdown.style.display = 'block';
+      dropdown.innerHTML = `<div style="padding:12px; text-align:center; color:#64748b; font-size:11px; background:#ffffff;">No patients found</div>`;
+    }
+  };
+
+  window._regSelectIntakePatient = function(uhid) {
+    const patient = (window.state.patients || []).find(p => p.uhid === uhid);
+    if (patient) {
+      _matchedPatient = patient;
+      const dropdown = document.getElementById('intake-search-dropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+      }
+      var c = document.getElementById('main-content');
+      if (c) renderCurrentState(c);
+    }
+  };
+
+  window._regSearchIntakePatient = function() {
+    const input = document.getElementById('intake-pat-search');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val) return;
+    const patient = (window.state.patients || []).find(p => p.uhid === val || p.mobile === val);
+    if (patient) {
+      window._regSelectIntakePatient(patient.uhid);
+    } else {
+      window._regUpdateIntakeSearch(val);
+    }
   };
 
 })();

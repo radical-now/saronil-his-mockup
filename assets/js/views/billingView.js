@@ -89,7 +89,7 @@ if (!window.state.billingQueries) {
 if (!window.state.billingGovtCases) {
   window.state.billingGovtCases = [
     { name: "Suresh Babu", uhid: "SH-2026-04768", cardNo: "CGHS-88291A", beneficiary: "Pensioner (Retd. Govt. Employee)", wardEntitlement: "Semi-Private", rateList: "Y", billAmt: 18000, cghsRate: 14500, difference: 3500, status: "Rate Applied", polyReferral: "Y" },
-    { name: "Pramod Rao", uhid: "SH-2026-04851", cardNo: "ECHS-00291B", beneficiary: "Ex-Serviceman", wardEntitlement: "Private", rateList: "Y", billAmt: 800, cghsRate: 600, difference: 200, status: "OPD — Referral Required", polyReferral: "N" }
+    { name: "Pramod Rao", uhid: "SH-2026-04870", cardNo: "ECHS-00291B", beneficiary: "Ex-Serviceman", wardEntitlement: "Private", rateList: "Y", billAmt: 800, cghsRate: 600, difference: 200, status: "OPD — Referral Required", polyReferral: "N" }
   ];
 }
 
@@ -142,7 +142,7 @@ window.views.billing = function(container, subAnchor, params) {
   
   // Align activeBillingRole with the global persona selection
   const globalRole = window.state && window.state.activeUserRole;
-  if (['CASHIER', 'BILLING_EXECUTIVE', 'BILLING_SUPERVISOR', 'MRD_COORDINATOR', 'ACCOUNTS_MANAGER'].includes(globalRole)) {
+  if (['CASHIER', 'BILLING_EXECUTIVE', 'BILLING_SUPERVISOR', 'MRD_COORDINATOR', 'ACCOUNTS_MANAGER', 'AUDITOR', 'Super Admin'].includes(globalRole)) {
     window.activeBillingRole = globalRole;
   }
   
@@ -199,16 +199,63 @@ window.views.billing = function(container, subAnchor, params) {
 };
 
 function normalizeBillingRecords() {
-  const OPD_UHIDS = ['SH-2026-04817','SH-2026-04826','SH-2026-04840','SH-2026-04845','SH-2026-04851','SH-2026-04855','SH-2026-04862','SH-2026-04869'];
+  const OPD_UHIDS = ['SH-2026-04817','SH-2026-04826','SH-2026-04850','SH-2026-04845','SH-2026-04870','SH-2026-04855','SH-2026-04862','SH-2026-04869'];
   const INS_UHIDS = ['SH-2026-04799','SH-2026-04790','SH-2026-04821','SH-2026-04810','SH-2026-04831','SH-2026-04845','SH-2026-04822','SH-2026-04812','SH-2026-04798'];
+
+  // Sync names in all billing database objects with the single source of truth (window.state.patients)
+  if (window.state.billingPendingApprovals) {
+    window.state.billingPendingApprovals.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.uhid === x.uhid);
+      if (p) x.name = p.name;
+    });
+  }
+  if (window.state.billingAdvances) {
+    window.state.billingAdvances.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.uhid === x.uhid);
+      if (p) x.name = p.name;
+    });
+  }
+  if (window.state.billingPackages) {
+    window.state.billingPackages.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.name === x.name || pt.uhid === x.uhid);
+      if (p) {
+        x.name = p.name;
+        if (p.uhid) x.uhid = p.uhid;
+      }
+    });
+  }
+  if (window.state.billingTpaCases) {
+    window.state.billingTpaCases.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.uhid === x.uhid);
+      if (p) x.name = p.name;
+    });
+  }
+  if (window.state.billingGovtCases) {
+    window.state.billingGovtCases.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.uhid === x.uhid);
+      if (p) x.name = p.name;
+    });
+  }
+  if (window.state.billingPmjayCases) {
+    window.state.billingPmjayCases.forEach(x => {
+      const p = (window.state.patients || []).find(pt => pt.uhid === x.uhid);
+      if (p) x.name = p.name;
+    });
+  }
+
   state.billing.sort((a,b) => (b.date || '').localeCompare(a.date || '')); // recent first
   state.billing.forEach(b => {
     if (!b.id && b.invoiceId) b.id = b.invoiceId;
     if (!b.id) b.id = "INV" + Math.floor(Math.random() * 100000);
     if (!b.items) b.items = [];
 
+    // Dynamically retrieve name from common patients registry
+    const pObj = (window.state.patients || []).find(x => x.uhid === b.uhid);
+    if (pObj) {
+      b.patientName = pObj.name;
+    }
+
     if (!b.visitType) {
-      const pObj = (window.state.patients || []).find(x => x.uhid === b.uhid);
       b.visitType = (pObj?.type === 'OPD' || OPD_UHIDS.includes(b.uhid)) ? "OPD" : "IPD";
     }
     if (!b.admissionNo) b.admissionNo = b.visitType === "IPD" ? "ADM" + b.id.replace("INV", "").replace(/[^0-9]/g,'') : "";
@@ -296,6 +343,21 @@ window.switchBillingTab = function(tab) {
   }
 };
 
+if (typeof window.criticalFlagsExpanded === 'undefined') {
+  window.criticalFlagsExpanded = false;
+}
+
+window.toggleCriticalFlags = function() {
+  window.criticalFlagsExpanded = !window.criticalFlagsExpanded;
+  const container = document.getElementById('main-content');
+  if (container) {
+    const role = window.activeBillingRole;
+    const totalOutstanding = state.billing.reduce((acc, curr) => acc + (curr.amount - curr.paid), 0);
+    const totalAdvances = window.state.billingAdvances.reduce((acc, curr) => acc + curr.balance, 0);
+    window.views.billing(container);
+  }
+};
+
 window.toggleCashierShift = function() {
   if (window.cashierShift.status === "Open") {
     window.cashierShift.status = "Closed";
@@ -344,50 +406,58 @@ function renderBillingDashboard(container) {
       }
       .kpi-row {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 8px;
         margin-bottom: 16px;
       }
       .kpi-card {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 6px;
-        padding: 12px;
+        padding: 8px 4px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         min-height: 90px;
-        border-left: 4px solid #cbd5e1;
+        text-align: center;
+        border-top: 4px solid #cbd5e1;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       }
-      .kpi-card.normal { border-left-color: #10b981; }
-      .kpi-card.warning { border-left-color: #f59e0b; }
-      .kpi-card.critical { border-left-color: #ef4444; }
-      .kpi-card.purple { border-left-color: #a855f7; }
+      .kpi-card.normal { border-top-color: #10b981; }
+      .kpi-card.warning { border-top-color: #f59e0b; }
+      .kpi-card.critical { border-top-color: #ef4444; }
+      .kpi-card.purple { border-top-color: #a855f7; }
+      .kpi-card.rose { border-top-color: #f43f5e; }
+      .kpi-card.orange { border-top-color: #fb923c; }
+      .kpi-card.slate { border-top-color: #94a3b8; }
+      .kpi-card.darkred { border-top-color: #b91c1c; }
       
-      .kpi-label { font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #475569; }
-      .kpi-value { font-size: 1.15rem; font-weight: bold; margin-top: 4px; color: #0f172a; }
-      .kpi-sub { font-size: 0.68rem; color: #64748b; margin-top: 2px; }
+      .kpi-label { font-size: 0.58rem; text-transform: uppercase; font-weight: 700; color: #475569; }
+      .kpi-value { font-size: 1.05rem; font-weight: 800; margin-top: 4px; color: #0f172a; }
+      .kpi-sub { font-size: 0.60rem; color: #64748b; margin-top: 2px; }
 
       .dashboard-body-grid {
         display: grid;
-        grid-template-columns: 79% 21%;
+        grid-template-columns: 1fr;
         gap: 16px;
       }
       .flag-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px;
-        border-bottom: 1px dashed #e2e8f0;
+        padding: 8px 10px;
+        margin-bottom: 6px;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: opacity 0.2s;
         border-radius: 4px;
+        border: 1px solid transparent;
       }
       .flag-row:hover {
-        background-color: #f8fafc;
+        opacity: 0.85;
       }
       .payer-strip {
         display: flex;
+        align-items: center;
         gap: 8px;
         flex-wrap: wrap;
         background-color: #f1f5f9;
@@ -402,8 +472,26 @@ function renderBillingDashboard(container) {
       .payer-pill {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
-        padding: 2px 8px;
-        border-radius: 20px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-width: 90px;
+        line-height: 1.2;
+      }
+      .payer-pill-label {
+        font-size: 0.65rem;
+        color: #64748b;
+        font-weight: 500;
+      }
+      .payer-pill-val {
+        font-size: 0.75rem;
+        color: #1e293b;
+        font-weight: 700;
+        margin-top: 2px;
       }
       .billing-tab-menu {
         display: flex;
@@ -475,8 +563,13 @@ function renderBillingDashboard(container) {
       .interactive-row:hover {
         background-color: #f8fafc;
       }
+      @media (max-width: 1400px) {
+        .kpi-row { grid-template-columns: repeat(5, 1fr); }
+      }
+      @media (max-width: 800px) {
+        .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      }
       @media (max-width: 1200px) {
-        .kpi-row { grid-template-columns: repeat(3, 1fr); }
         .dashboard-body-grid { grid-template-columns: 1fr; }
       }
     </style>
@@ -498,14 +591,34 @@ function renderBillingDashboard(container) {
         ${renderRoleKpis(role, totalOutstanding, totalAdvances)}
       </div>
 
+      <!-- PAYER TYPE QUICK STATS STRIP (Exec, Supervisor, Accounts Mgr, Super Admin) -->
+      ${(role === 'BILLING_EXECUTIVE' || role === 'BILLING_SUPERVISOR' || role === 'ACCOUNTS_MANAGER' || role === 'Super Admin') ? renderPayerQuickStats() : ''}
+
+      <!-- SECTION: HORIZONTAL CRITICAL OPERATIONAL FLAGS ROW -->
+      <div style="margin-bottom: 16px;">
+        <div onclick="window.toggleCriticalFlags()" style="border: 2px solid #ef4444; border-radius: 6px; padding: 10px 16px; background-color: #fef2f2; color: #b91c1c; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 700; font-size: 0.84rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>⚠️</span>
+            <span>CRITICAL OPERATIONAL FLAGS</span>
+            <span style="background-color: #ef4444; color: white; padding: 2px 8px; font-size: 0.72rem; border-radius: 12px; font-weight: 800;">${getRoleFlags(role).length} Flags</span>
+          </div>
+          <div style="font-size: 0.76rem; font-weight: 600; color: #b91c1c;">
+            ${window.criticalFlagsExpanded ? 'Collapse Panel ▴' : 'Expand Panel ▾'}
+          </div>
+        </div>
+
+        ${window.criticalFlagsExpanded ? `
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 8px; background: #ffffff; padding: 12px; border: 1px solid #fca5a5; border-radius: 6px; box-shadow: var(--shadow-sm);">
+            ${renderRoleFlags(role)}
+          </div>
+        ` : ''}
+      </div>
+
       <!-- SECTION 3 & 5: TWO PANEL WORKDESK -->
       <div class="dashboard-body-grid">
-        <!-- LEFT PANEL (65%): MAIN TAB WORKSPACE -->
+        <!-- LEFT PANEL (100%): MAIN TAB WORKSPACE -->
         <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0;">
-          <!-- PAYER TYPE QUICK STATS STRIP (Exec, Supervisor, Accounts Mgr) -->
-          ${(role === 'BILLING_EXECUTIVE' || role === 'BILLING_SUPERVISOR' || role === 'ACCOUNTS_MANAGER') ? renderPayerQuickStats() : ''}
-
-          <div class="billing-card">
+          <div class="billing-card" style="margin-bottom: 0;">
             <!-- Tabs Menu -->
             <div class="billing-tab-menu">
               ${renderTabButtons(role)}
@@ -517,22 +630,14 @@ function renderBillingDashboard(container) {
             </div>
           </div>
         </div>
-
-        <!-- RIGHT PANEL (35%): CRITICAL OPERATIONAL FLAGS -->
-        <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0;">
-          <div class="billing-card" style="border-left: 4px solid #ef4444;">
-            <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0 0 10px 0; color: #b91c1c; border-bottom: 1px solid #fee2e2; padding-bottom: 6px;">
-              ⚠️ Critical Operational Flags
-            </h3>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              ${renderRoleFlags(role)}
-            </div>
-          </div>
-          
-          <!-- SECTION 7: BOTTOM ANALYTICS (Accounts Mgr & Supervisor only) -->
-          ${(role === 'ACCOUNTS_MANAGER' || role === 'BILLING_SUPERVISOR') ? renderBottomAnalytics() : ''}
-        </div>
       </div>
+
+      <!-- SECTION 7: BOTTOM ANALYTICS (Accounts Mgr & Supervisor only) -->
+      ${(role === 'ACCOUNTS_MANAGER' || role === 'BILLING_SUPERVISOR') ? `
+        <div style="margin-top: 16px;">
+          ${renderBottomAnalytics()}
+        </div>
+      ` : ''}
 
     </div>
   `;
@@ -548,213 +653,145 @@ function renderBillingDashboard(container) {
 function renderRoleCtas(role) {
   if (role === 'CASHIER') {
     return `
-      <button class="btn btn-primary" onclick="window.switchBillingTab('opd_counter')" style="font-size: 0.78rem; font-weight: 700; height: 32px;">New OPD Bill</button>
+      <button class="btn btn-primary" onclick="window.switchBillingTab('opd_counter')" style="font-size: 0.78rem; font-weight: 700; height: 32px; background-color: #0f2942; border-color: #0f2942;">New OPD Bill</button>
       <button class="btn btn-secondary" onclick="window.switchBillingTab('billing_queue')" style="font-size: 0.78rem; height: 32px;">Collect Payment</button>
       <button class="btn btn-secondary" onclick="window.switchBillingTab('advance_ledger')" style="font-size: 0.78rem; height: 32px;">New Advance</button>
       <button class="btn btn-secondary" onclick="window.toggleCashierShift()" style="font-size: 0.78rem; height: 32px; background-color:#fee2e2; color:#ef4444; border-color:#fca5a5;">Close Shift</button>
     `;
-  } else if (role === 'BILLING_EXECUTIVE') {
+  } else if (role === 'BILLING_EXECUTIVE' || role === 'Super Admin' || role === 'BILLING_SUPERVISOR' || role === 'ACCOUNTS_MANAGER') {
     return `
-      <button class="btn btn-primary" onclick="window.showNewBillModal()" style="font-size: 0.78rem; font-weight: 700; height: 32px;">+ Create IPD Bill</button>
-      <button class="btn btn-secondary" onclick="window.showApplyPackageModal()" style="font-size: 0.78rem; height: 32px;">Apply Package</button>
-      <button class="btn btn-secondary" onclick="window.showInterimBillModal()" style="font-size: 0.78rem; height: 32px;">Interim Bill</button>
-    `;
-  } else if (role === 'BILLING_SUPERVISOR') {
-    return `
-      <button class="btn btn-primary" onclick="window.switchBillingTab('approval_queue')" style="font-size: 0.78rem; font-weight: 700; height: 32px;">Approval Queue (3)</button>
-      <button class="btn btn-secondary" onclick="window.switchBillingTab('billing_queue')" style="font-size: 0.78rem; height: 32px;">Exception Flags (2)</button>
+      <button class="btn btn-primary" onclick="window.switchBillingTab('opd_counter')" style="font-size: 0.78rem; font-weight: 700; height: 32px; background-color: #0f2942; border-color: #0f2942; color: white;">+ Create OPD Bill</button>
+      <button class="btn btn-primary" onclick="window.showNewBillModal()" style="font-size: 0.78rem; font-weight: 700; height: 32px; background-color: #0f2942; border-color: #0f2942; color: white;">+ Create IPD Bill</button>
+      <button class="btn btn-secondary" onclick="window.showApplyPackageModal()" style="font-size: 0.78rem; height: 32px; background-color: #f1f5f9; color: #334155; border-color: #cbd5e1; font-weight: 600;">Apply Package</button>
+      <button class="btn btn-secondary" onclick="window.showInterimBillModal()" style="font-size: 0.78rem; height: 32px; background-color: #f1f5f9; color: #334155; border-color: #cbd5e1; font-weight: 600;">Interim Bill</button>
     `;
   } else if (role === 'MRD_COORDINATOR') {
     return `
-      <button class="btn btn-primary" onclick="window.switchBillingTab('mrd_discharge')" style="font-size: 0.78rem; font-weight: 700; height: 32px;">Discharge Queue</button>
+      <button class="btn btn-primary" onclick="window.switchBillingTab('mrd_discharge')" style="font-size: 0.78rem; font-weight: 700; height: 32px; background-color: #0f2942; border-color: #0f2942;">Discharge Queue</button>
       <button class="btn btn-secondary" onclick="window.switchBillingTab('mrd_discharge')" style="font-size: 0.78rem; height: 32px;">Coding Worklist</button>
-    `;
-  } else if (role === 'ACCOUNTS_MANAGER') {
-    return `
-      <button class="btn btn-primary" onclick="window.switchBillingTab('insurance_tpa')" style="font-size: 0.78rem; font-weight: 700; height: 32px;">Day Summary</button>
-      <button class="btn btn-secondary" onclick="window.switchBillingTab('shift_reconcile')" style="font-size: 0.78rem; height: 32px;">Shift Reconciliation</button>
     `;
   }
   return '';
 }
 
-function renderRoleKpis(role, totalOutstanding, totalAdvances) {
-  if (role === 'CASHIER') {
-    return `
-      <div class="kpi-card normal">
-        <span class="kpi-label">Counter Collection Today</span>
-        <span class="kpi-value billing-mono">₹47,200.00</span>
-        <span class="kpi-sub">Cash ₹23k | UPI ₹18.2k | Card ₹6k</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Receipts Issued Today</span>
-        <span class="kpi-value billing-mono">38 Receipts</span>
-        <span class="kpi-sub">No draft receipts left</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Advances Collected Today</span>
-        <span class="kpi-value billing-mono">₹85,000.00</span>
-        <span class="kpi-sub">3 IPD admissions top-up</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">Refunds Processed Today</span>
-        <span class="kpi-value billing-mono">₹4,500.00</span>
-        <span class="kpi-sub">All cash refunds approved</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">OPD Bills Raised Today</span>
-        <span class="kpi-value billing-mono">145 Bills</span>
-        <span class="kpi-sub">98% conversion rate</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Shift Balance Status</span>
-        <span class="kpi-value billing-mono" style="color: #10b981;">Balanced ✓</span>
-        <span class="kpi-sub">Tolerance threshold within limit</span>
-      </div>
-    `;
-  } else if (role === 'BILLING_EXECUTIVE') {
-    return `
-      <div class="kpi-card warning">
-        <span class="kpi-label">IPD Bills Pending Generation</span>
-        <span class="kpi-value billing-mono">3 Cases</span>
-        <span class="kpi-sub">D/C summary submitted</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">Outstanding Amount</span>
-        <span class="kpi-value billing-mono">${formatINR(totalOutstanding)}</span>
-        <span class="kpi-sub">Unpaid or partially cleared</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Advance Held</span>
-        <span class="kpi-value billing-mono">${formatINR(totalAdvances)}</span>
-        <span class="kpi-sub">Unadjusted patient deposits</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Package Billing Active</span>
-        <span class="kpi-value billing-mono">12 Packages</span>
-        <span class="kpi-sub">Appendectomy, Maternity, LSCS</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">Interim Overdue >3 Days</span>
-        <span class="kpi-value billing-mono" style="color:#d97706;">4 Patients</span>
-        <span class="kpi-sub">Weekly cycle reconciliation</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">Deposit Exhausted Alerts</span>
-        <span class="kpi-value billing-mono" style="color:#ef4444;">2 Patients</span>
-        <span class="kpi-sub">Deposit balance below ₹2,000</span>
-      </div>
-    `;
-  } else if (role === 'BILLING_SUPERVISOR') {
-    return `
-      <div class="kpi-card warning">
-        <span class="kpi-label">Discount Approvals Pending</span>
-        <span class="kpi-value billing-mono">2 Requests</span>
-        <span class="kpi-sub">Zakat, trust, patient hardship</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">Bill Cancellation Requests</span>
-        <span class="kpi-value billing-mono">1 Request</span>
-        <span class="kpi-sub">Requires supervisor authorization</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Concessions Approved Today</span>
-        <span class="kpi-value billing-mono">5 Cases</span>
-        <span class="kpi-sub">BPL/Charity bed rate checks</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">Exception Flags Today</span>
-        <span class="kpi-value billing-mono">4 Flags</span>
-        <span class="kpi-sub">Duplicate billing/manual override</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Waiver Value Approved</span>
-        <span class="kpi-value billing-mono">₹45,200.00</span>
-        <span class="kpi-sub">This month concessions</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Referral Commission Pending</span>
-        <span class="kpi-value billing-mono">3 referrals</span>
-        <span class="kpi-sub">Doctor referrals audit</span>
-      </div>
-    `;
-  } else if (role === 'MRD_COORDINATOR') {
-    return `
-      <div class="kpi-card normal">
-        <span class="kpi-label">Discharges Today</span>
-        <span class="kpi-value billing-mono">3 Patients</span>
-        <span class="kpi-sub">CCU, Gen ward, Private</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">Pending Clearance</span>
-        <span class="kpi-value billing-mono">2 Patients</span>
-        <span class="kpi-sub">Awaiting billing or pharmacy returns</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">D/C Summary Pending</span>
-        <span class="kpi-value billing-mono">1 Case</span>
-        <span class="kpi-sub">Physician not finalized log</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">ICD Coding Pending</span>
-        <span class="kpi-value billing-mono">2 Cases</span>
-        <span class="kpi-sub">Awaiting chart coding review</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Deficiency Notices Sent</span>
-        <span class="kpi-value billing-mono">1 Notice</span>
-        <span class="kpi-sub">Doctor notified for consent sign</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Avg Discharge TAT</span>
-        <span class="kpi-value billing-mono">3.2 hours</span>
-        <span class="kpi-sub">Target TAT under 4.0 hours</span>
-      </div>
-    `;
-  } else if (role === 'ACCOUNTS_MANAGER') {
-    return `
-      <div class="kpi-card normal">
-        <span class="kpi-label">Total Collection Today</span>
-        <span class="kpi-value billing-mono">₹3,45,200.00</span>
-        <span class="kpi-sub">IPD deposits & OPD collections</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">Outstanding Amount</span>
-        <span class="kpi-value billing-mono">${formatINR(totalOutstanding)}</span>
-        <span class="kpi-sub">Patients payable credit ledger</span>
-      </div>
-      <div class="kpi-card purple">
-        <span class="kpi-label">TPA / Insurance Pending</span>
-        <span class="kpi-value billing-mono">₹4,25,000.00</span>
-        <span class="kpi-sub">Star Health, Medi Assist, Paramount</span>
-      </div>
-      <div class="kpi-card normal">
-        <span class="kpi-label">Govt Schemes Outstanding</span>
-        <span class="kpi-value billing-mono">₹1,85,000.00</span>
-        <span class="kpi-sub">CGHS/ECHS/PMJAY claims</span>
-      </div>
-      <div class="kpi-card warning">
-        <span class="kpi-label">Advances Unadjusted >7d</span>
-        <span class="kpi-value billing-mono">4 Accounts</span>
-        <span class="kpi-sub">Awaiting bill allocation</span>
-      </div>
-      <div class="kpi-card critical">
-        <span class="kpi-label">Write-off Pending</span>
-        <span class="kpi-value billing-mono">1 Request</span>
-        <span class="kpi-sub">Requires management clearance</span>
-      </div>
-    `;
-  }
-  return '';
+function renderRoleKpis() {
+  const oBills = window.state.outstandingBills || [];
+  const totalOutstanding = oBills.filter(o => o.status !== 'Closed' && o.status !== 'Approved Write-Off').reduce((sum, o) => sum + o.balance_due, 0);
+  const aged60Outstanding = oBills.filter(o => o.status !== 'Closed' && o.status !== 'Approved Write-Off' && o.aging_days > 60).reduce((sum, o) => sum + o.balance_due, 0);
+  
+  const suspense = window.state.suspenseReceipts || [];
+  const unmatchedCount = suspense.filter(r => r.match_status !== 'matched' && r.match_status !== 'unclaimed').length;
+  const unmatchedSum = suspense.filter(r => r.match_status !== 'matched' && r.match_status !== 'unclaimed').reduce((sum, r) => sum + r.amount, 0);
+  
+  // Calculate if any unmatched item is older than 7 days
+  const hasAgedSuspense = suspense.some(r => {
+    if (r.match_status === 'matched' || r.match_status === 'unclaimed') return false;
+    const rDate = new Date(r.receipt_date);
+    const today = new Date();
+    return (today - rDate) > 7 * 86400000;
+  });
+
+  const totalAdvances = (window.state.billingAdvances || []).reduce((sum, a) => sum + a.balance, 0);
+  const exhaustedDeposits = (window.state.billingAdvances || []).filter(a => a.status === 'Exhausted' || a.balance <= 0).length;
+
+  const tpaPreAuthCount = (window.state.billingTpaCases || []).filter(c => c.status === 'Active' && c.loaStatus !== 'LOA Approved').length +
+                          (window.state.billingPmjayCases || []).filter(c => c.status === 'Pre-Auth Pending').length;
+
+  const dischargesTodayCount = (window.state.admissions || []).filter(a => a.status === 'Discharged').length + 8;
+
+  const billingBlockedCount = (window.state.billingMrdQueue || []).filter(q => q.clearance.billing === false).length;
+
+  const opdCollectionToday = (window.state.billingOpdReceipts || []).reduce((sum, r) => sum + r.amount, 0);
+  const todayAdvanceCollection = 85000; 
+  const todayCollectionTotal = opdCollectionToday + todayAdvanceCollection;
+
+  const pendingRefunds = window.state.billingRefunds || [];
+  const pendingRefundsCount = pendingRefunds.filter(r => r.status === 'Pending Approval').length;
+  const pendingRefundsSum = pendingRefunds.filter(r => r.status === 'Pending Approval').reduce((sum, r) => sum + r.amount, 0);
+
+  const tpaShortSettlementsSum = (window.state.billingSettlements || []).reduce((sum, s) => sum + (s.shortPay || 0), 0);
+
+  const packagesExceeding = (window.state.billingPackages || []).filter(p => p.variance > 0).length;
+
+  return `
+    <!-- Card 1: Outstanding Amount -->
+    <div class="kpi-card critical clickable" onclick="window.switchBillingTab('outstanding_recovery')" style="cursor: pointer; border-top-color: #f87171;">
+      <span class="kpi-label">Outstanding Amount</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${formatINR(totalOutstanding)}</span>
+      <span class="kpi-sub">Aged >60d: ${formatINR(aged60Outstanding)} <span style="color: #ef4444; font-weight: bold;">↑ 4.2%</span></span>
+    </div>
+    
+    <!-- Card 2: Unmatched Suspense -->
+    <div class="kpi-card warning clickable" onclick="window.switchBillingTab('unidentified_receipts')" style="cursor: pointer; border-top-color: #fbbf24;">
+      <span class="kpi-label">Unmatched Suspense</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${unmatchedCount} Receipts</span>
+      <span class="kpi-sub">Total: ${formatINR(unmatchedSum)} <span style="color: #10b981; font-weight: bold;">↓ 2.1%</span></span>
+    </div>
+
+    <!-- Card 3: Deposit Exhausted Alerts -->
+    <div class="kpi-card rose clickable" onclick="window.switchBillingTab('advance_ledger')" style="cursor: pointer; border-top-color: #f43f5e;">
+      <span class="kpi-label">Deposit Exhausted</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${exhaustedDeposits} Patients</span>
+      <span class="kpi-sub">Total advances: ${formatINR(totalAdvances)} <span style="color: #ef4444; font-weight: bold;">↑ 12%</span></span>
+    </div>
+
+    <!-- Card 4: TPA Pre-Auth Pending -->
+    <div class="kpi-card purple clickable" onclick="window.switchBillingTab('insurance_tpa')" style="cursor: pointer; border-top-color: #c084fc;">
+      <span class="kpi-label">Pre-Auth / Cashless</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${tpaPreAuthCount} Cases</span>
+      <span class="kpi-sub">Awaiting insurer approval <span style="color: #8b5cf6;">→ stable</span></span>
+    </div>
+
+    <!-- Card 5: Discharge Blocked by Billing -->
+    <div class="kpi-card darkred clickable" onclick="window.switchBillingTab('mrd_discharge')" style="cursor: pointer; border-top-color: #b91c1c;">
+      <span class="kpi-label">D/C Blocked by Billing</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${billingBlockedCount} Patients</span>
+      <span class="kpi-sub">Clinically cleared, unpaid <span style="color: #10b981; font-weight: bold;">↓ 1 case</span></span>
+    </div>
+
+    <!-- Card 6: Today's Collection -->
+    <div class="kpi-card normal clickable" onclick="window.switchBillingTab('shift_reconcile')" style="cursor: pointer; border-top-color: #34d399;">
+      <span class="kpi-label">Today's Collection</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${formatINR(todayCollectionTotal)}</span>
+      <span class="kpi-sub">Cash counter shift tally <span style="color: #10b981; font-weight: bold;">↑ 8.5%</span></span>
+    </div>
+
+    <!-- Card 7: Pending Refunds -->
+    <div class="kpi-card warning clickable" onclick="window.switchBillingTab('refunds')" style="cursor: pointer; border-top-color: #fbbf24;">
+      <span class="kpi-label">Pending Refunds</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${pendingRefundsCount} Requests</span>
+      <span class="kpi-sub">Value: ${formatINR(pendingRefundsSum)} <span style="color: #64748b;">→ stable</span></span>
+    </div>
+
+    <!-- Card 8: TPA Rejections (MTD) -->
+    <div class="kpi-card critical clickable" onclick="window.switchBillingTab('insurance_tpa')" style="cursor: pointer; border-top-color: #f87171;">
+      <span class="kpi-label">TPA Rejections (MTD)</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${formatINR(tpaShortSettlementsSum)}</span>
+      <span class="kpi-sub">Short-settled claims <span style="color: #ef4444; font-weight: bold;">↑ 3.2%</span></span>
+    </div>
+
+    <!-- Card 9: Cost Overrun Risk -->
+    <div class="kpi-card orange clickable" onclick="window.switchBillingTab('package_billing')" style="cursor: pointer; border-top-color: #fb923c;">
+      <span class="kpi-label">Package Overrun Risk</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${packagesExceeding} Packages</span>
+      <span class="kpi-sub">Exceeded cost ceiling <span style="color: #ef4444; font-weight: bold;">↑ 1 case</span></span>
+    </div>
+
+    <!-- Card 10: Discharges Today -->
+    <div class="kpi-card slate clickable" onclick="window.switchBillingTab('mrd_discharge')" style="cursor: pointer; border-top-color: #94a3b8;">
+      <span class="kpi-label">Discharges Today</span>
+      <span class="kpi-value billing-mono" style="font-size: 1.15rem; font-weight: 800;">${dischargesTodayCount} Patients</span>
+      <span class="kpi-sub">Completed discharges <span style="color: #10b981; font-weight: bold;">ready for archive</span></span>
+    </div>
+  `;
 }
 
 // --------------------------------------------------------------------------
 // SECTION 3: OPERATIONAL FLAGS (role-filtered)
 // --------------------------------------------------------------------------
-function renderRoleFlags(role) {
-  let flags = [];
+function getRoleFlags(role) {
   if (role === 'MRD_COORDINATOR') {
-    flags = [
+    return [
       { text: "Discharge clearance pending >6 hours", severity: "red", count: "1 Patient", tab: "mrd_discharge" },
       { text: "D/C summary not submitted >24h post discharge", severity: "red", count: "1 Case", tab: "mrd_discharge" },
       { text: "ICD coding pending >48 hours", severity: "amber", count: "1 Chart", tab: "mrd_discharge" },
@@ -762,23 +799,25 @@ function renderRoleFlags(role) {
       { text: "MLC record pending closure", severity: "purple", count: "1 Case", tab: "mrd_discharge" },
       { text: "LAMA indemnity bond not filed", severity: "red", count: "1 Case", tab: "mrd_discharge" }
     ];
-  } else {
-    flags = [
-      { text: "Expired pre-authorisations (TPA LOA lapsed)", severity: "red", count: "1 Claim", tab: "insurance_tpa" },
-      { text: "IPD patients no interim bill >3 days", severity: "amber", count: "4 Cases", tab: "billing_queue" },
-      { text: "Deposit exhausted - patient advance below ₹500", severity: "red", count: "2 Patients", tab: "advance_ledger" },
-      { text: "Advances unadjusted >7 days", severity: "amber", count: "3 Accounts", tab: "advance_ledger" },
-      { text: "Package vs actuals conflict (Actuals exceed pkg)", severity: "purple", count: "1 Case", tab: "package_billing" },
-      { text: "Pending discount approvals", severity: "blue", count: "2 Requests", tab: "approval_queue" },
-      { text: "Pending bill cancellation requests", severity: "orange", count: "1 Request", tab: "approval_queue" },
-      { text: "Duplicate UHID / duplicate bill detected", severity: "red", count: "1 Alert", tab: "approval_queue" },
-      { text: "LAMA/AOR cases without indemnity bond billing", severity: "red", count: "1 Patient", tab: "billing_queue" },
-      { text: "MLC cases pending billing clearance", severity: "purple", count: "1 Case", tab: "billing_queue" },
-      { text: "CGHS/ECHS cases without rate list applied", severity: "orange", count: "1 Card", tab: "govt_schemes" },
-      { text: "Charity/BPL/EWS concession not approved yet", severity: "amber", count: "1 Case", tab: "approval_queue" }
-    ];
   }
+  return [
+    { text: "Expired pre-authorisations (TPA LOA lapsed)", severity: "red", count: "1 Claim", tab: "insurance_tpa" },
+    { text: "IPD patients no interim bill >3 days", severity: "amber", count: "4 Cases", tab: "billing_queue" },
+    { text: "Deposit exhausted - patient advance below ₹500", severity: "red", count: "2 Patients", tab: "advance_ledger" },
+    { text: "Advances unadjusted >7 days", severity: "amber", count: "3 Accounts", tab: "advance_ledger" },
+    { text: "Package vs actuals conflict (Actuals exceed pkg)", severity: "purple", count: "1 Case", tab: "package_billing" },
+    { text: "Pending discount approvals", severity: "blue", count: "2 Requests", tab: "approval_queue" },
+    { text: "Pending bill cancellation requests", severity: "orange", count: "1 Request", tab: "approval_queue" },
+    { text: "Duplicate UHID / duplicate bill detected", severity: "red", count: "1 Alert", tab: "approval_queue" },
+    { text: "LAMA/AOR cases without indemnity bond billing", severity: "red", count: "1 Patient", tab: "billing_queue" },
+    { text: "MLC cases pending billing clearance", severity: "purple", count: "1 Case", tab: "billing_queue" },
+    { text: "CGHS/ECHS cases without rate list applied", severity: "orange", count: "1 Card", tab: "govt_schemes" },
+    { text: "Charity/BPL/EWS concession not approved yet", severity: "amber", count: "1 Case", tab: "approval_queue" }
+  ];
+}
 
+function renderRoleFlags(role) {
+  const flags = getRoleFlags(role);
   const sevColors = {
     red: { bg: "#fef2f2", col: "#b91c1c", border: "#ef4444" },
     amber: { bg: "#fffbeb", col: "#b45309", border: "#f59e0b" },
@@ -790,9 +829,9 @@ function renderRoleFlags(role) {
   return flags.map(f => {
     const s = sevColors[f.severity] || sevColors.amber;
     return `
-      <div class="flag-row" onclick="window.switchBillingTab('${f.tab}')" style="background-color: ${s.bg}; border-left: 3px solid ${s.border}; color: ${s.col}; font-size: 0.74rem;">
+      <div class="flag-row" onclick="window.switchBillingTab('${f.tab}')" style="background-color: ${s.bg}; border: 1.2px solid ${s.border}33; border-left: 4.5px solid ${s.border}; color: ${s.col}; font-size: 0.73rem; margin-bottom: 0;">
         <span style="font-weight: 600;">${f.text}</span>
-        <span class="badge" style="background-color: ${s.col}; color: white; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; font-weight: bold;">${f.count}</span>
+        <span class="badge" style="background-color: ${s.col}; color: white; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px; font-weight: bold; min-width: 65px; text-align: center;">${f.count}</span>
       </div>
     `;
   }).join('');
@@ -805,15 +844,42 @@ function renderPayerQuickStats() {
   return `
     <div class="payer-strip">
       <span style="color:#0f172a; font-weight:bold; margin-right:4px;">Revenue Split:</span>
-      <span class="payer-pill">Self Pay: <strong class="billing-mono">₹1,45,200.00</strong></span>
-      <span class="payer-pill">TPA/Insurance: <strong class="billing-mono">₹1,20,000.00</strong></span>
-      <span class="payer-pill">CGHS: <strong class="billing-mono">₹32,000.00</strong></span>
-      <span class="payer-pill">ECHS: <strong class="billing-mono">₹12,000.00</strong></span>
-      <span class="payer-pill">PMJAY/Govt Scheme: <strong class="billing-mono">₹18,000.00</strong></span>
-      <span class="payer-pill">ESI: <strong class="billing-mono">₹18,200.00</strong></span>
-      <span class="payer-pill">Company/PSU: <strong class="billing-mono">₹0.00</strong></span>
-      <span class="payer-pill">Railway: <strong class="billing-mono">₹0.00</strong></span>
-      <span class="payer-pill" style="color:var(--color-success);">Charity/BPL: <strong class="billing-mono">₹0.00 (Waived)</strong></span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">Self Pay</span>
+        <strong class="billing-mono payer-pill-val">₹1,45,200.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">TPA/Insurance</span>
+        <strong class="billing-mono payer-pill-val">₹1,20,000.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">CGHS</span>
+        <strong class="billing-mono payer-pill-val">₹32,000.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">ECHS</span>
+        <strong class="billing-mono payer-pill-val">₹12,000.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">PMJAY/Govt Scheme</span>
+        <strong class="billing-mono payer-pill-val">₹18,000.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">ESI</span>
+        <strong class="billing-mono payer-pill-val">₹18,200.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">Company/PSU</span>
+        <strong class="billing-mono payer-pill-val">₹0.00</strong>
+      </span>
+      <span class="payer-pill">
+        <span class="payer-pill-label">Railway</span>
+        <strong class="billing-mono payer-pill-val">₹0.00</strong>
+      </span>
+      <span class="payer-pill" style="color:var(--color-success); border-color: rgba(34, 197, 94, 0.4);">
+        <span class="payer-pill-label" style="color:var(--color-success);">Charity/BPL</span>
+        <strong class="billing-mono payer-pill-val" style="color:var(--color-success);">₹0.00 (Waived)</strong>
+      </span>
     </div>
   `;
 }
@@ -823,17 +889,19 @@ function renderPayerQuickStats() {
 // --------------------------------------------------------------------------
 function renderTabButtons(role) {
   const allTabs = {
-    billing_queue: { title: "Billing Queue", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    opd_advance: { title: "OPD Advance Billing", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    opd_counter: { title: "OPD Cash Counter", roles: ["CASHIER"] },
-    advance_ledger: { title: "Advance & Deposit Ledger", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    package_billing: { title: "Package Billing", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    insurance_tpa: { title: "Insurance / TPA", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    govt_schemes: { title: "Govt Schemes", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    refunds: { title: "Refunds & Adjustments", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER"] },
-    approval_queue: { title: "Approval Queue", roles: ["BILLING_SUPERVISOR"] },
-    shift_reconcile: { title: "Shift Reconciliation", roles: ["CASHIER", "ACCOUNTS_MANAGER"] },
-    mrd_discharge: { title: "MRD & Discharge", roles: ["MRD_COORDINATOR"] }
+    billing_queue: { title: "Billing Queue", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    opd_counter: { title: "OPD Cash Counter", roles: ["CASHIER", "Super Admin"] },
+    advance_ledger: { title: "Advance & Deposit Ledger", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    package_billing: { title: "Package Billing", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    insurance_tpa: { title: "Insurance / TPA", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    govt_schemes: { title: "Govt Schemes", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    refunds: { title: "Refunds & Adjustments", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "MRD_COORDINATOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    approval_queue: { title: "Approval Queue", roles: ["BILLING_SUPERVISOR", "ACCOUNTS_MANAGER", "Super Admin"] },
+    shift_reconcile: { title: "Shift Reconciliation", roles: ["CASHIER", "ACCOUNTS_MANAGER", "Super Admin"] },
+    mrd_discharge: { title: "MRD & Discharge", roles: ["MRD_COORDINATOR", "Super Admin"] },
+    outstanding_recovery: { title: "Outstanding & Recovery", roles: ["BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] },
+    unidentified_receipts: { title: "Suspense Ledger (Unmatched)", roles: ["CASHIER", "BILLING_EXECUTIVE", "BILLING_SUPERVISOR", "ACCOUNTS_MANAGER", "Super Admin"] },
+    gst_tax_engine: { title: "GST Configuration", roles: ["BILLING_SUPERVISOR", "ACCOUNTS_MANAGER", "AUDITOR", "Super Admin"] }
   };
 
   return Object.entries(allTabs).map(([key, val]) => {
@@ -848,7 +916,6 @@ function renderTabButtons(role) {
 // --------------------------------------------------------------------------
 function renderTabContent(tab) {
   if (tab === 'billing_queue') return renderBillingQueueTab();
-  if (tab === 'opd_advance') return renderOpdAdvanceTab();
   if (tab === 'opd_counter') return renderOpdCounterTab();
   if (tab === 'advance_ledger') return renderAdvanceLedgerTab();
   if (tab === 'package_billing') return renderPackageBillingTab();
@@ -858,6 +925,9 @@ function renderTabContent(tab) {
   if (tab === 'approval_queue') return renderApprovalQueueTab();
   if (tab === 'shift_reconcile') return renderShiftReconcileTab();
   if (tab === 'mrd_discharge') return renderMrdDischargeTab();
+  if (tab === 'outstanding_recovery') return renderOutstandingRecoveryTab();
+  if (tab === 'unidentified_receipts') return renderUnidentifiedReceiptsTab();
+  if (tab === 'gst_tax_engine') return renderGstTaxEngineTab();
   return '<div style="color:var(--text-secondary); font-size:0.8rem; padding:16px;">Tab content not configured.</div>';
 }
 
@@ -918,15 +988,15 @@ function renderBillingQueueTab() {
     }
   });
 
-  // Main billing queue table defaults to non-OPD bills (IPD / Daycare / Emergency)
-  const activeBills = state.billing.filter(b => b.visitType !== 'OPD');
+  // Main billing queue table contains IPD, Daycare, Emergency, and pending OPD bills
+  const activeBills = state.billing.filter(b => b.visitType !== 'OPD' || b.status === 'Pending');
 
   // Merge them together!
   const mergedQueue = [...pendingIpdAdvanceRequests, ...activeBills];
 
   return `
     <div style="text-align: left; margin-bottom: 10px;">
-      <h3 style="font-size: 0.88rem; font-weight: 700; margin: 0; color: var(--text-primary);">Billing Queue (IPD / Daycare / Emergency)</h3>
+      <h3 style="font-size: 0.88rem; font-weight: 700; margin: 0; color: var(--text-primary);">Billing Queue (IPD / OPD / Daycare / Emergency)</h3>
     </div>
 
     <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
@@ -935,6 +1005,7 @@ function renderBillingQueueTab() {
         <option value="">All Visit Types</option>
         <option value="IPD Request">IPD Request</option>
         <option value="IPD">IPD</option>
+        <option value="OPD">OPD</option>
         <option value="Emergency">Emergency</option>
         <option value="Day Care">Day Care</option>
       </select>
@@ -945,17 +1016,20 @@ function renderBillingQueueTab() {
         <option value="CGHS">CGHS</option>
         <option value="ECHS">ECHS</option>
       </select>
+      <select id="bill-q-status" class="form-select" style="width: auto; font-size:0.8rem; height:34px;">
+        <option value="">All Statuses</option>
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
+      </select>
     </div>
 
     <div style="overflow-x: auto;">
       <table class="custom-table">
         <thead>
           <tr>
-            <th>Bill No</th>
+            <th>Bill Info</th>
             <th>Patient Info</th>
-            <th>Type</th>
-            <th>Ward/Bed</th>
-            <th>Adm Days</th>
+            <th>Payment Type</th>
             <th style="text-align: right;">Deposit Bal (₹)</th>
             <th style="text-align: right;">Total (₹)</th>
             <th>Payer</th>
@@ -968,6 +1042,27 @@ function renderBillingQueueTab() {
             const payerBadgeStyle = pBadges[b.paymentCategory] || "background:#f1f5f9; color:#475569;";
             const statStyle = statusColors[b.status] || "background:#f1f5f9; color:#475569;";
             
+            const payTypeBadges = {
+              "Advance": "background:#fffbeb; color:#b45309; border: 1px solid #fde68a; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+              "Consultation": "background:#e0f2fe; color:#0369a1; border: 1px solid #bae6fd; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+              "Discharge": "background:#ecfdf5; color:#047857; border: 1px solid #a7f3d0; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+              "Procedure": "background:#f5f3ff; color:#6d28d9; border: 1px solid #ddd6fe; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;"
+            };
+
+            let paymentType = b.paymentType || '';
+            if (!paymentType) {
+              if (b.isAdmissionRequest || b.visitType === 'IPD Request' || b.id.startsWith('REQ-') || (b.items && b.items.some(it => it.desc && it.desc.toLowerCase().includes('advance')))) {
+                paymentType = 'Advance';
+              } else if (b.visitType === 'OPD') {
+                paymentType = 'Consultation';
+              } else if (b.visitType === 'IPD') {
+                paymentType = 'Discharge';
+              } else {
+                paymentType = 'Procedure';
+              }
+            }
+            const payTypeBadgeStyle = payTypeBadges[paymentType] || "background:#f1f5f9; color:#475569; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;";
+
             let payerDetail = b.paymentCategory;
             if (b.paymentCategory === 'Insurance' && b.insuranceDetails) {
               payerDetail = `${b.insuranceDetails.provider} (PA: ${b.insuranceDetails.preauthNo})`;
@@ -978,15 +1073,28 @@ function renderBillingQueueTab() {
 
             return `
               <tr class="interactive-row" onclick="router.navigate('billing-workspace?id=${b.id}')">
-                <td class="billing-mono" style="font-weight: 600;">${b.id}</td>
+                <td class="billing-mono">
+                  <div style="font-weight: 600; color: var(--text-primary); font-size: 0.82rem;">${b.id}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px;">${b.visitType}</span>
+                    ${b.visitType.includes('IPD') ? `
+                      <span style="display: inline-flex; align-items: center; gap: 3px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94a3b8;"><path d="M3 20v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8M5 10V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M3 18h18"/></svg>
+                        ${b.visitType === 'IPD' ? (b.bed || 'IPD Bed') : (b.visitType === 'IPD Request' ? (window.state.wards[b.bed]?.name || b.bed) : '—')}
+                      </span>
+                    ` : ''}
+                    ${b.visitType === 'IPD' ? `
+                      <span style="color: #cbd5e1; font-size: 0.65rem;">|</span>
+                      <span>${daysAdmitted}</span>
+                    ` : ''}
+                  </div>
+                </td>
                 <td>
                   <div style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="event.stopPropagation(); router.navigate('patients?uhid=${b.uhid}')">${b.patientName}</div>
                   <div class="billing-mono" style="font-size: 0.72rem; color: #64748b; margin-top: 1px;">UHID: ${b.uhid}</div>
                   ${b.uhid === 'SH-2026-04790' ? `<span class="badge" style="background:#faf5ff; color:#6b21a8; font-size:0.6rem; padding:1px 4px; margin-top: 2px; display: inline-block;">MLC</span>` : ''}
                 </td>
-                <td>${b.visitType}</td>
-                <td class="billing-mono">${b.visitType === 'IPD' ? (b.bed || 'IPD Bed') : (b.visitType === 'IPD Request' ? (window.state.wards[b.bed]?.name || b.bed) : '—')}</td>
-                <td>${daysAdmitted}</td>
+                <td><span style="${payTypeBadgeStyle}">${paymentType}</span></td>
                 <td class="billing-mono" style="text-align: right; color:${depositBalVal < 2000 && b.visitType === 'IPD' ? 'var(--color-danger)' : 'inherit'}; font-weight:600;">${formatINR(depositBalVal)}</td>
                 <td class="billing-mono" style="text-align: right; font-weight:bold;">${formatINR(b.amount)}</td>
                 <td><span class="badge-payer" style="${payerBadgeStyle}">${payerDetail}</span></td>
@@ -999,15 +1107,14 @@ function renderBillingQueueTab() {
                       ${window.activeBillingRole === 'CASHIER' ? `
                         <button class="btn btn-primary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:700;">Collect</button>
                       ` : `
-                        <button class="btn btn-secondary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">Workspace</button>
+                        <button class="btn btn-secondary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">See Details</button>
                       `}
-                      <button class="btn btn-secondary" onclick="window.mockPrintInvoice('${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">Print</button>
                     `}
                   </div>
                 </td>
               </tr>
             `;
-          }).join('') || `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No records found.</td></tr>`}
+          }).join('') || `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No records found.</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -1207,7 +1314,7 @@ window.selectOpdPatientChip = function(uhid, name) {
   document.getElementById('opd-autocomplete-results').style.display = 'none';
 };
 
-window.generateOpdQuickBill = function() {
+window.generateOpdQuickBill = async function() {
   const uhid = document.getElementById('opd-uhid-field').value;
   const name = document.getElementById('opd-name-field').value;
   const srvSelect = document.getElementById('opd-service-select');
@@ -1253,12 +1360,12 @@ window.generateOpdQuickBill = function() {
     auditLogs: [{ timestamp: new Date().toISOString(), user: "Cashier", action: "Quick OPD Bill & Receipt Generated" }]
   });
 
-  alert(`Receipt ${receiptNo} issued successfully for ${name}.`);
+  await customAlert(`Receipt ${receiptNo} issued successfully for ${name}.`);
   router.navigate('billing');
 };
 
-window.triggerReceiptReprint = function(receiptNo) {
-  const reason = prompt(`🧾 Reprint Request for Receipt ID: ${receiptNo}
+window.triggerReceiptReprint = async function(receiptNo) {
+  const reason = await customPrompt(`🧾 Reprint Request for Receipt ID: ${receiptNo}
 Reason log is mandatory:`);
   if (!reason || reason.trim() === '') {
     alert("Reprint reason is mandatory to comply with audit logs.");
@@ -1412,11 +1519,11 @@ function renderAdvanceLedgerTab() {
   `;
 }
 
-window.triggerCollectOpdAdvanceFee = function(billId) {
+window.triggerCollectOpdAdvanceFee = async function(billId) {
   const bill = window.state.billing.find(b => b.id === billId);
   if (!bill) return;
 
-  const amt = prompt(`Collect OPD Advance Registration/Consultation Fee for patient: ${bill.patientName} (${bill.uhid})\nAmount due: ${formatINR(bill.amount)}\nEnter amount to collect (₹):`, bill.amount);
+  const amt = await customPrompt(`Collect OPD Advance Registration/Consultation Fee for patient: ${bill.patientName} (${bill.uhid})\nAmount due: ${formatINR(bill.amount)}\nEnter amount to collect (₹):`, bill.amount);
   const val = Number(amt);
   if (!val || val <= 0) return;
 
@@ -1441,13 +1548,13 @@ window.triggerCollectOpdAdvanceFee = function(billId) {
   localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
   localStorage.setItem('saronil_billing_opd_receipts', JSON.stringify(window.state.billingOpdReceipts));
 
-  alert(`✓ Successfully collected ₹${val} OPD Advance Fee for ${bill.patientName}. Receipt ${receiptNo} printed.`);
+  await customAlert(`✓ Successfully collected ₹${val} OPD Advance Fee for ${bill.patientName}. Receipt ${receiptNo} printed.`);
   const currentTab = window.activeBillingTab || 'billing_queue';
   router.navigate('billing?tab=' + currentTab + '&t=' + Date.now());
 };
 
-window.triggerCollectIpdAdvance = function(uhid, defaultAmount) {
-  const amt = prompt(`Collect IPD Admission Advance Deposit for patient: ${uhid}\nOutstanding shortfall: ₹${defaultAmount}\nEnter amount to collect (₹):`, defaultAmount);
+window.triggerCollectIpdAdvance = async function(uhid, defaultAmount) {
+  const amt = await customPrompt(`Collect IPD Admission Advance Deposit for patient: ${uhid}\nOutstanding shortfall: ₹${defaultAmount}\nEnter amount to collect (₹):`, defaultAmount);
   const val = Number(amt);
   if (!val || val <= 0) return;
 
@@ -1473,13 +1580,13 @@ window.triggerCollectIpdAdvance = function(uhid, defaultAmount) {
   }
 
   localStorage.setItem('saronil_billingAdvances', JSON.stringify(window.state.billingAdvances));
-  alert(`✓ Successfully collected ₹${val} IPD Admission Advance for ${adv.name}. Receipt printed.`);
+  await customAlert(`✓ Successfully collected ₹${val} IPD Admission Advance for ${adv.name}. Receipt printed.`);
   const currentTab = window.activeBillingTab || 'billing_queue';
   router.navigate('billing?tab=' + currentTab + '&t=' + Date.now());
 };
 
-window.triggerCollectAdvanceTopup = function(uhid) {
-  const amt = prompt(`Collect deposit top-up advance for patient: ${uhid}
+window.triggerCollectAdvanceTopup = async function(uhid) {
+  const amt = await customPrompt(`Collect deposit top-up advance for patient: ${uhid}
 Enter amount (₹):`);
   const val = Number(amt);
   if (!val || val <= 0) return;
@@ -1490,18 +1597,18 @@ Enter amount (₹):`);
     adv.balance += val;
     adv.daysSinceTopup = 0;
     adv.status = adv.balance >= 5000 ? "Active" : (adv.balance >= 2000 ? "Low Balance" : "Exhausted");
-    alert(`Successfully collected ₹${val} deposit for ${adv.name}. Receipt printed.`);
+    await customAlert(`Successfully collected ₹${val} deposit for ${adv.name}. Receipt printed.`);
     router.navigate('billing');
   }
 };
 
-window.triggerAdvanceRefund = function(uhid, balance) {
+window.triggerAdvanceRefund = async function(uhid, balance) {
   if (balance <= 0) {
     alert("No active deposit balance left to refund.");
     return;
   }
 
-  const amt = prompt(`Process advance refund for patient: ${uhid}
+  const amt = await customPrompt(`Process advance refund for patient: ${uhid}
 Available balance: ${formatINR(balance)}
 Enter refund amount (₹):`);
   const val = Number(amt);
@@ -1536,7 +1643,7 @@ Enter refund amount (₹):`);
     adv.deposited -= val;
     adv.balance -= val;
     adv.status = adv.balance >= 5000 ? "Active" : (adv.balance >= 2000 ? "Low Balance" : "Exhausted");
-    alert(`Successfully refunded ₹${val} to the patient. Refund voucher printed.`);
+    await customAlert(`Successfully refunded ₹${val} to the patient. Refund voucher printed.`);
     router.navigate('billing');
   }
 };
@@ -1632,7 +1739,7 @@ window.togglePackageExpand = function(idx) {
   }
 };
 
-window.billAsPackage = function(idx, opt) {
+window.billAsPackage = async function(idx, opt) {
   const pkg = window.state.billingPackages[idx];
   if (opt) {
     pkg.variance = 0;
@@ -1642,19 +1749,19 @@ window.billAsPackage = function(idx, opt) {
     pkg.status = "Billed as Actuals";
   }
   pkg.actionNeeded = false;
-  alert(`Resolved surgical package for ${pkg.name}. Finalizing tariff.`);
+  await customAlert(`Resolved surgical package for ${pkg.name}. Finalizing tariff.`);
   router.navigate('billing');
 };
 
-window.triggerSupervisorPackageDecision = function(idx) {
-  const dec = prompt(`Supervisor decision log for Package Conflict:
+window.triggerSupervisorPackageDecision = async function(idx) {
+  const dec = await customPrompt(`Supervisor decision log for Package Conflict:
 Patient: ${window.state.billingPackages[idx].name}
 Enter resolution reason (Package Cap applied / Charge Exclusions separately):`);
   if (dec) {
     const pkg = window.state.billingPackages[idx];
     pkg.status = "Supervisor Decided: " + dec;
     pkg.actionNeeded = false;
-    alert("Supervisor override decision logged in billing session.");
+    await customAlert("Supervisor override decision logged in billing session.");
     router.navigate('billing');
   }
 };
@@ -1882,11 +1989,11 @@ function renderTpaSubTabContent(sub) {
   return '';
 }
 
-window.requestTpaEnhancement = function(caseNo) {
+window.requestTpaEnhancement = async function(caseNo) {
   const currentCase = window.state.billingTpaCases.find(c => c.caseNo === caseNo);
   if (!currentCase) return;
 
-  const amt = prompt(`Request Cashless Enhancement for case ${caseNo}:
+  const amt = await customPrompt(`Request Cashless Enhancement for case ${caseNo}:
 Current LOA Approved: ${formatINR(currentCase.loaAmount)}
 Enter enhancement amount (₹):`);
   const val = Number(amt);
@@ -1894,7 +2001,7 @@ Enter enhancement amount (₹):`);
 
   currentCase.loaAmount += val;
   currentCase.loaStatus = "Enhancement Requested";
-  alert(`Cashless enhancement request of ₹${val} submitted to TPA desk.`);
+  await customAlert(`Cashless enhancement request of ₹${val} submitted to TPA desk.`);
   router.navigate('billing');
 };
 
@@ -1913,48 +2020,48 @@ window.updateClaimChecklist = function(idx, key, val) {
   }
 };
 
-window.submitClaimToTpa = function(claimNo) {
+window.submitClaimToTpa = async function(claimNo) {
   const cl = window.state.billingClaims.find(c => c.claimNo === claimNo);
   if (cl) {
     const incomplete = Object.entries(cl.checklist).filter(([k, v]) => !v);
     if (incomplete.length > 0) {
-      const confirmSubmit = confirm(`⚠️ Incomplete claim documentation package!
+      const confirmSubmit = await customConfirm(`⚠️ Incomplete claim documentation package!
 Missing files: ${incomplete.map(i => i[0]).join(', ')}.
 Do you still want to force submit to TPA?`);
       if (!confirmSubmit) return;
     }
     cl.status = "Submitted";
-    alert(`Claim ID ${claimNo} submitted successfully to insurance portal.`);
+    await customAlert(`Claim ID ${claimNo} submitted successfully to insurance portal.`);
     router.navigate('billing');
   }
 };
 
-window.acceptTpaSettlement = function(idx) {
+window.acceptTpaSettlement = async function(idx) {
   const set = window.state.billingSettlements[idx];
-  alert(`Settlement of ₹${set.settled} accepted. NEFT UTR Ref logged: ${set.utr}`);
+  await customAlert(`Settlement of ₹${set.settled} accepted. NEFT UTR Ref logged: ${set.utr}`);
   window.state.billingSettlements.splice(idx, 1);
   router.navigate('billing');
 };
 
-window.disputeTpaSettlement = function(idx) {
+window.disputeTpaSettlement = async function(idx) {
   const set = window.state.billingSettlements[idx];
-  const msg = prompt(`Enter dispute justification for TPA short-pay of ₹${set.shortPay} on Claim ${set.claimNo}:`);
+  const msg = await customPrompt(`Enter dispute justification for TPA short-pay of ₹${set.shortPay} on Claim ${set.claimNo}:`);
   if (msg) {
-    alert(`Dispute filed. Sent to Supervisor Approval Queue.`);
+    await customAlert(`Dispute filed. Sent to Supervisor Approval Queue.`);
     window.state.billingSettlements.splice(idx, 1);
     router.navigate('billing');
   }
 };
 
-window.respondToTpaQuery = function(query) {
-  const responseText = prompt(`Respond to TPA query: "${query}"
+window.respondToTpaQuery = async function(query) {
+  const responseText = await customPrompt(`Respond to TPA query: "${query}"
 Enter query response description:`);
   if (responseText) {
     const q = window.state.billingQueries.find(item => item.query === query);
     if (q) {
       q.sent = "Yes";
       q.status = "Responded";
-      alert("Response documents package uploaded & sent to TPA coordinator.");
+      await customAlert("Response documents package uploaded & sent to TPA coordinator.");
       router.navigate('billing');
     }
   }
@@ -2110,13 +2217,13 @@ function renderGovtSubTabContent(sub) {
   return '';
 }
 
-window.applyCghsRates = function(uhid) {
+window.applyCghsRates = async function(uhid) {
   const gov = window.state.billingGovtCases.find(g => g.uhid === uhid);
   if (gov) {
     gov.rateList = "Y";
     gov.difference = 0;
     gov.status = "CGHS Applied";
-    alert(`CGHS tariff rate master applied successfully to patient: ${gov.name}`);
+    await customAlert(`CGHS tariff rate master applied successfully to patient: ${gov.name}`);
     router.navigate('billing');
   }
 };
@@ -2187,7 +2294,7 @@ function renderRefundsTab() {
   `;
 }
 
-window.approveRefundRequest = function(idx) {
+window.approveRefundRequest = async function(idx) {
   const ref = window.state.billingRefunds[idx];
   const role = window.activeBillingRole;
 
@@ -2206,12 +2313,12 @@ window.approveRefundRequest = function(idx) {
 
   ref.status = "Approved";
   ref.approver = role;
-  alert(`Refund request approved by ${BILLING_ROLES[role].name}.`);
+  await customAlert(`Refund request approved by ${BILLING_ROLES[role].name}.`);
   router.navigate('billing');
 };
 
-window.rejectRefundRequest = function(idx) {
-  const reason = prompt("Enter refund rejection reason (mandatory):");
+window.rejectRefundRequest = async function(idx) {
+  const reason = await customPrompt("Enter refund rejection reason (mandatory):");
   if (!reason || reason.trim() === '') {
     alert("Rejection reason is mandatory.");
     return;
@@ -2219,21 +2326,21 @@ window.rejectRefundRequest = function(idx) {
   const ref = window.state.billingRefunds[idx];
   ref.status = "Rejected";
   ref.approver = window.activeBillingRole;
-  alert("Refund request rejected. Patient notified via automated SMS.");
+  await customAlert("Refund request rejected. Patient notified via automated SMS.");
   router.navigate('billing');
 };
 
-window.payRefundCash = function(idx) {
+window.payRefundCash = async function(idx) {
   const ref = window.state.billingRefunds[idx];
   ref.status = "Cash Paid";
-  alert(`Refund of ₹${ref.amount} paid in Cash. Voucher printed.`);
+  await customAlert(`Refund of ₹${ref.amount} paid in Cash. Voucher printed.`);
   router.navigate('billing');
 };
 
-window.payRefundNeft = function(idx) {
+window.payRefundNeft = async function(idx) {
   const ref = window.state.billingRefunds[idx];
   ref.status = "NEFT Initiated";
-  alert(`Refund of ₹${ref.amount} initiated via NEFT direct bank transfer.`);
+  await customAlert(`Refund of ₹${ref.amount} initiated via NEFT direct bank transfer.`);
   router.navigate('billing');
 };
 
@@ -2379,7 +2486,7 @@ function renderApprovalSubTabContent(sub) {
   return '';
 }
 
-window.approveDiscountRequest = function(id) {
+window.approveDiscountRequest = async function(id) {
   const req = window.state.billingPendingApprovals.find(r => r.id === id);
   if (req) {
     const bill = state.billing.find(b => b.uhid === req.uhid);
@@ -2389,18 +2496,18 @@ window.approveDiscountRequest = function(id) {
       bill.auditLogs.push({ timestamp: new Date().toISOString(), user: "Billing Supervisor", action: `Approved discount of ₹${req.discRequested}` });
     }
     window.state.billingPendingApprovals = window.state.billingPendingApprovals.filter(r => r.id !== id);
-    alert("Discount request approved.");
+    await customAlert("Discount request approved.");
     router.navigate('billing');
   }
 };
 
-window.rejectDiscountRequest = function(id) {
+window.rejectDiscountRequest = async function(id) {
   window.state.billingPendingApprovals = window.state.billingPendingApprovals.filter(r => r.id !== id);
-  alert("Discount request rejected. Cashier notified.");
+  await customAlert("Discount request rejected. Cashier notified.");
   router.navigate('billing');
 };
 
-window.approveCancellation = function(billNo) {
+window.approveCancellation = async function(billNo) {
   const bill = state.billing.find(b => b.id === billNo);
   if (bill) {
     bill.status = "Cancelled";
@@ -2409,14 +2516,14 @@ window.approveCancellation = function(billNo) {
     bill.auditLogs.push({ timestamp: new Date().toISOString(), user: "Billing Supervisor", action: "Approved Bill Cancellation (Voided)" });
     
     window.state.billingPendingApprovals = window.state.billingPendingApprovals.filter(r => r.targetId !== billNo);
-    alert(`Bill ${billNo} voided and cancelled successfully.`);
+    await customAlert(`Bill ${billNo} voided and cancelled successfully.`);
     router.navigate('billing');
   }
 };
 
-window.rejectCancellation = function(billNo) {
+window.rejectCancellation = async function(billNo) {
   window.state.billingPendingApprovals = window.state.billingPendingApprovals.filter(r => r.targetId !== billNo);
-  alert("Cancellation request rejected. Cashier workspace remains active.");
+  await customAlert("Cancellation request rejected. Cashier workspace remains active.");
   router.navigate('billing');
 };
 
@@ -2492,7 +2599,7 @@ function renderShiftReconcileTab() {
   `;
 }
 
-window.triggerShiftCloseRecon = function() {
+window.triggerShiftCloseRecon = async function() {
   const physical = Number(document.getElementById('recon-physical-cash').value) || 0;
   const systemNet = 47200;
   const variance = physical - systemNet;
@@ -2545,7 +2652,7 @@ Supervisor countersign is required to force close this shift.`);
   w.print();
 
   window.cashierShift.status = "Closed";
-  alert("Shift closed successfully. Z-report printed.");
+  await customAlert("Shift closed successfully. Z-report printed.");
   router.navigate('billing');
 };
 
@@ -2720,29 +2827,29 @@ window.toggleMrdClearanceChecklist = function(idx) {
   }
 };
 
-window.triggerFinalDischargeClearance = function(idx) {
+window.triggerFinalDischargeClearance = async function(idx) {
   const mrd = window.state.billingMrdQueue[idx];
   const pending = Object.entries(mrd.clearance).filter(([dept, cleared]) => !cleared);
   
   if (pending.length > 0) {
-    const override = confirm(`⚠️ Incomplete Clearance checklist!
+    const override = await customConfirm(`⚠️ Incomplete Clearance checklist!
 Pending sign-offs: ${pending.map(p => p[0]).join(', ')}.
 Do you want to force MRD clearance override? (Requires permanent audit log log)`);
     if (!override) return;
     
-    const reason = prompt("Enter medical record override justification:");
+    const reason = await customPrompt("Enter medical record override justification:");
     if (!reason || reason.trim() === '') {
       alert("Override justification is mandatory.");
       return;
     }
   }
 
-  alert(`Discharge final clearance granted for ${mrd.name}. UHID and chart moved to archive.`);
+  await customAlert(`Discharge final clearance granted for ${mrd.name}. UHID and chart moved to archive.`);
   window.state.billingMrdQueue.splice(idx, 1);
   router.navigate('billing');
 };
 
-window.saveIcdCoding = function(idx) {
+window.saveIcdCoding = async function(idx) {
   const cod = window.state.billingMrdCoding[idx];
   const codeVal = document.getElementById(`icd-code-select-${idx}`).value;
   const secVal = document.getElementById(`icd-sec-code-${idx}`).value;
@@ -2751,7 +2858,7 @@ window.saveIcdCoding = function(idx) {
   cod.secondary = secVal;
   cod.status = "Coded & Validated";
   
-  alert(`ICD-10 clinical coding saved successfully for ${cod.name}. Chart validated.`);
+  await customAlert(`ICD-10 clinical coding saved successfully for ${cod.name}. Chart validated.`);
   router.navigate('billing');
 };
 
@@ -2975,10 +3082,10 @@ function getPatientBillingItems(bill, patForBill, bedRate, nursingRate, bedDays)
   };
 }
 
-function renderInvoiceWorkspace(container, invoiceId) {
+async function renderInvoiceWorkspace(container, invoiceId) {
   const bill = state.billing.find(b => b.id === invoiceId);
   if (!bill) {
-    alert("Billing Record not found.");
+    await customAlert("Billing Record not found.");
     router.navigate('billing');
     return;
   }
@@ -3012,7 +3119,25 @@ function renderInvoiceWorkspace(container, invoiceId) {
   const discountableAmt = grossTotal - packageDiscount - rateDifference - roomLimitExcess;
   const copayDeduction = discountableAmt * (copayPct / 100);
 
-  const netBillAmount = grossTotal - packageDiscount - rateDifference - roomLimitExcess - copayDeduction;
+  // Healthcare GST Compliance calculations
+  const wardName = patForBill?.ward || '';
+  const isIcuCategory = wardName.toLowerCase().includes('icu') || wardName.toLowerCase().includes('ccu') || wardName.toLowerCase().includes('hdu');
+  let roomGst = 0;
+  if (!isIcuCategory && bedRate > 5000) {
+    roomGst = (bedRate * bedDays) * 0.05; // 5% GST on non-ICU rooms > 5,000/day
+  }
+  
+  let packageGst = 0;
+  if (isPackageApplied && activePkg) {
+    const pkgLower = activePkg.package.toLowerCase();
+    if (pkgLower.includes('cosmetic') || pkgLower.includes('wellness') || pkgLower.includes('corporate')) {
+      packageGst = activePkg.pkgAmt * 0.18; // 18% GST on cosmetic and corporate packages
+    }
+  }
+
+  const gstAmount = bill.taxOverrideAmount !== undefined ? bill.taxOverrideAmount : (roomGst + packageGst);
+  const netBillAmount = grossTotal - packageDiscount - rateDifference - roomLimitExcess - copayDeduction + gstAmount;
+
   const depositAdjusted = Math.min(netBillAmount, bill.advancePaid || 0);
   const payerExpected = (bill.paymentCategory === 'Insurance' || isCGHS) ? (netBillAmount - depositAdjusted) : 0;
   const patientPayable = Math.max(0, netBillAmount - depositAdjusted - payerExpected);
@@ -3315,6 +3440,20 @@ function renderInvoiceWorkspace(container, invoiceId) {
                 </div>
               ` : ''}
 
+              <div style="display:flex; justify-content:space-between; color:#4f46e5; border-top:1px dashed #cbd5e1; padding-top:4px; align-items:center;">
+                <div>
+                  <span>(+) GST / Tax Amount:</span>
+                  ${(!isIcuCategory && bedRate > 5000) ? `<br/><span style="font-size:0.65rem; color:#64748b;">(non-ICU Room &gt; ₹5000/day: 5% applied, ITC=0)</span>` : ''}
+                  ${bill.taxOverrideReason ? `<br/><span style="font-size:0.65rem; color:#b45309;">(Override: ${bill.taxOverrideReason})</span>` : ''}
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <strong class="ws-mono">+${formatINR(gstAmount)}</strong>
+                  ${(window.activeBillingRole === 'BILLING_SUPERVISOR' || window.activeBillingRole === 'Super Admin') ? `
+                    <button class="btn btn-secondary" onclick="window.triggerTaxOverride('${bill.id}')" style="padding:2px 4px; font-size:0.65rem; cursor:pointer;">Override</button>
+                  ` : ''}
+                </div>
+              </div>
+
               <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px dashed #cbd5e1; padding-top:4px; margin-top:2px;">
                 <span>Net Bill Amount:</span>
                 <strong class="ws-mono">${formatINR(netBillAmount)}</strong>
@@ -3416,6 +3555,36 @@ window.confirmCollectPayment = function(id, payable, mode) {
   }
 
   const bill = state.billing.find(b => b.id === id);
+  if (!bill) return;
+
+  const patForBill = (window.state.patients || []).find(p => p.uhid === bill.uhid);
+  const isSponsor = bill.paymentCategory === 'Insurance' || patForBill?.payer?.includes('CGHS') || patForBill?.payer?.includes('ECHS');
+
+  if (isSponsor && !bill.buyerGstin) {
+    const gstinInput = prompt("B2B Finalization: Enter Buyer GSTIN to finalize corporate/TPA invoice:");
+    if (!gstinInput || gstinInput.trim().length < 10) {
+      alert("B2B Finalization Blocked: Insurer/Scheme GSTIN is mandatory for claims settlement.");
+      return;
+    }
+    bill.buyerGstin = gstinInput.trim().toUpperCase();
+  }
+
+  // Generate sequential GST Invoice Series number
+  if (!bill.gstInvoiceId) {
+    const seriesNo = String((window.state.gstInvoiceSeries || []).length + 1).padStart(4, '0');
+    const gstInvId = `GST-INV-2026-${seriesNo}`;
+    bill.gstInvoiceId = gstInvId;
+    if (!window.state.gstInvoiceSeries) window.state.gstInvoiceSeries = [];
+    window.state.gstInvoiceSeries.push({
+      gst_invoice_id: gstInvId,
+      bill_id: bill.id,
+      buyer_gstin: bill.buyerGstin || null,
+      invoice_series: gstInvId,
+      invoice_date: new Date().toISOString().split('T')[0]
+    });
+    localStorage.setItem('saronil_gstInvoiceSeries', JSON.stringify(window.state.gstInvoiceSeries));
+  }
+
   if (bill) {
     bill.paid += payable;
     bill.status = "Paid";
@@ -3526,11 +3695,10 @@ window.confirmCollectPayment = function(id, payable, mode) {
         }
         localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
       }
+    }    localStorage.setItem('saronil_billing', JSON.stringify(state.billing));
+    if (window.state.syncOutstandingBills) {
+      window.state.syncOutstandingBills();
     }
-
-
-
-
     const modal = window.getOrCreateBillingModal();
     modal.innerHTML = `
       <div class="modal-box" style="max-width:480px; padding:1.5rem; border-radius:12px; background:white; border:1px solid #cbd5e1; box-shadow:0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align:center;">
@@ -3564,19 +3732,19 @@ window.finishPaymentWorkflow = function() {
   router.navigate('billing');
 };
 
-window.triggerRaiseInterimBill = function(id) {
+window.triggerRaiseInterimBill = async function(id) {
   const bill = state.billing.find(b => b.id === id);
   if (bill) {
     bill.auditLogs.push({ timestamp: new Date().toISOString(), user: "Billing Executive", action: "Interim bill generated & dispatched to patient ward" });
-    alert("Interim bill copy printed & dispatched to ward coordinator.");
+    await customAlert("Interim bill copy printed & dispatched to ward coordinator.");
     router.navigate('billing');
   }
 };
 
-window.triggerCancelBill = function(id) {
-  const confirmCancel = confirm(`Are you sure you want to request cancellation for bill ${id}? This will void all records.`);
+window.triggerCancelBill = async function(id) {
+  const confirmCancel = await customConfirm(`Are you sure you want to request cancellation for bill ${id}? This will void all records.`);
   if (confirmCancel) {
-    const reason = prompt("Enter billing void/cancellation reason notes:");
+    const reason = await customPrompt("Enter billing void/cancellation reason notes:");
     if (reason) {
       const bill = state.billing.find(b => b.id === id);
       window.state.billingPendingApprovals.push({
@@ -3588,7 +3756,7 @@ window.triggerCancelBill = function(id) {
         raisedBy: window.activeBillingRole,
         status: "Pending"
       });
-      alert("Bill cancellation request queued to Supervisor approval workflow.");
+      await customAlert("Bill cancellation request queued to Supervisor approval workflow.");
       router.navigate('billing');
     }
   }
@@ -3662,7 +3830,24 @@ window.mockPrintInvoice = function(invoiceId) {
   const discountableAmt = grossTotal - packageDiscount - rateDifference - roomLimitExcess;
   const copayDeduction = discountableAmt * (copayPct / 100);
 
-  const netBillAmount = grossTotal - packageDiscount - rateDifference - roomLimitExcess - copayDeduction;
+  // Healthcare GST Compliance calculations in print preview
+  const wardName = patForBill?.ward || '';
+  const isIcuCategory = wardName.toLowerCase().includes('icu') || wardName.toLowerCase().includes('ccu') || wardName.toLowerCase().includes('hdu');
+  let roomGst = 0;
+  if (!isIcuCategory && bedRate > 5000) {
+    roomGst = (bedRate * bedDays) * 0.05;
+  }
+  
+  let packageGst = 0;
+  if (isPackageApplied && activePkg) {
+    const pkgLower = activePkg.package.toLowerCase();
+    if (pkgLower.includes('cosmetic') || pkgLower.includes('wellness') || pkgLower.includes('corporate')) {
+      packageGst = activePkg.pkgAmt * 0.18;
+    }
+  }
+
+  const gstAmount = bill.taxOverrideAmount !== undefined ? bill.taxOverrideAmount : (roomGst + packageGst);
+  const netBillAmount = grossTotal - packageDiscount - rateDifference - roomLimitExcess - copayDeduction + gstAmount;
   const depositAdjusted = Math.min(netBillAmount, bill.advancePaid || 0);
   const payerExpected = (bill.paymentCategory === 'Insurance' || isCGHS) ? (netBillAmount - depositAdjusted) : 0;
   const patientPayable = Math.max(0, netBillAmount - depositAdjusted - payerExpected);
@@ -3695,7 +3880,7 @@ window.mockPrintInvoice = function(invoiceId) {
             </div>
             <div style="text-align: right;">
               <h2 style="margin: 0; color: #1e3a8a; font-size: 1.4rem;">TAX INVOICE</h2>
-              <div style="font-size: 0.85rem; font-weight: 700; color: #475569;">Invoice ID: ${bill.id}</div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #475569;">Invoice ID: ${bill.id}${bill.gstInvoiceId ? `<br><span style="color:#4f46e5;">GST Invoice ID: ${bill.gstInvoiceId}</span>` : ''}</div>
               <div style="font-size: 0.8rem; color: #64748b;">Date: ${bill.date}</div>
             </div>
           </div>
@@ -3711,7 +3896,7 @@ window.mockPrintInvoice = function(invoiceId) {
               <h4 style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 0.9rem;">Sponsor / Insurance Details</h4>
               <strong>Payer Category:</strong> ${bill.paymentCategory}<br>
               <strong>TPA Company:</strong> ${bill.paymentCategory === 'Insurance' ? (bill.insuranceDetails?.provider || 'Star Health') : 'Self Pay / Cash'}<br>
-              <strong>Pre-Auth Status:</strong> ${bill.paymentCategory === 'Insurance' ? 'Approved (PA-99231)' : 'N/A'}
+              <strong>Pre-Auth Status:</strong> ${bill.paymentCategory === 'Insurance' ? 'Approved (PA-99231)' : 'N/A'}${bill.buyerGstin ? `<br><strong>Buyer GSTIN:</strong> <span style="font-family:monospace;">${bill.buyerGstin}</span>` : ''}
             </div>
           </div>
 
@@ -3809,6 +3994,12 @@ window.mockPrintInvoice = function(invoiceId) {
                 <tr style="color:#ef4444;">
                   <td>Co-payment (${copayPct}%):</td>
                   <td>-${formatINR(copayDeduction)}</td>
+                </tr>
+              ` : ''}
+              ${gstAmount > 0 ? `
+                <tr style="color:#4f46e5;">
+                  <td>GST / Taxes (Healthcare Composite):</td>
+                  <td>+${formatINR(gstAmount)}</td>
                 </tr>
               ` : ''}
               <tr style="border-top: 1px solid #cbd5e1; font-size: 1rem; color: #1e3a8a;">
@@ -4261,12 +4452,14 @@ window.initBillingQueueFilters = function() {
   const searchInput = document.getElementById('bill-q-search');
   const typeSelect = document.getElementById('bill-q-type');
   const payerSelect = document.getElementById('bill-q-payer');
+  const statusSelect = document.getElementById('bill-q-status');
 
-  if (searchInput && typeSelect && payerSelect) {
+  if (searchInput && typeSelect && payerSelect && statusSelect) {
     const handler = () => {
       const q = searchInput.value.toLowerCase().trim();
       const visitType = typeSelect.value;
       const payer = payerSelect.value;
+      const statusVal = statusSelect.value;
 
       const tbody = document.getElementById('billing-q-table-body');
       if (!tbody) return;
@@ -4289,7 +4482,7 @@ window.initBillingQueueFilters = function() {
       };
 
       // Compute the same merged list
-      const activeBills = state.billing.filter(b => b.visitType !== 'OPD');
+      const activeBills = state.billing.filter(b => b.visitType !== 'OPD' || b.status === 'Pending');
       
       const pendingIpdAdvanceRequests = [];
       const reqs = window.state.admissionRequests || [];
@@ -4352,6 +4545,15 @@ window.initBillingQueueFilters = function() {
           if (b.paymentCategory !== payer) return false;
         }
 
+        // Status filter (Pending / Paid)
+        if (statusVal) {
+          if (statusVal === 'Paid') {
+            if (b.status !== 'Paid') return false;
+          } else if (statusVal === 'Pending') {
+            if (b.status === 'Paid' || b.status === 'Cancelled') return false;
+          }
+        }
+
         return true;
       });
 
@@ -4359,6 +4561,27 @@ window.initBillingQueueFilters = function() {
         const payerBadgeStyle = pBadges[b.paymentCategory] || "background:#f1f5f9; color:#475569;";
         const statStyle = statusColors[b.status] || "background:#f1f5f9; color:#475569;";
         
+        const payTypeBadges = {
+          "Advance": "background:#fffbeb; color:#b45309; border: 1px solid #fde68a; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+          "Consultation": "background:#e0f2fe; color:#0369a1; border: 1px solid #bae6fd; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+          "Discharge": "background:#ecfdf5; color:#047857; border: 1px solid #a7f3d0; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;",
+          "Procedure": "background:#f5f3ff; color:#6d28d9; border: 1px solid #ddd6fe; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;"
+        };
+
+        let paymentType = b.paymentType || '';
+        if (!paymentType) {
+          if (b.isAdmissionRequest || b.visitType === 'IPD Request' || b.id.startsWith('REQ-') || (b.items && b.items.some(it => it.desc && it.desc.toLowerCase().includes('advance')))) {
+            paymentType = 'Advance';
+          } else if (b.visitType === 'OPD') {
+            paymentType = 'Consultation';
+          } else if (b.visitType === 'IPD') {
+            paymentType = 'Discharge';
+          } else {
+            paymentType = 'Procedure';
+          }
+        }
+        const payTypeBadgeStyle = payTypeBadges[paymentType] || "background:#f1f5f9; color:#475569; padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;";
+
         let payerDetail = b.paymentCategory;
         if (b.paymentCategory === 'Insurance' && b.insuranceDetails) {
           payerDetail = `${b.insuranceDetails.provider} (PA: ${b.insuranceDetails.preauthNo})`;
@@ -4369,15 +4592,28 @@ window.initBillingQueueFilters = function() {
 
         return `
           <tr class="interactive-row" onclick="router.navigate('billing-workspace?id=${b.id}')">
-            <td class="billing-mono" style="font-weight: 600;">${b.id}</td>
+            <td class="billing-mono">
+              <div style="font-weight: 600; color: var(--text-primary); font-size: 0.82rem;">${b.id}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px;">${b.visitType}</span>
+                ${b.visitType.includes('IPD') ? `
+                  <span style="display: inline-flex; align-items: center; gap: 3px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94a3b8;"><path d="M3 20v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8M5 10V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M3 18h18"/></svg>
+                    ${b.visitType === 'IPD' ? (b.bed || 'IPD Bed') : (b.visitType === 'IPD Request' ? (window.state.wards[b.bed]?.name || b.bed) : '—')}
+                  </span>
+                ` : ''}
+                ${b.visitType === 'IPD' ? `
+                  <span style="color: #cbd5e1; font-size: 0.65rem;">|</span>
+                  <span>${daysAdmitted}</span>
+                ` : ''}
+              </div>
+            </td>
             <td>
               <div style="font-weight:600; color: var(--primary); text-decoration: underline; cursor: pointer;" onclick="event.stopPropagation(); router.navigate('patients?uhid=${b.uhid}')">${b.patientName}</div>
               <div class="billing-mono" style="font-size: 0.72rem; color: #64748b; margin-top: 1px;">UHID: ${b.uhid}</div>
               ${b.uhid === 'SH-2026-04790' ? `<span class="badge" style="background:#faf5ff; color:#6b21a8; font-size:0.6rem; padding:1px 4px; margin-top: 2px; display: inline-block;">MLC</span>` : ''}
             </td>
-            <td>${b.visitType}</td>
-            <td class="billing-mono">${b.visitType === 'IPD' ? (b.bed || 'IPD Bed') : (b.visitType === 'IPD Request' ? (window.state.wards[b.bed]?.name || b.bed) : '—')}</td>
-            <td>${daysAdmitted}</td>
+            <td><span style="${payTypeBadgeStyle}">${paymentType}</span></td>
             <td class="billing-mono" style="text-align: right; color:${depositBalVal < 2000 && b.visitType === 'IPD' ? 'var(--color-danger)' : 'inherit'}; font-weight:600;">${formatINR(depositBalVal)}</td>
             <td class="billing-mono" style="text-align: right; font-weight:bold;">${formatINR(b.amount)}</td>
             <td><span class="badge-payer" style="${payerBadgeStyle}">${payerDetail}</span></td>
@@ -4390,9 +4626,8 @@ window.initBillingQueueFilters = function() {
                   ${window.activeBillingRole === 'CASHIER' ? `
                     <button class="btn btn-primary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:700;">Collect</button>
                   ` : `
-                    <button class="btn btn-secondary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">Workspace</button>
+                    <button class="btn btn-secondary" onclick="router.navigate('billing-workspace?id=${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">See Details</button>
                   `}
-                  <button class="btn btn-secondary" onclick="window.mockPrintInvoice('${b.id}')" style="padding:2px 6px; font-size:0.7rem; height:22px; font-weight:600;">Print</button>
                 `}
               </div>
             </td>
@@ -4404,10 +4639,1357 @@ window.initBillingQueueFilters = function() {
     searchInput.addEventListener('input', handler);
     typeSelect.addEventListener('change', handler);
     payerSelect.addEventListener('change', handler);
+    statusSelect.addEventListener('change', handler);
     
     // Maintain state if user already typed search query before rendering
-    if (searchInput.value || typeSelect.value || payerSelect.value) {
+    if (searchInput.value || typeSelect.value || payerSelect.value || statusSelect.value) {
       handler();
     }
+  }
+};
+
+// --------------------------------------------------------------------------
+// GAP MODULES COMPONENT IMPLEMENTATIONS
+// --------------------------------------------------------------------------
+
+window.renderOutstandingRecoveryTab = function() {
+  if (window.state.syncOutstandingBills) {
+    window.state.syncOutstandingBills();
+  }
+  
+  const role = window.activeBillingRole || 'BILLING_EXECUTIVE';
+  const outstanding = window.state.outstandingBills || [];
+  
+  const searchQuery = document.getElementById('recovery-search')?.value || '';
+  const agingFilter = document.getElementById('recovery-aging')?.value || 'All';
+  const statusFilter = document.getElementById('recovery-status')?.value || 'All';
+  const payerFilter = document.getElementById('recovery-payer')?.value || 'All';
+  
+  const filtered = outstanding.filter(item => {
+    const matchesSearch = item.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.bill_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.UHID.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    let matchesAging = true;
+    if (agingFilter === '0-7') matchesAging = item.aging_days <= 7;
+    else if (agingFilter === '8-15') matchesAging = item.aging_days > 7 && item.aging_days <= 15;
+    else if (agingFilter === '15-30') matchesAging = item.aging_days > 15 && item.aging_days <= 30;
+    else if (agingFilter === '30-60') matchesAging = item.aging_days > 30 && item.aging_days <= 60;
+    else if (agingFilter === '60+') matchesAging = item.aging_days > 60;
+    
+    let matchesStatus = true;
+    if (statusFilter !== 'All') {
+      matchesStatus = item.status === statusFilter;
+    }
+    
+    let matchesPayer = true;
+    if (payerFilter !== 'All') {
+      matchesPayer = item.payer_type === payerFilter;
+    }
+    
+    return matchesSearch && matchesAging && matchesStatus && matchesPayer;
+  });
+
+  return `
+    <div class="recovery-workspace" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom: 2px;">
+        <button class="btn btn-secondary" onclick="window.exportOutstandingReport()" style="padding:6px 12px; font-size:0.75rem; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; border-radius: 4px; font-weight: 600; cursor:pointer;">📥 Export Aging Report</button>
+      </div>
+
+      <!-- Filters Row -->
+      <div style="display:flex; gap:12px; flex-wrap:wrap; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; align-items:center;">
+        <div style="flex:1; min-width:200px;">
+          <label style="display:block; font-size:0.7rem; font-weight:700; color:#475569; margin-bottom:4px;">Search Patient / Bill / UHID</label>
+          <input type="text" id="recovery-search" value="${searchQuery}" oninput="window.refreshRecoveryGrid()" placeholder="Search patient name, UHID, invoice..." style="width:100%; padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:0.7rem; font-weight:700; color:#475569; margin-bottom:4px;">Aging Bucket</label>
+          <select id="recovery-aging" onchange="window.refreshRecoveryGrid()" style="padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px; min-width:120px;">
+            <option value="All" ${agingFilter === 'All' ? 'selected' : ''}>All Buckets</option>
+            <option value="0-7" ${agingFilter === '0-7' ? 'selected' : ''}>0–7 Days</option>
+            <option value="8-15" ${agingFilter === '8-15' ? 'selected' : ''}>8–15 Days</option>
+            <option value="15-30" ${agingFilter === '15-30' ? 'selected' : ''}>15–30 Days</option>
+            <option value="30-60" ${agingFilter === '30-60' ? 'selected' : ''}>30–60 Days</option>
+            <option value="60+" ${agingFilter === '60+' ? 'selected' : ''}>60+ Days</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.7rem; font-weight:700; color:#475569; margin-bottom:4px;">Status</label>
+          <select id="recovery-status" onchange="window.refreshRecoveryGrid()" style="padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px; min-width:120px;">
+            <option value="All" ${statusFilter === 'All' ? 'selected' : ''}>All Statuses</option>
+            <option value="Unpaid" ${statusFilter === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
+            <option value="Partially Paid" ${statusFilter === 'Partially Paid' ? 'selected' : ''}>Partially Paid</option>
+            <option value="Write-Off Pending" ${statusFilter === 'Write-Off Pending' ? 'selected' : ''}>Write-Off Pending</option>
+            <option value="Approved Write-Off" ${statusFilter === 'Approved Write-Off' ? 'selected' : ''}>Approved Write-Off</option>
+            <option value="Legal Handoff" ${statusFilter === 'Legal Handoff' ? 'selected' : ''}>Legal Handoff</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:0.7rem; font-weight:700; color:#475569; margin-bottom:4px;">Payer Type</label>
+          <select id="recovery-payer" onchange="window.refreshRecoveryGrid()" style="padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px; min-width:120px;">
+            <option value="All" ${payerFilter === 'All' ? 'selected' : ''}>All Payers</option>
+            <option value="Self Pay" ${payerFilter === 'Self Pay' ? 'selected' : ''}>Self Pay</option>
+            <option value="Insurance" ${payerFilter === 'Insurance' ? 'selected' : ''}>Insurance</option>
+            <option value="CGHS" ${payerFilter === 'CGHS' ? 'selected' : ''}>CGHS</option>
+            <option value="ECHS" ${payerFilter === 'ECHS' ? 'selected' : ''}>ECHS</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grid Table -->
+      <div class="billing-table-wrapper" style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:6px;">
+        <table class="billing-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:0.78rem;">
+          <thead>
+            <tr style="background-color:#f1f5f9; color:#475569; font-weight:700; border-bottom:1px solid #cbd5e1;">
+              <th style="padding:10px;">Bill ID</th>
+              <th style="padding:10px;">Patient (UHID)</th>
+              <th style="padding:10px;">Admission</th>
+              <th style="padding:10px; text-align:right;">Bill Amt</th>
+              <th style="padding:10px; text-align:right;">Received</th>
+              <th style="padding:10px; text-align:right; color:#ef4444;">Balance Due</th>
+              <th style="padding:10px;">Bill Date</th>
+              <th style="padding:10px;">Aging</th>
+              <th style="padding:10px;">Assigned Executive</th>
+              <th style="padding:10px;">Status</th>
+              <th style="padding:10px; text-align:center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length === 0 ? `
+              <tr>
+                <td colspan="11" style="padding:20px; text-align:center; color:#64748b;">No outstanding bills match the selected filters.</td>
+              </tr>
+            ` : filtered.map(item => {
+              const agingClass = item.aging_days > 60 ? 'badge-status error' : (item.aging_days > 30 ? 'badge-status warning' : 'badge-status normal');
+              const statusClass = item.status === 'Write-Off Pending' ? 'badge-status warning' : (item.status === 'Approved Write-Off' ? 'badge-status normal' : 'badge-status critical');
+              return `
+                <tr style="border-bottom:1px solid #e2e8f0; hover:background:#f8fafc;">
+                  <td style="padding:10px; font-weight:700;">${item.bill_id}</td>
+                  <td style="padding:10px;">${item.patient_name} <br/><span style="font-size:0.7rem; color:#64748b;">${item.UHID}</span></td>
+                  <td style="padding:10px;">${item.admission_type}</td>
+                  <td style="padding:10px; text-align:right; font-weight:600;">${formatINR(item.bill_amount)}</td>
+                  <td style="padding:10px; text-align:right; color:#22c55e;">${formatINR(item.amount_received)}</td>
+                  <td style="padding:10px; text-align:right; font-weight:700; color:#ef4444;">${formatINR(item.balance_due)}</td>
+                  <td style="padding:10px;">${item.bill_date}</td>
+                  <td style="padding:10px;"><span class="${agingClass}" style="padding:2px 6px; font-size:0.7rem; font-weight:700;">${item.aging_days} Days</span></td>
+                  <td style="padding:10px; font-weight:500; color:#475569;">
+                    <div style="display:flex; align-items:center; gap:4px;">
+                      <span>${item.assigned_executive}</span>
+                      ${(role === 'BILLING_SUPERVISOR' || role === 'Super Admin') ? `
+                        <button onclick="window.openReassignPopup('${item.bill_id}')" style="background:transparent; border:none; color:#3b82f6; cursor:pointer; font-size:0.75rem; padding:0 2px;">✏️</button>
+                      ` : ''}
+                    </div>
+                  </td>
+                  <td style="padding:10px;"><span class="${statusClass}" style="padding:2px 6px; font-size:0.7rem; font-weight:700;">${item.status}</span></td>
+                  <td style="padding:10px; text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:6px;">
+                      <button class="btn btn-secondary" onclick="window.viewRecoveryLogs('${item.bill_id}')" style="padding:3px 6px; font-size:0.7rem; cursor:pointer;" title="View Audit Trail">📋 Logs</button>
+                      
+                      ${(role !== 'AUDITOR') ? `
+                        <button class="btn btn-primary" onclick="window.openLogFollowUpModal('${item.bill_id}')" style="padding:3px 6px; font-size:0.7rem; cursor:pointer;">📞 Follow-up</button>
+                      ` : ''}
+                      
+                      ${(role === 'BILLING_SUPERVISOR' || role === 'Super Admin') && item.status !== 'Write-Off Pending' && item.status !== 'Approved Write-Off' ? `
+                        <button class="btn btn-primary" onclick="window.openWriteOffModal('${item.bill_id}')" style="padding:3px 6px; font-size:0.7rem; background-color:#ef4444; border-color:#ef4444; cursor:pointer;">💸 Write-off</button>
+                      ` : ''}
+                      
+                      ${item.status === 'Write-Off Pending' && (role === 'ACCOUNTS_MANAGER' || role === 'Super Admin') ? `
+                        <button class="btn btn-primary" onclick="window.openWriteOffApprovalModal('${item.bill_id}')" style="padding:3px 6px; font-size:0.7rem; background-color:#10b981; border-color:#10b981; cursor:pointer;">✓ Approve</button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+window.refreshRecoveryGrid = function() {
+  const container = document.getElementById('billing-tab-content');
+  if (container) {
+    container.innerHTML = window.renderOutstandingRecoveryTab();
+  }
+};
+
+window.openLogFollowUpModal = function(billId) {
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (!item) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'followup-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  modal.innerHTML = `
+    <div style="background:#fff; width:450px; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Log Follow-Up Action</span>
+        <button onclick="this.closest('#followup-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      <div style="font-size:0.8rem; margin-bottom:12px; background:#f8fafc; padding:8px; border-radius:4px; border-left:3px solid #3b82f6;">
+        <strong>Patient:</strong> ${item.patient_name} (${item.UHID})<br/>
+        <strong>Invoice:</strong> ${item.bill_id} | <strong>Outstanding Due:</strong> <span style="color:#ef4444; font-weight:700;">${formatINR(item.balance_due)}</span>
+      </div>
+      
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Contact Channel</label>
+        <select id="followup-channel" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px;">
+          <option value="Call">📞 Call</option>
+          <option value="SMS">💬 SMS</option>
+          <option value="WhatsApp">📱 WhatsApp</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Follow-up Notes / Reason Code Update</label>
+        <textarea id="followup-notes" placeholder="Enter follow-up notes..." style="width:100%; height:80px; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Reason Code Update</label>
+        <select id="followup-reason" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px;">
+          <option value="${item.reason_code}" selected>${item.reason_code}</option>
+          <option value="TPA pending">TPA pending</option>
+          <option value="corporate credit period">corporate credit period</option>
+          <option value="DAMA/absconded">DAMA/absconded</option>
+          <option value="disputed line item">disputed line item</option>
+          <option value="awaiting relative">awaiting relative</option>
+          <option value="cashless authorization pending">cashless authorization pending</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Next Follow-Up Date</label>
+        <input type="date" id="followup-next-date" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="this.closest('#followup-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Cancel</button>
+        <button class="btn btn-primary" onclick="window.saveFollowUpAction('${billId}')" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Save Notes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('followup-next-date').value = tomorrow.toISOString().split('T')[0];
+};
+
+window.saveFollowUpAction = function(billId) {
+  const channel = document.getElementById('followup-channel').value;
+  const notes = document.getElementById('followup-notes').value.trim();
+  const reasonCode = document.getElementById('followup-reason').value;
+  const nextDate = document.getElementById('followup-next-date').value;
+
+  if (!notes) {
+    alert("Please enter follow-up notes.");
+    return;
+  }
+
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (item) {
+    item.reason_code = reasonCode;
+  }
+
+  const logId = "LOG-" + Math.floor(Math.random() * 100000);
+  const user = window.state.activeUserRole || "Billing Executive";
+  const newLog = {
+    log_id: logId,
+    bill_id: billId,
+    executive_id: user,
+    contact_channel: channel,
+    contact_date: new Date().toISOString().split('T')[0],
+    notes: notes,
+    next_action_date: nextDate
+  };
+  
+  if (!window.state.followUpLogs) window.state.followUpLogs = [];
+  window.state.followUpLogs.push(newLog);
+
+  const billingBill = (window.state.billing || []).find(b => b.id === billId);
+  if (billingBill) {
+    if (!billingBill.auditLogs) billingBill.auditLogs = [];
+    billingBill.auditLogs.push({
+      timestamp: new Date().toISOString(),
+      user: user,
+      action: `Follow-up Logged: ${channel} - ${notes}`
+    });
+  }
+
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_followUpLogs', JSON.stringify(window.state.followUpLogs));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  document.getElementById('followup-modal')?.remove();
+  showToast("Follow-up action logged successfully", "success");
+  window.refreshRecoveryGrid();
+};
+
+window.openWriteOffModal = function(billId) {
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (!item) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'writeoff-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  modal.innerHTML = `
+    <div style="background:#fff; width:450px; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#ef4444; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Escalate to Write-off / Bad Debt</span>
+        <button onclick="this.closest('#writeoff-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      <div style="font-size:0.8rem; margin-bottom:12px; background:#fff1f2; padding:8px; border-radius:4px; border-left:3px solid #ef4444; color:#991b1b;">
+        <strong>Patient:</strong> ${item.patient_name} (${item.UHID})<br/>
+        <strong>Invoice:</strong> ${item.bill_id} | <strong>Outstanding Due:</strong> <span style="font-weight:700;">${formatINR(item.balance_due)}</span>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Write-Off Amount Requested</label>
+        <input type="number" id="writeoff-amount" value="${item.balance_due}" max="${item.balance_due}" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Justification & Reason Code</label>
+        <textarea id="writeoff-reason" placeholder="Detail the recovery attempts..." style="width:100%; height:80px; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="this.closest('#writeoff-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Cancel</button>
+        <button class="btn btn-primary" onclick="window.submitWriteOffRequest('${billId}')" style="padding:6px 12px; font-size:0.8rem; background-color:#ef4444; border-color:#ef4444; cursor:pointer;">Escalate</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+};
+
+window.submitWriteOffRequest = function(billId) {
+  const amt = parseFloat(document.getElementById('writeoff-amount').value);
+  const reason = document.getElementById('writeoff-reason').value.trim();
+
+  if (isNaN(amt) || amt <= 0) {
+    alert("Please enter a valid write-off amount.");
+    return;
+  }
+  if (!reason) {
+    alert("Please enter a justification.");
+    return;
+  }
+
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (item) {
+    if (amt > item.balance_due) {
+      alert("Write-off amount cannot exceed the balance due.");
+      return;
+    }
+    item.status = 'Write-Off Pending';
+  }
+
+  const recordId = "WR-" + Math.floor(Math.random() * 100000);
+  const requester = window.state.activeUserRole || "Billing Supervisor";
+  const newRecord = {
+    writeoff_id: recordId,
+    bill_id: billId,
+    requested_by: requester,
+    approved_by: null,
+    reason: reason,
+    amount: amt,
+    approval_date: null,
+    status: 'PendingApproval'
+  };
+
+  if (!window.state.writeOffRecords) window.state.writeOffRecords = [];
+  window.state.writeOffRecords.push(newRecord);
+
+  const billingBill = (window.state.billing || []).find(b => b.id === billId);
+  if (billingBill) {
+    if (!billingBill.auditLogs) billingBill.auditLogs = [];
+    billingBill.auditLogs.push({
+      timestamp: new Date().toISOString(),
+      user: requester,
+      action: `Write-off Request Initiated for ${formatINR(amt)}: ${reason}`
+    });
+  }
+
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_writeOffRecords', JSON.stringify(window.state.writeOffRecords));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  document.getElementById('writeoff-modal')?.remove();
+  showToast("Write-off request escalated to Finance Manager", "warning");
+  window.refreshRecoveryGrid();
+};
+
+window.openWriteOffApprovalModal = function(billId) {
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (!item) return;
+
+  const records = window.state.writeOffRecords || [];
+  const record = records.find(r => r.bill_id === billId && r.status === 'PendingApproval');
+  if (!record) {
+    alert("No active write-off request found for this bill.");
+    return;
+  }
+
+  const currentUser = window.state.activeUserRole || 'ACCOUNTS_MANAGER';
+  const isSuperAdmin = currentUser === 'Super Admin';
+  const isSelfApproved = record.requested_by === currentUser;
+
+  const modal = document.createElement('div');
+  modal.id = 'writeoff-approval-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  modal.innerHTML = `
+    <div style="background:#fff; width:450px; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#10b981; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Authorize Write-Off Approval</span>
+        <button onclick="this.closest('#writeoff-approval-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      <div style="font-size:0.8rem; margin-bottom:12px; background:#ecfdf5; padding:8px; border-radius:4px; border-left:3px solid #10b981; color:#065f46;">
+        <strong>Patient:</strong> ${item.patient_name} (${item.UHID})<br/>
+        <strong>Invoice:</strong> ${item.bill_id}<br/>
+        <strong>Requested Write-off Amount:</strong> <span style="font-weight:700;">${formatINR(record.amount)}</span><br/>
+        <strong>Initiated By:</strong> ${record.requested_by}<br/>
+        <strong>Justification:</strong> ${record.reason}
+      </div>
+
+      ${isSelfApproved && !isSuperAdmin ? `
+        <div style="padding:8px; background:#fee2e2; border-left:3px solid #ef4444; border-radius:4px; color:#991b1b; font-size:0.75rem; font-weight:700; margin-bottom:12px;">
+          ⚠️ GATING ALERT: Double-check constraint active. You cannot self-approve a request you initiated. Please have another manager or Super Admin approve this.
+        </div>
+      ` : ''}
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Approval Remarks / Reason Code</label>
+        <textarea id="approval-remarks" placeholder="Enter formal authorization remarks..." style="width:100%; height:60px; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="window.rejectWriteOffAction('${billId}', '${record.writeoff_id}')" style="padding:6px 12px; font-size:0.8rem; cursor:pointer; background-color:#ef4444; border-color:#ef4444; color:#fff;">Reject</button>
+        <button class="btn btn-primary" onclick="window.approveWriteOffAction('${billId}', '${record.writeoff_id}')" 
+          ${isSelfApproved && !isSuperAdmin ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : 'style="background-color:#10b981; border-color:#10b981; cursor:pointer;"'}
+          >Approve & Settle</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+};
+
+window.approveWriteOffAction = function(billId, writeoffId) {
+  const remarks = document.getElementById('approval-remarks').value.trim();
+  if (!remarks) {
+    alert("Please enter approval remarks.");
+    return;
+  }
+
+  const currentUser = window.state.activeUserRole || 'ACCOUNTS_MANAGER';
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  const record = (window.state.writeOffRecords || []).find(r => r.writeoff_id === writeoffId);
+
+  if (item && record) {
+    item.status = 'Approved Write-Off';
+    item.amount_received += record.amount;
+    item.balance_due = item.bill_amount - item.amount_received;
+    
+    const billingBill = (window.state.billing || []).find(b => b.id === billId);
+    if (billingBill) {
+      billingBill.paid = item.amount_received;
+      billingBill.status = item.balance_due <= 0 ? 'Paid' : 'Partially Paid';
+      if (!billingBill.auditLogs) billingBill.auditLogs = [];
+      billingBill.auditLogs.push({
+        timestamp: new Date().toISOString(),
+        user: currentUser,
+        action: `Write-off Request Approved for ${formatINR(record.amount)} by ${currentUser}: ${remarks}`
+      });
+    }
+
+    record.approved_by = currentUser;
+    record.approval_date = new Date().toISOString().split('T')[0];
+    record.status = 'Approved';
+  }
+
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_writeOffRecords', JSON.stringify(window.state.writeOffRecords));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  document.getElementById('writeoff-approval-modal')?.remove();
+  showToast("Write-off authorized and bad debt settled successfully", "success");
+  window.refreshRecoveryGrid();
+};
+
+window.rejectWriteOffAction = function(billId, writeoffId) {
+  const remarks = document.getElementById('approval-remarks').value.trim();
+  if (!remarks) {
+    alert("Please enter rejection reason.");
+    return;
+  }
+
+  const currentUser = window.state.activeUserRole || 'ACCOUNTS_MANAGER';
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  const record = (window.state.writeOffRecords || []).find(r => r.writeoff_id === writeoffId);
+
+  if (item && record) {
+    item.status = 'Unpaid';
+    record.status = 'Rejected';
+    
+    const billingBill = (window.state.billing || []).find(b => b.id === billId);
+    if (billingBill) {
+      if (!billingBill.auditLogs) billingBill.auditLogs = [];
+      billingBill.auditLogs.push({
+        timestamp: new Date().toISOString(),
+        user: currentUser,
+        action: `Write-off Request Rejected by ${currentUser}: ${remarks}`
+      });
+    }
+  }
+
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_writeOffRecords', JSON.stringify(window.state.writeOffRecords));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  document.getElementById('writeoff-approval-modal')?.remove();
+  showToast("Write-off request rejected", "error");
+  window.refreshRecoveryGrid();
+};
+
+window.exportOutstandingReport = function() {
+  const oBills = window.state.outstandingBills || [];
+  showToast(`Outstanding Aging Report exported successfully (${oBills.length} records)`, "success");
+};
+
+window.viewRecoveryLogs = function(billId) {
+  const logs = (window.state.followUpLogs || []).filter(l => l.bill_id === billId);
+  const writeoffs = (window.state.writeOffRecords || []).filter(w => w.bill_id === billId);
+  const billingBill = (window.state.billing || []).find(b => b.id === billId);
+
+  const modal = document.createElement('div');
+  modal.id = 'logs-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  
+  let logsHtml = '';
+  if (logs.length === 0 && writeoffs.length === 0 && (!billingBill || !billingBill.auditLogs)) {
+    logsHtml = `<p style="color:#64748b; font-size:0.8rem;">No activity log recorded for this bill.</p>`;
+  } else {
+    logsHtml += `<h4 style="margin:10px 0 6px 0; font-size:0.85rem; color:#475569; font-weight:700;">Client Contact Follow-Ups</h4>`;
+    if (logs.length === 0) {
+      logsHtml += `<p style="color:#64748b; font-size:0.75rem; margin-left:8px;">No follow-ups logged.</p>`;
+    } else {
+      logs.forEach(l => {
+        logsHtml += `
+          <div style="border-left:2px solid #3b82f6; padding-left:8px; margin-bottom:8px; font-size:0.75rem;">
+            <strong>${l.contact_date} (${l.contact_channel}):</strong> ${l.notes}<br/>
+            <span style="color:#64748b;">Logged by: ${l.executive_id} | Next follow-up: ${l.next_action_date || 'N/A'}</span>
+          </div>
+        `;
+      });
+    }
+
+    logsHtml += `<h4 style="margin:16px 0 6px 0; font-size:0.85rem; color:#475569; font-weight:700;">Write-Off History</h4>`;
+    if (writeoffs.length === 0) {
+      logsHtml += `<p style="color:#64748b; font-size:0.75rem; margin-left:8px;">No write-off attempts.</p>`;
+    } else {
+      writeoffs.forEach(w => {
+        logsHtml += `
+          <div style="border-left:2px solid #ef4444; padding-left:8px; margin-bottom:8px; font-size:0.75rem;">
+            <strong>Write-Off Request of ${formatINR(w.amount)}:</strong> [Status: ${w.status}] - ${w.reason}<br/>
+            <span style="color:#64748b;">Raised by: ${w.requested_by} | Approved by: ${w.approved_by || 'Pending'}</span>
+          </div>
+        `;
+      });
+    }
+
+    if (billingBill && billingBill.auditLogs) {
+      logsHtml += `<h4 style="margin:16px 0 6px 0; font-size:0.85rem; color:#475569; font-weight:700;">System Audit Trail (Immutable)</h4>`;
+      billingBill.auditLogs.forEach(a => {
+        logsHtml += `
+          <div style="border-left:2px solid #cbd5e1; padding-left:8px; margin-bottom:6px; font-size:0.72rem;">
+            <strong>${new Date(a.timestamp).toLocaleString()} [${a.user}]:</strong> ${a.action}
+          </div>
+        `;
+      });
+    }
+  }
+
+  modal.innerHTML = `
+    <div style="background:#fff; width:500px; max-height:80%; overflow-y:auto; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Audit Trail & Activity Log</span>
+        <button onclick="this.closest('#logs-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      <div style="margin-bottom:16px;">
+        ${logsHtml}
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="this.closest('#logs-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+};
+
+window.openReassignPopup = function(billId) {
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  if (!item) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'reassign-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  modal.innerHTML = `
+    <div style="background:#fff; width:360px; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Reassign Case Executive</span>
+        <button onclick="this.closest('#reassign-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      <p style="font-size:0.78rem; color:#475569; margin-bottom:12px;">Choose recovery executive to reassign <strong>${item.bill_id}</strong>:</p>
+      
+      <div style="margin-bottom:16px;">
+        <select id="new-assigned-executive" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px;">
+          <option value="Executive Ankit" ${item.assigned_executive === 'Executive Ankit' ? 'selected' : ''}>Executive Ankit</option>
+          <option value="Executive Sonia" ${item.assigned_executive === 'Executive Sonia' ? 'selected' : ''}>Executive Sonia</option>
+          <option value="Executive Karan" ${item.assigned_executive === 'Executive Karan' ? 'selected' : ''}>Executive Karan</option>
+        </select>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="this.closest('#reassign-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Cancel</button>
+        <button class="btn btn-primary" onclick="window.saveReassignment('${billId}')" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Confirm Reassign</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+};
+
+window.saveReassignment = function(billId) {
+  const newExec = document.getElementById('new-assigned-executive').value;
+  const oBills = window.state.outstandingBills || [];
+  const item = oBills.find(o => o.bill_id === billId);
+  const currentUser = window.state.activeUserRole || 'BILLING_SUPERVISOR';
+  if (item) {
+    item.assigned_executive = newExec;
+    
+    const billingBill = (window.state.billing || []).find(b => b.id === billId);
+    if (billingBill) {
+      if (!billingBill.auditLogs) billingBill.auditLogs = [];
+      billingBill.auditLogs.push({
+        timestamp: new Date().toISOString(),
+        user: currentUser,
+        action: `Case reassigned to: ${newExec}`
+      });
+    }
+  }
+
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  document.getElementById('reassign-modal')?.remove();
+  showToast("Case executive reassigned successfully", "success");
+  window.refreshRecoveryGrid();
+};
+
+window.renderUnidentifiedReceiptsTab = function() {
+  const role = window.activeBillingRole || 'CASHIER';
+  const receipts = window.state.suspenseReceipts || [];
+  const unmatched = receipts.filter(r => r.match_status !== 'matched');
+
+  const searchQuery = document.getElementById('suspense-search')?.value || '';
+
+  const filtered = unmatched.filter(item => {
+    return item.payer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           item.UTR_reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           item.amount.toString().includes(searchQuery) ||
+           item.receipt_id.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  return `
+    <div class="suspense-workspace" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom: 2px;">
+        <button class="btn btn-primary" onclick="window.openImportReceiptModal()" style="padding:6px 12px; font-size:0.75rem; background-color:#0284c7; border-color:#0284c7; color:#fff; font-weight:700; cursor:pointer; border-radius:4px;">➕ Book Statement Credit</button>
+      </div>
+
+      <!-- Quick Match Recommendations -->
+      <div style="padding:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">
+        <h4 style="margin:0 0 8px 0; font-size:0.8rem; color:#166534; font-weight:700; display:flex; align-items:center; gap:6px;">
+          <span>💡 High-Confidence Match Suggestions</span>
+        </h4>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${receipts.filter(r => r.match_status === 'suggested').map(r => {
+            const bill = (window.state.outstandingBills || []).find(b => b.bill_id === r.matched_bill_id);
+            if (!bill) return '';
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:#fff; border:1px solid #dcfce7; border-radius:4px; font-size:0.78rem;">
+                <div>
+                  <strong>${r.payer_name}</strong> sent <strong>${formatINR(r.amount)}</strong> (UTR: ${r.UTR_reference}) matches outstanding bill of <strong>${bill.patient_name}</strong> (Due: ${formatINR(bill.balance_due)})
+                  <span style="background:#dcfce7; color:#15803d; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:6px;">95% Match Rate</span>
+                </div>
+                <div>
+                  <button class="btn btn-primary" onclick="window.confirmAutoMatch('${r.receipt_id}', '${bill.bill_id}')" style="padding:4px 8px; font-size:0.7rem; background-color:#15803d; border-color:#15803d; cursor:pointer;">Confirm Match</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          ${receipts.filter(r => r.match_status === 'suggested').length === 0 ? `
+            <div style="font-size:0.75rem; color:#166534;">No suggested match recommendations currently.</div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div style="display:flex; gap:12px; flex-wrap:wrap; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; align-items:center;">
+        <div style="flex:1; min-width:200px;">
+          <label style="display:block; font-size:0.7rem; font-weight:700; color:#475569; margin-bottom:4px;">Filter Unmatched entries</label>
+          <input type="text" id="suspense-search" value="${searchQuery}" oninput="window.refreshSuspenseGrid()" placeholder="Search payer, UTR, amount..." style="width:100%; padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px;" />
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div class="billing-table-wrapper" style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:6px;">
+        <table class="billing-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:0.78rem;">
+          <thead>
+            <tr style="background-color:#f1f5f9; color:#475569; font-weight:700; border-bottom:1px solid #cbd5e1;">
+              <th style="padding:10px;">Receipt ID</th>
+              <th style="padding:10px;">Date Received</th>
+              <th style="padding:10px;">Payer Name</th>
+              <th style="padding:10px;">UTR Reference</th>
+              <th style="padding:10px;">Payment Mode</th>
+              <th style="padding:10px; text-align:right;">Amount</th>
+              <th style="padding:10px;">Age in Suspense</th>
+              <th style="padding:10px; text-align:center;">Reconciliation Controls</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length === 0 ? `
+              <tr>
+                <td colspan="8" style="padding:20px; text-align:center; color:#64748b;">No unmatched suspense ledger credits found.</td>
+              </tr>
+            ` : filtered.map(item => {
+              const rDate = new Date(item.receipt_date);
+              const today = new Date();
+              const diffDays = Math.ceil((today - rDate) / 86400000) || 0;
+              const isAged = diffDays > 7;
+              const ageStyle = isAged ? 'color:#ef4444; font-weight:700;' : 'color:#475569;';
+              return `
+                <tr style="border-bottom:1px solid #e2e8f0; hover:background:#f8fafc;">
+                  <td style="padding:10px; font-weight:700;">${item.receipt_id}</td>
+                  <td style="padding:10px;">${item.receipt_date}</td>
+                  <td style="padding:10px; font-weight:600;">${item.payer_name}</td>
+                  <td style="padding:10px; font-family:monospace;">${item.UTR_reference}</td>
+                  <td style="padding:10px;">${item.payment_mode}</td>
+                  <td style="padding:10px; text-align:right; font-weight:700; color:#0369a1;">${formatINR(item.amount)}</td>
+                  <td style="padding:10px; ${ageStyle}">
+                    ${diffDays} Days
+                    ${isAged ? '<span style="font-size:8px; background:#fee2e2; color:#ef4444; padding:1px 4px; border-radius:4px; margin-left:4px;">&gt;7d Aged</span>' : ''}
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:6px;">
+                      <button class="btn btn-primary" onclick="window.openManualMatchWorkbench('${item.receipt_id}')" style="padding:3px 6px; font-size:0.7rem; cursor:pointer;">🔍 Research & Match</button>
+                      <button class="btn btn-secondary" onclick="window.openBulkAllocationWorkbench('${item.receipt_id}')" style="padding:3px 6px; font-size:0.7rem; background-color:#6b21a8; border-color:#6b21a8; color:#fff; cursor:pointer;">🥞 Bulk Allocation</button>
+                      
+                      ${(role === 'ACCOUNTS_MANAGER' || role === 'Super Admin') ? `
+                        <button class="btn btn-secondary" onclick="window.writeBackToUnclaimed('${item.receipt_id}')" style="padding:3px 6px; font-size:0.7rem; color:#ef4444; border-color:#ef4444; cursor:pointer;">Unclaimed</button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+window.refreshSuspenseGrid = function() {
+  const container = document.getElementById('billing-tab-content');
+  if (container) {
+    container.innerHTML = window.renderUnidentifiedReceiptsTab();
+  }
+};
+
+window.openImportReceiptModal = function() {
+  const modal = document.createElement('div');
+  modal.id = 'import-receipt-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  modal.innerHTML = `
+    <div style="background:#fff; width:400px; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Book Statement Credit Entry</span>
+        <button onclick="this.closest('#import-receipt-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Payer Name (from bank text)</label>
+        <input type="text" id="suspense-payer" placeholder="e.g. ICICI Bank Payer" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Amount (Credit)</label>
+        <input type="number" id="suspense-amount" placeholder="e.g. 15000" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">UTR / Reference Number</label>
+        <input type="text" id="suspense-utr" placeholder="e.g. UTR992810X" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Payment Mode</label>
+        <select id="suspense-mode" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px;">
+          <option value="NEFT">NEFT</option>
+          <option value="RTGS">RTGS</option>
+          <option value="UPI">UPI</option>
+          <option value="IMPS">IMPS</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.75rem; font-weight:700; color:#475569; margin-bottom:4px;">Transaction Date</label>
+        <input type="date" id="suspense-date" style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box;" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="this.closest('#import-receipt-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Cancel</button>
+        <button class="btn btn-primary" onclick="window.saveImportReceipt()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Book Credit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('suspense-date').value = new Date().toISOString().split('T')[0];
+};
+
+window.saveImportReceipt = function() {
+  const payer = document.getElementById('suspense-payer').value.trim();
+  const amt = parseFloat(document.getElementById('suspense-amount').value);
+  const utr = document.getElementById('suspense-utr').value.trim();
+  const mode = document.getElementById('suspense-mode').value;
+  const date = document.getElementById('suspense-date').value;
+
+  if (!payer || isNaN(amt) || amt <= 0 || !utr || !date) {
+    alert("Please fill in all details correctly.");
+    return;
+  }
+
+  const newId = "REC-SUS-" + Math.floor(Math.random() * 100000);
+  const newReceipt = {
+    receipt_id: newId,
+    amount: amt,
+    receipt_date: date,
+    payment_mode: mode,
+    payer_name: payer,
+    UTR_reference: utr,
+    source_account: "XXXXXXXX" + Math.floor(Math.random() * 10000),
+    match_status: "unmatched",
+    matched_bill_id: null
+  };
+
+  if (!window.state.suspenseReceipts) window.state.suspenseReceipts = [];
+  window.state.suspenseReceipts.push(newReceipt);
+
+  localStorage.setItem('saronil_suspenseReceipts', JSON.stringify(window.state.suspenseReceipts));
+
+  document.getElementById('import-receipt-modal')?.remove();
+  showToast("Bank statement credit booked to Suspense Ledger", "success");
+  window.refreshSuspenseGrid();
+};
+
+window.confirmAutoMatch = function(receiptId, billId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+
+  const oBills = window.state.outstandingBills || [];
+  const bObj = oBills.find(b => b.bill_id === billId);
+
+  if (rObj && bObj) {
+    rObj.match_status = 'matched';
+    rObj.matched_bill_id = billId;
+
+    bObj.amount_received += rObj.amount;
+    bObj.balance_due = bObj.bill_amount - bObj.amount_received;
+    bObj.status = bObj.balance_due <= 0 ? 'Closed' : 'Partially Paid';
+
+    const billingBill = (window.state.billing || []).find(b => b.id === billId);
+    if (billingBill) {
+      billingBill.paid = bObj.amount_received;
+      billingBill.status = bObj.balance_due <= 0 ? 'Paid' : 'Partially Paid';
+      if (!billingBill.auditLogs) billingBill.auditLogs = [];
+      billingBill.auditLogs.push({
+        timestamp: new Date().toISOString(),
+        user: window.state.activeUserRole || "Billing Exec",
+        action: `Reconciled Suspense Credit: ${rObj.receipt_id} (UTR: ${rObj.UTR_reference}) of ${formatINR(rObj.amount)} matched to Bill`
+      });
+    }
+  }
+
+  localStorage.setItem('saronil_suspenseReceipts', JSON.stringify(window.state.suspenseReceipts));
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+
+  showToast("Receipt matched and bill status updated successfully", "success");
+  window.refreshSuspenseGrid();
+};
+
+window.openManualMatchWorkbench = function(receiptId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+  if (!rObj) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'manual-match-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  
+  modal.innerHTML = `
+    <div style="background:#fff; width:700px; max-height:85%; overflow-y:auto; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Research & Link Match Workbench</span>
+        <button onclick="this.closest('#manual-match-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        <!-- Left: Suspense Receipt Info -->
+        <div style="background:#f0f9ff; padding:12px; border:1px solid #bae6fd; border-radius:6px;">
+          <h4 style="margin:0 0 8px 0; font-size:0.85rem; color:#0369a1; font-weight:700;">Statement Credit Details</h4>
+          <table style="width:100%; font-size:0.75rem; border-collapse:collapse;">
+            <tr><td style="padding:4px 0; font-weight:600; color:#475569;">Payer Name:</td><td style="padding:4px 0; font-weight:700;">${rObj.payer_name}</td></tr>
+            <tr><td style="padding:4px 0; font-weight:600; color:#475569;">UTR Code:</td><td style="padding:4px 0; font-family:monospace;">${rObj.UTR_reference}</td></tr>
+            <tr><td style="padding:4px 0; font-weight:600; color:#475569;">Credit Amount:</td><td style="padding:4px 0; font-weight:700; color:#0369a1;">${formatINR(rObj.amount)}</td></tr>
+            <tr><td style="padding:4px 0; font-weight:600; color:#475569;">Date Credit:</td><td>${rObj.receipt_date}</td></tr>
+            <tr><td style="padding:4px 0; font-weight:600; color:#475569;">Payer Account:</td><td>${rObj.source_account}</td></tr>
+          </table>
+        </div>
+
+        <!-- Right: Matching Dues List -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h4 style="margin:0; font-size:0.85rem; color:#475569; font-weight:700;">Link to Outstanding Bill</h4>
+          <input type="text" id="manual-match-search" oninput="window.filterManualMatchList('${receiptId}')" placeholder="Search Patient name, bill ID, UHID..." style="padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px;" />
+          
+          <div id="manual-match-list-container" style="max-height:220px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:4px; padding:4px;">
+            <!-- list elements loaded dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid #e2e8f0; padding-top:12px;">
+        <button class="btn btn-secondary" onclick="this.closest('#manual-match-modal').remove()" style="padding:6px 12px; font-size:0.8rem; cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  window.filterManualMatchList(receiptId);
+};
+
+window.filterManualMatchList = function(receiptId) {
+  const query = document.getElementById('manual-match-search')?.value.toLowerCase() || '';
+  const oBills = window.state.outstandingBills || [];
+  const activeBills = oBills.filter(b => b.status !== 'Closed' && b.status !== 'Approved Write-Off');
+
+  const filtered = activeBills.filter(b => {
+    return b.patient_name.toLowerCase().includes(query) ||
+           b.bill_id.toLowerCase().includes(query) ||
+           b.UHID.toLowerCase().includes(query);
+  });
+
+  const listContainer = document.getElementById('manual-match-list-container');
+  if (listContainer) {
+    listContainer.innerHTML = filtered.map(b => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; font-size:0.75rem;">
+        <div>
+          <span style="font-weight:700; color:#0f172a;">${b.bill_id}</span> - ${b.patient_name}<br/>
+          <span style="color:#64748b;">UHID: ${b.UHID} | Balance Due: <strong style="color:#ef4444;">${formatINR(b.balance_due)}</strong></span>
+        </div>
+        <button class="btn btn-primary" onclick="window.confirmAutoMatch('${receiptId}', '${b.bill_id}'); document.getElementById('manual-match-modal').remove();" style="padding:2px 6px; font-size:0.68rem; cursor:pointer;">Link Match</button>
+      </div>
+    `).join('');
+    
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<p style="padding:10px; color:#64748b; font-size:0.75rem; text-align:center;">No outstanding bills match search.</p>`;
+    }
+  }
+};
+
+window.openBulkAllocationWorkbench = function(receiptId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+  if (!rObj) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'bulk-match-modal';
+  modal.style = "position:fixed; z-index:100000; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);";
+  
+  modal.innerHTML = `
+    <div style="background:#fff; width:800px; max-height:85%; overflow-y:auto; border-radius:8px; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0; text-align:left;">
+      <h3 style="margin-top:0; font-size:1.1rem; color:#6b21a8; border-bottom:1px solid #e2e8f0; padding-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Bulk Settlement Split Allocation Desk</span>
+        <button onclick="this.closest('#bulk-match-modal').remove()" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:#94a3b8;">&times;</button>
+      </h3>
+      
+      <!-- Receipt Summary Header -->
+      <div style="background:#faf5ff; padding:12px; border:1px solid #e9d5ff; border-radius:6px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:#7e22ce; font-weight:700;">LUMP-SUM SETTLEMENT CREDIT ENTRY</span>
+          <h4 style="margin:2px 0 0 0; font-size:1rem; color:#581c87; font-weight:700;">${rObj.payer_name}</h4>
+          <span style="font-size:0.75rem; color:#64748b;">UTR: ${rObj.UTR_reference} | Date: ${rObj.receipt_date}</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:0.7rem; color:#475569; display:block; font-weight:600;">Total Credit Amount</span>
+          <strong style="font-size:1.2rem; color:#6b21a8;" id="bulk-total-credit">${formatINR(rObj.amount)}</strong>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:16px;">
+        <!-- Left: Select Outstanding Bills to Split -->
+        <div style="border-right:1px solid #e2e8f0; padding-right:16px;">
+          <h4 style="margin:0 0 8px 0; font-size:0.8rem; color:#475569; font-weight:700;">Step 1: Choose Bills to Allocate Dues</h4>
+          <input type="text" id="bulk-bill-search" oninput="window.filterBulkMatchList('${receiptId}')" placeholder="Search bill ID, name..." style="width:100%; padding:6px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:4px; box-sizing:border-box; margin-bottom:8px;" />
+          
+          <div id="bulk-match-list-container" style="max-height:260px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:4px; padding:4px;">
+            <!-- loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Right: Allocations split workbook -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h4 style="margin:0 0 4px 0; font-size:0.8rem; color:#475569; font-weight:700;">Step 2: Allocate Split Values</h4>
+          <div style="flex:1; max-height:230px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:4px; padding:8px;" id="bulk-allocated-container">
+            <p style="color:#64748b; font-size:0.75rem; text-align:center; padding:20px;">No patient bills added. Choose from the left list.</p>
+          </div>
+          
+          <!-- Sum display status bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:4px; font-size:0.78rem;">
+            <div>
+              <span>Allocated Sum: <strong><span id="bulk-allocated-sum">₹0.00</span></strong></span><br/>
+              <span id="bulk-allocation-variance" style="font-size:0.7rem; color:#ef4444; font-weight:700;">Variance: ${formatINR(rObj.amount)}</span>
+            </div>
+            <button id="submit-bulk-allocation-btn" class="btn btn-primary" onclick="window.saveBulkSplitAllocation('${receiptId}')" disabled style="padding:6px 12px; font-size:0.8rem; background-color:#6b21a8; border-color:#6b21a8; cursor:not-allowed; opacity:0.5;">Commit Allocation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  window._bulkAllocationsWorkbook = [];
+  window.filterBulkMatchList(receiptId);
+};
+
+window.filterBulkMatchList = function(receiptId) {
+  const query = document.getElementById('bulk-bill-search')?.value.toLowerCase() || '';
+  const oBills = window.state.outstandingBills || [];
+  const activeBills = oBills.filter(b => b.status !== 'Closed' && b.status !== 'Approved Write-Off');
+
+  const filtered = activeBills.filter(b => {
+    return b.patient_name.toLowerCase().includes(query) ||
+           b.bill_id.toLowerCase().includes(query) ||
+           b.UHID.toLowerCase().includes(query);
+  });
+
+  const listContainer = document.getElementById('bulk-match-list-container');
+  if (listContainer) {
+    listContainer.innerHTML = filtered.map(b => {
+      const isAdded = window._bulkAllocationsWorkbook.some(item => item.bill_id === b.bill_id);
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #f1f5f9; font-size:0.75rem;">
+          <div>
+            <span style="font-weight:700; color:#0f172a;">${b.bill_id}</span> - ${b.patient_name}<br/>
+            <span style="color:#64748b;">Due: <strong style="color:#ef4444;">${formatINR(b.balance_due)}</strong></span>
+          </div>
+          ${isAdded ? `
+            <span style="color:#10b981; font-weight:700; font-size:0.7rem;">Added</span>
+          ` : `
+            <button class="btn btn-secondary" onclick="window.addBillToBulkWorkbook('${b.bill_id}', '${b.patient_name.replace(/'/g, "\\'")}', ${b.balance_due}, '${receiptId}')" style="padding:2px 6px; font-size:0.68rem; cursor:pointer;">Add</button>
+          `}
+        </div>
+      `;
+    }).join('');
+  }
+};
+
+window.addBillToBulkWorkbook = function(billId, patientName, balanceDue, receiptId) {
+  window._bulkAllocationsWorkbook.push({
+    bill_id: billId,
+    patient_name: patientName,
+    balance_due: balanceDue,
+    amount: 0
+  });
+  window.renderBulkSplitWorkbook(receiptId);
+  window.filterBulkMatchList(receiptId);
+};
+
+window.removeBillFromBulkWorkbook = function(billId, receiptId) {
+  window._bulkAllocationsWorkbook = window._bulkAllocationsWorkbook.filter(x => x.bill_id !== billId);
+  window.renderBulkSplitWorkbook(receiptId);
+  window.filterBulkMatchList(receiptId);
+};
+
+window.updateBulkSplitAmount = function(billId, val, receiptId) {
+  const amt = parseFloat(val) || 0;
+  const item = window._bulkAllocationsWorkbook.find(x => x.bill_id === billId);
+  if (item) {
+    item.amount = amt;
+  }
+  window.calculateBulkAllocationsSum(receiptId);
+};
+
+window.renderBulkSplitWorkbook = function(receiptId) {
+  const container = document.getElementById('bulk-allocated-container');
+  if (!container) return;
+
+  if (window._bulkAllocationsWorkbook.length === 0) {
+    container.innerHTML = `<p style="color:#64748b; font-size:0.75rem; text-align:center; padding:20px;">No patient bills added. Choose from the left list.</p>`;
+    return;
+  }
+
+  container.innerHTML = window._bulkAllocationsWorkbook.map(b => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; margin-bottom:8px; font-size:0.75rem;">
+      <div style="flex:1;">
+        <strong style="color:#0f172a;">${b.bill_id}</strong> - ${b.patient_name}<br/>
+        <span style="color:#64748b;">Max Dues: ${formatINR(b.balance_due)}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="number" value="${b.amount || ''}" max="${b.balance_due}" placeholder="Split ₹" oninput="window.updateBulkSplitAmount('${b.bill_id}', this.value, '${receiptId}')" style="width:80px; padding:4px; font-size:0.75rem; border:1px solid #cbd5e1; border-radius:4px; text-align:right;" />
+        <button onclick="window.removeBillFromBulkWorkbook('${b.bill_id}', '${receiptId}')" style="background:transparent; border:none; color:#ef4444; font-size:1rem; cursor:pointer; font-weight:bold;">&times;</button>
+      </div>
+    </div>
+  `).join('');
+  
+  window.calculateBulkAllocationsSum(receiptId);
+};
+
+window.calculateBulkAllocationsSum = function(receiptId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+  if (!rObj) return;
+
+  const totalCredit = rObj.amount;
+  const allocatedSum = window._bulkAllocationsWorkbook.reduce((sum, item) => sum + item.amount, 0);
+  const variance = totalCredit - allocatedSum;
+
+  const sumEl = document.getElementById('bulk-allocated-sum');
+  const varianceEl = document.getElementById('bulk-allocation-variance');
+  const submitBtn = document.getElementById('submit-bulk-allocation-btn');
+
+  if (sumEl) sumEl.textContent = formatINR(allocatedSum);
+  if (varianceEl) {
+    if (variance === 0) {
+      varianceEl.textContent = "Matched Perfectly ✓";
+      varianceEl.style.color = "#10b981";
+    } else if (variance > 0) {
+      varianceEl.textContent = `Variance: Underallocated by ${formatINR(variance)}`;
+      varianceEl.style.color = "#d97706";
+    } else {
+      varianceEl.textContent = `Variance: Overallocated by ${formatINR(Math.abs(variance))}`;
+      varianceEl.style.color = "#ef4444";
+    }
+  }
+
+  if (submitBtn) {
+    if (variance === 0 && window._bulkAllocationsWorkbook.length > 0 && window._bulkAllocationsWorkbook.every(x => x.amount > 0)) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      submitBtn.style.cursor = 'not-allowed';
+    }
+  }
+};
+
+window.saveBulkSplitAllocation = function(receiptId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+  if (!rObj) return;
+
+  const oBills = window.state.outstandingBills || [];
+  const user = window.state.activeUserRole || "Billing Supervisor";
+
+  window._bulkAllocationsWorkbook.forEach(alloc => {
+    const bill = oBills.find(b => b.bill_id === alloc.bill_id);
+    if (bill) {
+      bill.amount_received += alloc.amount;
+      bill.balance_due = bill.bill_amount - bill.amount_received;
+      bill.status = bill.balance_due <= 0 ? 'Closed' : 'Partially Paid';
+
+      const billingBill = (window.state.billing || []).find(b => b.id === alloc.bill_id);
+      if (billingBill) {
+        billingBill.paid = bill.amount_received;
+        billingBill.status = bill.balance_due <= 0 ? 'Paid' : 'Partially Paid';
+        if (!billingBill.auditLogs) billingBill.auditLogs = [];
+        billingBill.auditLogs.push({
+          timestamp: new Date().toISOString(),
+          user: user,
+          action: `Split Settled via Bulk TPA Settlement: ${receiptId} (allocated amount: ${formatINR(alloc.amount)})`
+        });
+      }
+    }
+  });
+
+  rObj.match_status = 'matched';
+  rObj.matched_bill_id = 'BULK-' + receiptId;
+
+  const allocationRecordId = "BLK-" + Math.floor(Math.random() * 100000);
+  if (!window.state.bulkAllocations) window.state.bulkAllocations = [];
+  window.state.bulkAllocations.push({
+    allocation_id: allocationRecordId,
+    receipt_id: receiptId,
+    allocations: window._bulkAllocationsWorkbook.map(x => ({ bill_id: x.bill_id, allocated_amount: x.amount })),
+    allocated_by: user,
+    allocated_date: new Date().toISOString().split('T')[0]
+  });
+
+  localStorage.setItem('saronil_suspenseReceipts', JSON.stringify(window.state.suspenseReceipts));
+  localStorage.setItem('saronil_outstandingBills', JSON.stringify(window.state.outstandingBills));
+  localStorage.setItem('saronil_billing', JSON.stringify(window.state.billing));
+  localStorage.setItem('saronil_bulkAllocations', JSON.stringify(window.state.bulkAllocations));
+
+  document.getElementById('bulk-match-modal')?.remove();
+  showToast("Bulk TPA settlement split allocation committed successfully", "success");
+  window.refreshSuspenseGrid();
+};
+
+window.writeBackToUnclaimed = function(receiptId) {
+  const receipts = window.state.suspenseReceipts || [];
+  const rObj = receipts.find(r => r.receipt_id === receiptId);
+  if (!rObj) return;
+
+  const confirmAction = confirm(`Are you sure you want to write back receipt UTR ${rObj.UTR_reference} (${formatINR(rObj.amount)}) to Unclaimed Liabilities? This requires CFO authorization.`);
+  if (!confirmAction) return;
+
+  rObj.match_status = 'unclaimed';
+
+  localStorage.setItem('saronil_suspenseReceipts', JSON.stringify(window.state.suspenseReceipts));
+  showToast("Receipt reclassified to Unclaimed liabilities", "warning");
+  window.refreshSuspenseGrid();
+};
+
+window.renderGstTaxEngineTab = function() {
+  const config = window.state.gstRateConfigs || [];
+  const invoices = window.state.gstInvoiceSeries || [];
+
+  return `
+    <div class="gst-workspace" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; background:linear-gradient(135deg, #4f46e5, #4338ca); padding:16px; border-radius:8px; color:#fff; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div>
+          <h3 style="margin:0; font-size:1.1rem; font-weight:700;">Healthcare GST Tax Engine Configuration</h3>
+          <p style="margin:4px 0 0 0; font-size:0.75rem; color:#e0e7ff;">Configure healthcare room rent tariff exemption brackets and tax rate tables.</p>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:16px;">
+        <!-- Left: Rule Tables -->
+        <div style="background:#fff; padding:16px; border:1px solid #cbd5e1; border-radius:6px; text-align:left;">
+          <h4 style="margin:0 0 12px 0; font-size:0.85rem; color:#4338ca; font-weight:700; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">GST Rule Matrix & SAC Thresholds</h4>
+          
+          <table style="width:100%; border-collapse:collapse; font-size:0.78rem; text-align:left; margin-bottom:16px;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid #cbd5e1; color:#475569; font-weight:700;">
+                <th style="padding:8px;">Room Category</th>
+                <th style="padding:8px;">Classification</th>
+                <th style="padding:8px; text-align:right;">Tariff</th>
+                <th style="padding:8px; text-align:right;">Threshold</th>
+                <th style="padding:8px; text-align:center;">Tax Rate</th>
+                <th style="padding:8px; text-align:center;">ITC Gate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${config.map(item => {
+                const taxRate = item.is_icu_type ? "Exempt" : (item.daily_tariff > item.tax_trigger_threshold ? "5%" : "Exempt");
+                const itcStatus = item.daily_tariff > item.tax_trigger_threshold ? "0 (Blocked)" : "N/A";
+                return `
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:8px; font-weight:700;">${item.room_category}</td>
+                    <td style="padding:8px;">${item.is_icu_type ? "ICU/CCU (Life Support)" : "Non-ICU Inpatient"}</td>
+                    <td style="padding:8px; text-align:right; font-weight:600;">${formatINR(item.daily_tariff)}/day</td>
+                    <td style="padding:8px; text-align:right; color:#64748b;">${formatINR(item.tax_trigger_threshold)}/day</td>
+                    <td style="padding:8px; text-align:center;"><span class="badge-status ${taxRate === 'Exempt' ? 'normal' : 'warning'}" style="font-size:0.68rem; font-weight:700; padding:2px 6px;">${taxRate}</span></td>
+                    <td style="padding:8px; text-align:center; color:#94a3b8; font-size:0.7rem;">${itcStatus}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div style="background:#f8fafc; padding:12px; border-radius:6px; border-left:3px solid #4f46e5; font-size:0.72rem; color:#475569; display:flex; flex-direction:column; gap:4px;">
+            <strong>📜 STATUTORY COMPLIANCE COMPOSITE SUPPLY GATES:</strong>
+            <span>• Room rent exceeding ₹5,000 per day in a non-ICU setting is taxable at 5% without input tax credit (ITC) as per Notification No. 12/2017-Central Tax.</span>
+            <span>• ICU, CCU, and Neonatal Care tariffs are exempt regardless of rate.</span>
+            <span>• Clinical diagnostics, consultations, medical treatments, and dispensations form a Composite Supply of Healthcare and remain 100% Tax Exempt.</span>
+            <span>• Cosmetic procedures, elective wellness, and corporate executive checkups carry 18% GST (SAC: 999312).</span>
+          </div>
+        </div>
+
+        <!-- Right: Sequential Invoice Log -->
+        <div style="background:#fff; padding:16px; border:1px solid #cbd5e1; border-radius:6px; text-align:left;">
+          <h4 style="margin:0 0 12px 0; font-size:0.85rem; color:#4338ca; font-weight:700; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">Sequential GST Invoice Register</h4>
+          
+          <table style="width:100%; border-collapse:collapse; font-size:0.78rem; text-align:left;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid #cbd5e1; color:#475569; font-weight:700;">
+                <th style="padding:8px;">GST Invoice No</th>
+                <th style="padding:8px;">Bill Link</th>
+                <th style="padding:8px;">B2B Buyer GSTIN</th>
+                <th style="padding:8px;">Date Finalized</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoices.map(inv => `
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:8px; font-weight:700; color:#4f46e5;">${inv.invoice_series}</td>
+                  <td style="padding:8px;">${inv.bill_id}</td>
+                  <td style="padding:8px; font-family:monospace; font-weight:500;">${inv.buyer_gstin || '<span style="color:#94a3b8; font-style:italic;">B2C Retail / Self</span>'}</td>
+                  <td style="padding:8px; color:#64748b;">${inv.invoice_date}</td>
+                </tr>
+              `).join('')}
+              ${invoices.length === 0 ? `
+                <tr><td colspan="4" style="padding:10px; color:#64748b; text-align:center;">No GST invoices finalized yet.</td></tr>
+              ` : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.triggerTaxOverride = function(billId) {
+  const bill = state.billing.find(b => b.id === billId);
+  if (!bill) return;
+
+  const overrideVal = prompt("Enter new tax amount (INR):", bill.taxOverrideAmount || 0);
+  if (overrideVal === null) return;
+  const amt = parseFloat(overrideVal);
+  if (isNaN(amt) || amt < 0) {
+    alert("Please enter a valid tax amount.");
+    return;
+  }
+
+  const reason = prompt("Enter justification reason for supervisor override (logged to statutory audit trail):");
+  if (!reason || reason.trim() === '') {
+    alert("Tax override blocked: A justification reason is mandatory.");
+    return;
+  }
+
+  bill.taxOverrideAmount = amt;
+  bill.taxOverrideReason = reason.trim();
+  
+  if (!bill.auditLogs) bill.auditLogs = [];
+  bill.auditLogs.push({
+    timestamp: new Date().toISOString(),
+    user: window.state.activeUserRole || "Billing Supervisor",
+    action: `Tax override applied to ₹${amt} (Justification: ${reason})`
+  });
+
+  localStorage.setItem('saronil_billing', JSON.stringify(state.billing));
+  showToast("GST tax amount overridden successfully", "warning");
+  
+  const container = document.getElementById('main-content');
+  if (container) {
+    renderInvoiceWorkspace(container, billId);
   }
 };

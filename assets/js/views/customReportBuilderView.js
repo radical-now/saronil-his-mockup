@@ -439,8 +439,8 @@
     window.crbGenerateReport();
   };
 
-  window.crbSaveTemplate = function () {
-    const name = prompt('Template name (e.g. Monthly CRM by Location):');
+  window.crbSaveTemplate = async function () {
+    const name = await customPrompt('Template name (e.g. Monthly CRM by Location):');
     if (!name || !name.trim()) return;
     if (!selectedFields.length) { alert('Select at least one field before saving.'); return; }
     saveTemplate(name.trim(), selectedFields);

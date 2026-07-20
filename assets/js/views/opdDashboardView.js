@@ -5,17 +5,18 @@
   function initOpdState() {
     if (!window.state) window.state = {};
 
-    // Only seed defaults if productionSeed hasn't run yet
-    if (!window.state.opdQueue || window.state.opdQueue.length === 0) {
-      window.state.opdQueue = [
-        { token: 'OPD-TK-101', patient: 'Sunita Sharma', uhid: 'SH-2026-04817', doctor: 'Dr. Priya Nair', speciality: 'Gynecology & Obs', status: 'Waiting', time: '10:15 AM', waitTime: 42 },
-        { token: 'OPD-TK-102', patient: 'Meera Iyer', uhid: 'SH-2026-04826', doctor: 'Dr. Ramesh Iyer', speciality: 'Pediatrics', status: 'Waiting', time: '10:30 AM', waitTime: 18 },
-        { token: 'OPD-TK-103', patient: 'Rajan Pillai', uhid: 'SH-2026-04840', doctor: 'Dr. Srinivasan', speciality: 'General Medicine', status: 'In Consultation', time: '09:45 AM', waitTime: 67 },
-        { token: 'OPD-TK-104', patient: 'Anjali Bose', uhid: 'SH-2026-04845', doctor: 'Dr. Priya Nair', speciality: 'Gynecology & Obs', status: 'Waiting', time: '11:00 AM', waitTime: 28 },
-        { token: 'OPD-TK-105', patient: 'Pramod Rao', uhid: 'SH-2026-04851', doctor: 'Dr. Anand', speciality: 'Cardiology', status: 'Registered', time: '09:00 AM', waitTime: 88 },
-        { token: 'OPD-TK-106', patient: 'Nandita Kumari', uhid: 'SH-2026-04855', doctor: 'Dr. Krishnamurthy', speciality: 'Psychiatry', status: 'Registered', time: '11:30 AM', waitTime: 5 },
-        { token: 'OPD-TK-107', patient: 'Vikrant Gupta', uhid: 'SH-2026-04862', doctor: 'Dr. Munna Kumar', speciality: 'Orthopedics', status: 'Waiting', time: '11:15 AM', waitTime: 13 }
-      ];
+    // Prefer queue seeded by productionSeed so OPD Dashboard and EMR share the same data
+    const savedOpdQueue = localStorage.getItem('saronil_opdQueue');
+    if (savedOpdQueue) {
+      try {
+        window.state.opdQueue = JSON.parse(savedOpdQueue);
+      } catch(e) {
+        window.state.opdQueue = null;
+      }
+    }
+
+    if (!window.state.opdQueue) {
+      window.state.opdQueue = [];
     }
 
     if (!window.state.doctorDutyLogs || window.state.doctorDutyLogs.length === 0) {
@@ -28,12 +29,34 @@
         { room: 'Room 114 — OPD', doctor: 'Dr. Munna Kumar', speciality: 'Orthopedics', status: 'Active', patientsWaiting: 1 }
       ];
     }
+
+    // Also rebuild doctorDutyLogs from opdQueue doctors if state has seeded queue
+    if (window.state.opdQueue && window.state.opdQueue.length > 0 && (!window.state.doctorDutyLogs || window.state.doctorDutyLogs.length === 0)) {
+      const seen = new Set();
+      window.state.doctorDutyLogs = window.state.opdQueue
+        .filter(q => { if (seen.has(q.doctor)) return false; seen.add(q.doctor); return true; })
+        .map((q, i) => ({
+          room: `Room ${101 + i} — OPD`,
+          doctor: q.doctor,
+          speciality: q.speciality,
+          status: 'Active',
+          patientsWaiting: window.state.opdQueue.filter(x => x.doctor === q.doctor && (x.status === 'Waiting' || x.status === 'In Consultation')).length
+        }));
+    }
   }
 
   window.views = window.views || {};
   window.views.opdDashboard = function(container) {
     initOpdState();
-    const queue = window.state.opdQueue || [];
+    if (typeof window.syncOpdQueueWithAppointments === 'function') {
+      window.syncOpdQueueWithAppointments();
+    }
+    // Filter out any active IPD patients from the OPD queue — they cannot be in the OPD queue
+    const isIPD = window.isActiveIPD || ((uhid) => {
+      const p = window.state && window.state.patients && window.state.patients.find(x => x.uhid === uhid);
+      return p && p.type === 'IPD' && (p.status === 'Admitted' || p.status === 'Critical' || p.status === 'Under Observation');
+    });
+    const queue = (window.state.opdQueue || []).filter(q => !isIPD(q.uhid));
     const waiting = queue.filter(q => q.status === 'Waiting' || q.status === 'In Consultation').length;
     const totalBooked = queue.length;
 
@@ -51,26 +74,69 @@
         </div>
 
         <!-- KPI Stats Cards -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
-          <div class="card" style="padding: 12px; display:flex; flex-direction:column; justify-content:space-between; min-height:80px;">
-            <div style="font-size:0.68rem; color:var(--text-secondary); font-weight:600;">Appointments Booked</div>
-            <div style="font-size:1.3rem; font-weight:bold; color:var(--text-primary); margin-top:4px;">${totalBooked + 141} Booked</div>
-            <div style="font-size:0.6rem; color:var(--text-muted);">Today's session load</div>
+        <div class="admin-kpi-scroll-row">
+          <!-- Card 1: Appointments Booked -->
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Appointments Booked</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${totalBooked + 141} Booked</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Today's session load</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ High Volume
+              </span>
+            </div>
           </div>
-          <div class="card" style="padding: 12px; display:flex; flex-direction:column; justify-content:space-between; min-height:80px;">
-            <div style="font-size:0.68rem; color:var(--text-secondary); font-weight:600;">Lobby Waiting Queue</div>
-            <div style="font-size:1.3rem; font-weight:bold; color:#D97706; margin-top:4px;">${waiting} Patients</div>
-            <div style="font-size:0.6rem; color:var(--text-muted);">Live lobby seating status</div>
+
+          <!-- Card 2: Lobby Waiting Queue -->
+          <div class="admin-kpi-card ${waiting > 0 ? 'status-warning' : 'status-normal'}" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Lobby Waiting Queue</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: #D97706; letter-spacing: -0.02em;">${waiting} Patients</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Live lobby seating status</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: ${waiting > 0 ? 'var(--color-warning)' : 'var(--color-success)'}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ${waiting > 0 ? '▼ Waiting' : '▲ Cleared'}
+              </span>
+            </div>
           </div>
-          <div class="card" style="padding: 12px; display:flex; flex-direction:column; justify-content:space-between; min-height:80px;">
-            <div style="font-size:0.68rem; color:var(--text-secondary); font-weight:600;">Avg Waiting Time</div>
-            <div style="font-size:1.3rem; font-weight:bold; color:#2563EB; margin-top:4px;">22 Minutes</div>
-            <div style="font-size:0.6rem; color:var(--text-muted);">Within hospital SLA</div>
+
+          <!-- Card 3: Avg Waiting Time -->
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Avg Waiting Time</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: #2563EB; letter-spacing: -0.02em;">22 Minutes</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Within hospital SLA</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Target Met
+              </span>
+            </div>
           </div>
-          <div class="card" style="padding: 12px; display:flex; flex-direction:column; justify-content:space-between; min-height:80px;">
-            <div style="font-size:0.68rem; color:var(--text-secondary); font-weight:600;">Doctors on Duty</div>
-            <div style="font-size:1.3rem; font-weight:bold; color:#059669; margin-top:4px;">${(window.state.doctorDutyLogs || []).filter(d => d.status === 'Active').length} Active</div>
-            <div style="font-size:0.6rem; color:var(--text-muted);">OPD consulting now</div>
+
+          <!-- Card 4: Doctors on Duty -->
+          <div class="admin-kpi-card status-normal" style="cursor: default;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Doctors on Duty</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: #059669; letter-spacing: -0.02em;">${(window.state.doctorDutyLogs || []).filter(d => d.status === 'Active').length} Active</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">OPD consulting now</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ▲ Roster Active
+              </span>
+            </div>
           </div>
         </div>
 

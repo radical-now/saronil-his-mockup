@@ -20,7 +20,23 @@ const roleToPersona = {
   'MRD_COORDINATOR': 'billing',
   'ACCOUNTS_MANAGER': 'billing',
   'Front Desk': 'admission',
+  'ATD Coordinator': 'admission',
+  'Billing Counter Executive': 'admission',
+  'Treating Consultant / Doctor': 'admission',
+  'Nursing Supervisor': 'admission',
+  'Administrator / Medical Superintendent': 'admission',
   'Lab': 'lab',
+  'Lab Technician': 'lab',
+  'Lab Executive': 'lab',
+  'Pathologist': 'lab',
+  'Lab Manager': 'lab',
+  'Lab Director': 'lab',
+  'Microbiologist': 'lab',
+  'Biochemist': 'lab',
+  'Histopathologist': 'lab',
+  'Lab Supervisor': 'lab',
+  'Phlebotomist': 'lab',
+  'Lab Reception': 'lab',
   'Pharmacist': 'pharmacy',
   'ATD Officer': 'atdOfficer',
   'OPD Officer': 'opdOfficer',
@@ -39,8 +55,8 @@ const personaToRole = {
   'doctor': 'Doctor',
   'nurse': 'Nurse',
   'billing': 'BILLING_EXECUTIVE',
-  'admission': 'Front Desk',
-  'lab': 'Lab',
+  'admission': 'ATD Coordinator',
+  'lab': 'Lab Technician',
   'pharmacy': 'Pharmacist',
   'atdOfficer': 'ATD Officer',
   'opdOfficer': 'OPD Officer',
@@ -50,7 +66,6 @@ const personaToRole = {
 
 window.updateDynamicSidebarUser = function(persona) {
   const nameEl = document.getElementById('sidebar-user-name');
-  const selectEl = document.getElementById('sidebar-doctor-select');
   const roleEl = document.getElementById('sidebar-user-role');
   const avatarEl = document.getElementById('sidebar-user-avatar');
 
@@ -69,76 +84,498 @@ window.updateDynamicSidebarUser = function(persona) {
     information: { name: "Pooja Singh", role: "Enquiry Executive", avatar: "PS" }
   };
 
-  const user = users[persona] || users.admin;
+  let user = users[persona] || users.admin;
 
   if (persona === 'doctor') {
-    if (nameEl) nameEl.style.display = 'none';
-    if (selectEl) {
-      selectEl.style.display = 'block';
+    const activeDocId = localStorage.getItem('saronil_active_doctor_id') || 'DOC_AMIT';
+    const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...(window.state ? window.state.doctors : [])];
+    const doc = docs.find(d => d.id === activeDocId) || docs[0];
+    const initials = doc.name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    
+    user = {
+      name: doc.name,
+      role: doc.spec === 'Sr. Consultant' ? 'Sr. Consultant' : `${doc.spec} Consultant`,
+      avatar: initials
+    };
+  }
+
+  if (nameEl) {
+    nameEl.style.display = 'block';
+    nameEl.textContent = user.name;
+  }
+  roleEl.textContent = user.role;
+  avatarEl.textContent = user.avatar;
+  if (window.state) {
+    window.state.activeDoctor = user.name;
+  }
+};
+
+window.toggleDoctorSwitcher = function(e) {
+  if (e) e.stopPropagation();
+  
+  let popover = document.getElementById('doctor-switcher-popover');
+  if (popover) {
+    popover.remove();
+    return;
+  }
+
+  // Create popover element
+  popover = document.createElement('div');
+  popover.id = 'doctor-switcher-popover';
+  popover.style.cssText = `
+    position: absolute;
+    bottom: 60px;
+    left: 12px;
+    width: 250px;
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: var(--radius-md, 8px);
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1));
+    z-index: 11000;
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+  `;
+
+  // Title header
+  const title = document.createElement('div');
+  title.style.cssText = `
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-secondary, #64748b);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    margin-bottom: 4px;
+  `;
+  title.textContent = 'Switch Active Doctor';
+  popover.appendChild(title);
+
+  // Doctors list (Dr. Amit Verma + state.doctors)
+  const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...(window.state ? window.state.doctors : [])];
+  const activeDocId = localStorage.getItem('saronil_active_doctor_id') || 'DOC_AMIT';
+
+  docs.forEach(doc => {
+    const item = document.createElement('div');
+    const isActive = doc.id === activeDocId;
+    item.style.cssText = `
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      background: ${isActive ? 'var(--primary-glow, #eff6ff)' : 'transparent'};
+      border-left: 3px solid ${isActive ? 'var(--primary, #3b82f6)' : 'transparent'};
+      transition: background 0.15s ease;
+    `;
+    item.className = 'doctor-switch-item';
+    
+    // Hover styling
+    item.onmouseenter = () => { if (!isActive) item.style.background = 'var(--bg-surface-elevated, #f8fafc)'; };
+    item.onmouseleave = () => { if (!isActive) item.style.background = 'transparent'; };
+
+    item.onclick = () => {
+      localStorage.setItem('saronil_active_doctor_id', doc.id);
       
-      // Populate select if empty
-      if (selectEl.options.length === 0 && window.state && window.state.doctors) {
-        const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...window.state.doctors];
-        docs.forEach(doc => {
-          const opt = document.createElement('option');
-          opt.value = doc.id;
-          opt.textContent = `${doc.name} (${doc.spec})`;
-          selectEl.appendChild(opt);
-        });
+      // Update sidebar details
+      window.updateDynamicSidebarUser('doctor');
+
+      // Trigger routing refresh & hide popover
+      popover.remove();
+      
+      if (window.syncOpdQueueWithAppointments) {
+        window.syncOpdQueueWithAppointments();
       }
-      
-      // Select the active doctor
-      const activeDocId = localStorage.getItem('saronil_active_doctor_id') || 'DOC_AMIT';
-      selectEl.value = activeDocId;
-      
-      // Update UI with selected doctor info
-      const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...(window.state ? window.state.doctors : [])];
-      const doc = docs.find(d => d.id === activeDocId) || docs[0];
-      
-      const initials = doc.name.replace('Dr. ', '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      avatarEl.textContent = initials;
-      roleEl.textContent = doc.spec === 'Sr. Consultant' ? 'Sr. Consultant' : `${doc.spec} Consultant`;
-      
-      if (window.state) {
-        window.state.activeDoctor = doc.name;
+
+      if (window.router && typeof window.router.handleRouting === 'function') {
+        window.router.handleRouting();
       }
-    }
+    };
+
+    const nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'font-size: 0.8rem; font-weight: 600; color: var(--text-primary);';
+    nameSpan.textContent = doc.name;
+
+    const specSpan = document.createElement('span');
+    specSpan.style.cssText = 'font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;';
+    specSpan.textContent = doc.spec;
+
+    item.appendChild(nameSpan);
+    item.appendChild(specSpan);
+    popover.appendChild(item);
+  });
+
+  const sidebar = document.querySelector('.app-sidebar');
+  if (sidebar) {
+    sidebar.appendChild(popover);
   } else {
-    if (nameEl) {
-      nameEl.style.display = 'block';
-      nameEl.textContent = user.name;
+    document.body.appendChild(popover);
+  }
+
+  // Close popover when clicking anywhere else
+  const closeListener = (event) => {
+    if (!popover.contains(event.target)) {
+      popover.remove();
+      document.removeEventListener('click', closeListener);
     }
-    if (selectEl) selectEl.style.display = 'none';
-    roleEl.textContent = user.role;
-    avatarEl.textContent = user.avatar;
-    if (window.state) {
-      window.state.activeDoctor = null;
+  };
+  setTimeout(() => {
+    document.addEventListener('click', closeListener);
+  }, 50);
+};
+
+
+// Global Roster / Duty / Handover State & Actions
+window.calcBillingHandoverVariance = function(systemCash) {
+  const declaredInput = document.getElementById('handover-declared-cash');
+  const varianceDisplay = document.getElementById('handover-variance-display');
+  if (!declaredInput || !varianceDisplay) return;
+  
+  const declaredVal = parseFloat(declaredInput.value) || 0;
+  const diff = declaredVal - systemCash;
+  if (diff === 0) {
+    varianceDisplay.style.color = '#10b981';
+    varianceDisplay.textContent = '₹0 (Balanced)';
+  } else if (diff > 0) {
+    varianceDisplay.style.color = '#10b981';
+    varianceDisplay.textContent = `+ ₹${diff.toLocaleString('en-IN')} (Surplus)`;
+  } else {
+    varianceDisplay.style.color = '#ef4444';
+    varianceDisplay.textContent = `- ₹${Math.abs(diff).toLocaleString('en-IN')} (Shortfall)`;
+  }
+};
+
+window.submitHandoverForRole = function(role) {
+  const pinInput = document.getElementById('handover-pin');
+  if (pinInput && pinInput.value !== '1234') {
+    alert('🚫 Authentication Failed: Invalid authorization PIN code. Shift sign-off denied.');
+    return;
+  }
+  
+  window.setPersonaDutyStatus(role, 'Off Duty');
+  
+  const overlay = document.getElementById('handover-modal-overlay');
+  if (overlay) overlay.remove();
+  
+  const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const formattedRoleName = role === 'billing' ? 'Cashier Counter' : `${role.charAt(0).toUpperCase() + role.slice(1)} Desk`;
+  if (window.showToast) {
+    window.showToast(`✓ Shift handover submitted successfully. ${formattedRoleName} signed off at ${now}.`, 'success');
+  }
+};
+
+window.setPersonaDutyStatus = function(persona, status) {
+  if (!window.state) return;
+  if (persona === 'doctor') {
+    window.state.doctorDutyStatus = status;
+  } else if (persona === 'nurse') {
+    window.state.nurseDutyStatus = status;
+  } else if (persona === 'billing') {
+    window.state.billingDutyStatus = status;
+  } else if (persona === 'lab') {
+    window.state.labDutyStatus = status;
+  } else if (persona === 'pharmacy') {
+    window.state.pharmacyDutyStatus = status;
+  } else if (persona === 'admission') {
+    window.state.admissionDutyStatus = status;
+  }
+
+  const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  if (window.showToast) {
+    window.showToast(`${persona.toUpperCase()} status updated to "${status}" at ${now}.`, 'success');
+  } else {
+    alert(`${persona.charAt(0).toUpperCase() + persona.slice(1)} status updated to "${status}". Roster notified at ${now}.`);
+  }
+
+  if (window.router && window.router.currentPage && window.views[window.router.currentPage]) {
+    const targetPage = window.router.currentPage;
+    if (targetPage === 'dashboard') {
+      const viewport = document.getElementById('dashboard-persona-viewport');
+      if (viewport && window._dashboardRenderers) {
+        const renderer = window._dashboardRenderers[persona];
+        if (renderer) renderer(viewport);
+      }
+    } else {
+      const { subAnchor, params } = window.router.parseHash();
+      window.views[targetPage](window.router.container, subAnchor || '', params || {});
     }
   }
 };
 
-window.changeSidebarDoctor = function(docId) {
-  localStorage.setItem('saronil_active_doctor_id', docId);
-  
-  // Find doctor and update state
-  const docs = [{ name: "Dr. Amit Verma", spec: "Sr. Consultant", id: "DOC_AMIT" }, ...(window.state ? window.state.doctors : [])];
-  const doc = docs.find(d => d.id === docId) || docs[0];
-  if (window.state) {
-    window.state.activeDoctor = doc.name;
+window.setDoctorDutyStatus = function(status) {
+  window.setPersonaDutyStatus('doctor', status);
+};
+
+window.initiateHandover = function(role) {
+  let existing = document.getElementById('handover-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'handover-modal-overlay';
+  overlay.className = 'handover-overlay active';
+  overlay.style.display = 'flex';
+  document.body.appendChild(overlay);
+
+  let modalHTML = '';
+
+  if (role === 'nurse') {
+    const patients = (window.state.patients || []).slice(0, 4);
+    modalHTML = `
+      <div class="handover-modal" style="width: 850px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background-color: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800;">📋 Nurse Shift Handover & Patient Board</h2>
+          <button onclick="document.getElementById('handover-modal-overlay').remove()" style="background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background-color: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.78rem; line-height: 1.4;">
+            ⚠️ <strong>Instructions:</strong> Please review and log narrative handover notes for all assigned inpatients before signing off your shift.
+          </div>
+          ${(window.state.patients || []).slice(0, 4).map(p => `
+            <div style="border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; background: white; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--primary); font-size: 0.82rem;">${p.name} (${p.uhid})</strong>
+                <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700;">${p.bed || 'Gen-Ward / GW-04'}</span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
+                <div>Diagnosis: <strong>${p.diagnosis || 'Post-op Recovery'}</strong></div>
+                <div>NEWS2 Score: <strong style="color: ${p.news2 >= 5 ? 'var(--color-danger)' : 'inherit'};">${p.news2 || '1'}</strong></div>
+                <div>Status: <strong>Stable</strong></div>
+              </div>
+              <div style="margin-top: 4px;">
+                <label style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 2px;">Shift Handover Note:</label>
+                <textarea class="nurse-handover-note" data-uhid="${p.uhid}" placeholder="Vitals trends, key complaints, medications given, pending plans..." style="width: 100%; height: 45px; font-size: 0.72rem; padding: 4px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-base); border-radius: 0 0 8px 8px;">
+          <button class="btn btn-secondary" onclick="window.print()" style="font-size: 0.78rem;">Print Handover Sheets</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" onclick="document.getElementById('handover-modal-overlay').remove()" style="font-size: 0.78rem;">Cancel</button>
+            <button class="btn btn-primary" onclick="window.submitHandoverForRole('nurse')" style="font-size: 0.78rem; font-weight: 800; background-color: var(--color-success); border-color: var(--color-success);">Submit & Sign-Off Shift</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (role === 'billing') {
+    let cashCollected = 24500;
+    let upiCollected = 41200;
+    let totalRev = cashCollected + upiCollected;
+    modalHTML = `
+      <div class="handover-modal" style="width: 550px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background-color: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800;">💸 Cashier Drawer Shift Reconciliation</h2>
+          <button onclick="document.getElementById('handover-modal-overlay').remove()" style="background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background-color: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;"><span>System Cash Collected:</span> <strong>₹${cashCollected.toLocaleString('en-IN')}</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>System UPI/Card Collected:</span> <strong>₹${upiCollected.toLocaleString('en-IN')}</strong></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 6px; font-weight: bold; color: var(--text-primary);">
+              <span>Total System Shift Revenue:</span> <span>₹${totalRev.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Cashier Declared Cash in Drawer (₹)</label>
+              <input type="number" id="handover-declared-cash" placeholder="Enter physical cash in drawer..." style="width: 100%; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.8rem;" oninput="window.calcBillingHandoverVariance(${cashCollected})">
+            </div>
+            <div style="font-size: 0.78rem; font-weight: bold; color: var(--text-secondary); display: flex; justify-content: space-between;">
+              <span>Discrepancy Variance Mismatch:</span>
+              <span id="handover-variance-display" style="color: #64748b;">₹0 (Balanced)</span>
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">End-of-Shift Handover Remarks</label>
+              <textarea id="handover-remarks" placeholder="Notes on pending claims, unallocated deposits, ledger issues..." style="width: 100%; height: 50px; font-size: 0.75rem; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Authorize with Cashier PIN (Enter 1234)</label>
+              <input type="password" id="handover-pin" maxlength="4" placeholder="••••" style="width: 100px; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.95rem; font-family: monospace; letter-spacing: 4px;">
+            </div>
+          </div>
+        </div>
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background-color: var(--bg-base); border-radius: 0 0 8px 8px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('handover-modal-overlay').remove()" style="font-size: 0.78rem;">Cancel</button>
+          <button class="btn btn-primary" onclick="window.submitHandoverForRole('billing')" style="font-size: 0.78rem; font-weight: 800; background-color: var(--color-success); border-color: var(--color-success);">Verify & Print Z-Report</button>
+        </div>
+      </div>
+    `;
+  } else if (role === 'lab') {
+    let pendingCritical = (window.state.criticalValues || []).filter(c => c.status === 'Pending').length;
+    let statTests = 3;
+    modalHTML = `
+      <div class="handover-modal" style="width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background-color: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800;">🔬 Laboratory Shift Handover Sign-Off</h2>
+          <button onclick="document.getElementById('handover-modal-overlay').remove()" style="background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background-color: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;"><span>Pending Critical Panic Values:</span> <strong style="color: ${pendingCritical > 0 ? '#ef4444' : 'inherit'};">${pendingCritical} logs</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Active STAT Tests in Process:</span> <strong>${statTests} orders</strong></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <h4 style="margin: 0; font-size: 0.78rem; font-weight: bold; color: var(--text-primary);">🎛️ Equipment & Calibration Checklist</h4>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Biochemistry Analyzer Calibrated
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Hematology Counter Controls run & verified
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox"> Centrifuges cleaned & powered down (where off-shift)
+              </label>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Narrative Handover Notes</label>
+              <textarea id="handover-remarks" placeholder="Details of delayed TAT runs, special cultures incubated, incoming pathologist tasks..." style="width: 100%; height: 50px; font-size: 0.75rem; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Enter Technician Authorization PIN (1234)</label>
+              <input type="password" id="handover-pin" maxlength="4" placeholder="••••" style="width: 100px; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.95rem; font-family: monospace; letter-spacing: 4px;">
+            </div>
+          </div>
+        </div>
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background-color: var(--bg-base); border-radius: 0 0 8px 8px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('handover-modal-overlay').remove()" style="font-size: 0.78rem;">Cancel</button>
+          <button class="btn btn-primary" onclick="window.submitHandoverForRole('lab')" style="font-size: 0.78rem; font-weight: 800; background-color: var(--color-success); border-color: var(--color-success);">Verify & Sign-Off Shift</button>
+        </div>
+      </div>
+    `;
+  } else if (role === 'pharmacy') {
+    let pendingRx = 4;
+    modalHTML = `
+      <div class="handover-modal" style="width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background-color: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800;">💊 Pharmacy Shift Sign-Off & Narcotics Audit</h2>
+          <button onclick="document.getElementById('handover-modal-overlay').remove()" style="background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background-color: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;"><span>Unfilled / Pending Rx Queue:</span> <strong>${pendingRx} prescriptions</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Narcotics & Schedule H1 Vault Audit:</span> <strong style="color: #10b981;">Fully Verified & Logged</strong></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <h4 style="margin: 0; font-size: 0.78rem; font-weight: bold; color: var(--text-primary);">🔒 Pharmacy Safety Checklist</h4>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Narcotic Vault double-locked
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Cold-chain refrigerators temperature checked (2°C - 8°C)
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox"> Counter POS registers closed
+              </label>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">End-of-Shift Remarks</label>
+              <textarea id="handover-remarks" placeholder="Stockout drug notifications, special orders pending dispatcher pickup..." style="width: 100%; height: 50px; font-size: 0.75rem; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Pharmacist Licensing PIN (1234)</label>
+              <input type="password" id="handover-pin" maxlength="4" placeholder="••••" style="width: 100px; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.95rem; font-family: monospace; letter-spacing: 4px;">
+            </div>
+          </div>
+        </div>
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background-color: var(--bg-base); border-radius: 0 0 8px 8px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('handover-modal-overlay').remove()" style="font-size: 0.78rem;">Cancel</button>
+          <button class="btn btn-primary" onclick="window.submitHandoverForRole('pharmacy')" style="font-size: 0.78rem; font-weight: 800; background-color: var(--color-success); border-color: var(--color-success);">Submit & Audit Vault</button>
+        </div>
+      </div>
+    `;
+  } else if (role === 'admission') {
+    let occupied = window.state.mgmtBeds ? window.state.mgmtBeds.occupied : 86;
+    let totalBeds = window.state.mgmtBeds ? window.state.mgmtBeds.total : 120;
+    let pendingAdmissions = 2;
+    modalHTML = `
+      <div class="handover-modal" style="width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background-color: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800;">🛎️ Admission Desk & Bed Board Handover</h2>
+          <button onclick="document.getElementById('handover-modal-overlay').remove()" style="background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background-color: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;"><span>Active Bed Occupancy:</span> <strong>${occupied} / ${totalBeds} beds</strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Pending Admission Requests:</span> <strong>${pendingAdmissions} requests</strong></div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <h4 style="margin: 0; font-size: 0.78rem; font-weight: bold; color: var(--text-primary);">🛏️ Bed Cleanliness & Turnaround Tasks</h4>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Cleaning logs updated with Housekeeping supervisor
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked> Reserved beds tags active (ER admissions pending)
+              </label>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Coordination Remarks</label>
+              <textarea id="handover-remarks" placeholder="Details of waiting list priorities, pending discharges awaiting billing approval..." style="width: 100%; height: 50px; font-size: 0.75rem; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+            </div>
+            
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 4px;">Desk Coordinator PIN (1234)</label>
+              <input type="password" id="handover-pin" maxlength="4" placeholder="••••" style="width: 100px; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.95rem; font-family: monospace; letter-spacing: 4px;">
+            </div>
+          </div>
+        </div>
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background-color: var(--bg-base); border-radius: 0 0 8px 8px;">
+          <button class="btn btn-secondary" onclick="document.getElementById('handover-modal-overlay').remove()" style="font-size: 0.78rem;">Cancel</button>
+          <button class="btn btn-primary" onclick="window.submitHandoverForRole('admission')" style="font-size: 0.78rem; font-weight: 800; background-color: var(--color-success); border-color: var(--color-success);">Verify & Sign-Off Desk</button>
+        </div>
+      </div>
+    `;
   }
-  
-  // Also filter patients in EMR view if applicable
-  window.activeEmrDoctorFilter = doc.name === 'Dr. Amit Verma' ? '' : doc.name;
-  
-  window.updateDynamicSidebarUser('doctor');
-  
-  if (window.router && typeof window.router.handleRouting === 'function') {
-    window.router.handleRouting();
-  }
+
+  overlay.innerHTML = modalHTML;
 };
 
 
 window.views.dashboard = function(container, subAnchor, params) {
+  window.renderKPICard = function({ id, title, value, subtext, status, trendText, trendDirection, icon, iconBg, iconColor, recordsCount }) {
+    const trendIcon = trendDirection === 'up' ? '↗' : (trendDirection === 'down' ? '↘' : '→');
+    const trendColor = trendDirection === 'up' ? 'var(--color-success)' : (trendDirection === 'down' ? 'var(--color-danger)' : 'var(--text-secondary)');
+    let kpiKey = id;
+    if (kpiKey === 'revenue_analytics') kpiKey = 'payments_outstanding';
+    return `
+      <div class="kpi-card stats-card status-${status}" onclick="window.router.navigate('dashboard?kpi=${kpiKey}')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; text-align:left;">
+          <div>
+            <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">${title}</span>
+            <h3 class="admin-mono" style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 4px 0 2px 0;">${value}</h3>
+          </div>
+          <div style="background-color: ${iconBg}; color: ${iconColor}; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            ${icon}
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 4px; margin-top: 4px;">
+          <span style="color: var(--text-muted);">${subtext}</span>
+          <span style="color: ${trendColor}; font-weight: 600;">${trendIcon} ${trendText}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  window._dashboardRenderers = {
+    doctor: renderDoctorDashboard,
+    nurse: renderNurseDashboard,
+    billing: renderBillingDashboard,
+    lab: renderLabDashboard,
+    pharmacy: renderPharmacyDashboard,
+    admission: renderAdmissionDashboard
+  };
 
   // Read active persona from local storage or default to 'admin'
   let activePersona = localStorage.getItem('saronil_active_persona') || 'admin';
@@ -552,8 +989,19 @@ function renderAdminDashboard(container) {
     const trendColor = isGood ? 'var(--color-success)' : 'var(--color-danger)';
     const trendIcon = trendDirection === 'up' ? '▲' : (trendDirection === 'down' ? '▼' : '—');
     
+    const kpiKeyMap = {
+      'Total Revenue': 'payments_outstanding',
+      'Bed Occupancy %': 'beds_available',
+      'Patients Today': 'patients_today',
+      'OPD / IPD Load': 'patients_today',
+      'Avg Length of Stay': 'discharges_today',
+      'OT Utilisation %': 'discharges_today',
+      'Complaint Count': 'critical_alerts',
+      'NABH Quality Score': 'critical_alerts'
+    };
+    const kpiKey = kpiKeyMap[title] || 'patients_today';
     return `
-      <div class="admin-kpi-card status-${status}" onclick="alert('Viewing detail for ${title}')">
+      <div class="admin-kpi-card status-${status}" onclick="window.router.navigate('dashboard?kpi=${kpiKey}')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
           <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${title}</span>
           ${showComplaintBadge && parseInt(value) > 5 ? `<span style="background-color: var(--color-danger); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 800;">SLA BREACH</span>` : ''}
@@ -566,7 +1014,6 @@ function renderAdminDashboard(container) {
           <span style="color: ${trendColor}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
             ${trendIcon} ${trendText}
           </span>
-          <span style="color: var(--text-muted); font-size: 0.65rem;">Updated just now</span>
         </div>
       </div>
     `;
@@ -621,125 +1068,7 @@ function renderAdminDashboard(container) {
   ];
 
   container.innerHTML = `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-      
-      :root {
-        --sidebar-width: 240px !important;
-        --header-height: 52px !important;
-      }
-      
-      .admin-mono {
-        font-family: 'JetBrains Mono', 'Courier New', Courier, monospace !important;
-      }
-      
-      .admin-card {
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 16px !important;
-        box-shadow: var(--shadow-sm);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      
-      .admin-kpi-scroll-row {
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        margin-bottom: 16px;
-        scrollbar-width: thin;
-      }
-      
-      .admin-kpi-scroll-row::-webkit-scrollbar {
-        height: 6px;
-      }
-      
-      .admin-kpi-scroll-row::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 3px;
-      }
-      
-      .admin-kpi-card {
-        flex: 0 0 calc(12.5% - 11px);
-        min-width: 170px;
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: var(--shadow-sm);
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        border-left: 4px solid var(--border-color);
-      }
-      
-      .admin-kpi-card.status-normal {
-        border-left-color: var(--color-success);
-      }
-      
-      .admin-kpi-card.status-warning {
-        border-left-color: var(--color-warning);
-      }
-      
-      .admin-kpi-card.status-critical {
-        border-left-color: var(--color-danger);
-      }
-      
-      .admin-kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-        border-color: var(--primary);
-      }
-      
-      .alert-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: transform 0.2s, filter 0.2s;
-        border-left: 4px solid var(--border-color);
-        text-decoration: none;
-      }
-      
-      .alert-row:hover {
-        filter: brightness(0.97);
-        transform: translateX(2px);
-      }
-      
-      .on-call-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-      }
-      
-      .on-call-dot.active {
-        background-color: var(--color-success);
-        box-shadow: 0 0 8px var(--color-success);
-      }
-      
-      .on-call-dot.occupied {
-        background-color: var(--color-danger);
-        box-shadow: 0 0 8px var(--color-danger);
-      }
-      
-      @media (max-width: 900px) {
-        .admin-two-col {
-          grid-template-columns: 1fr !important;
-        }
-        .admin-bottom-row {
-          grid-template-columns: 1fr !important;
-        }
-      }
-    </style>
+    
 
     <!-- PAGE HEADING -->
     <div style="margin-top: 4px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -760,7 +1089,7 @@ function renderAdminDashboard(container) {
     <!-- SECTION 2: QUICK ACTIONS BAR -->
     <div style="background-color: #ffffff; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; box-shadow: var(--shadow-sm);">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <button class="btn btn-secondary" onclick="router.navigate('admin-reports')" style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; height: 34px;">Hospital Reports</button>
+        <button class="btn btn-secondary" onclick="router.navigate('reports?tab=builder')" style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; height: 34px;">Hospital Reports</button>
         <button class="btn btn-secondary" onclick="router.navigate('admin-roles')" style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; height: 34px;">User Management</button>
         <button class="btn btn-secondary" onclick="router.navigate('admin-employees')" style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; height: 34px;">Department Management</button>
         <button class="btn btn-secondary" onclick="alert('Navigating to system settings...')" style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; height: 34px;">System Settings</button>
@@ -1464,18 +1793,14 @@ function renderDoctorDashboard(container) {
   }
 
   window.state.doctorDutyStatus = window.state.doctorDutyStatus || 'On Duty';
+  window.state.nurseDutyStatus = window.state.nurseDutyStatus || 'On Duty';
+  window.state.billingDutyStatus = window.state.billingDutyStatus || 'On Duty';
+  window.state.labDutyStatus = window.state.labDutyStatus || 'On Duty';
+  window.state.pharmacyDutyStatus = window.state.pharmacyDutyStatus || 'On Duty';
+  window.state.admissionDutyStatus = window.state.admissionDutyStatus || 'On Duty';
   window.state.activeDoctorPatientUhid = window.state.activeDoctorPatientUhid || 'SH-2026-04821';
 
-  // Toggle duty availability
-  window.setDoctorDutyStatus = function(status) {
-    window.state.doctorDutyStatus = status;
-    const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    alert(`Status updated to "${status}". Nursing station notified at ${now}.`);
-    const viewport = document.getElementById('dashboard-persona-viewport');
-    if (viewport) {
-      renderDoctorDashboard(viewport);
-    }
-  };
+  // Roster status setters and initiateHandover moved to global scope at the top of file
 
   // Switch active patient profile quickview
   window.selectDoctorDashboardPatient = function(uhid) {
@@ -1543,7 +1868,7 @@ function renderDoctorDashboard(container) {
   const activePatient = window.state.doctorActivePatients.find(p => p.uhid === window.state.activeDoctorPatientUhid) || window.state.doctorActivePatients[0];
 
   // Helper for rendering Doctor KPI Cards
-  function renderDocKPICard({ title, value, subtext, status, trendText, trendDirection, isInverse }) {
+  function renderDocKPICard({ title, value, subtext, status, trendText, trendDirection, isInverse, kpiKey }) {
     let isGood = false;
     if (trendDirection === 'up') {
       isGood = !isInverse;
@@ -1554,13 +1879,15 @@ function renderDoctorDashboard(container) {
     const trendIcon = trendDirection === 'up' ? '▲' : (trendDirection === 'down' ? '▼' : '—');
     
     return `
-      <div class="doctor-kpi-card status-${status}">
-        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${title}</span>
-        <div style="margin-top: 6px; margin-bottom: 6px;">
-          <span class="admin-mono" style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${value}</span>
-          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">${subtext}</div>
+      <div class="admin-kpi-card status-${status}" onclick="window.router.navigate('dashboard?kpi=${kpiKey}')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+          <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${title}</span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 4px; margin-top: 4px;">
+        <div style="margin-top: 8px; margin-bottom: 8px;">
+          <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${value}</span>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${subtext}</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
           <span style="color: ${trendColor}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
             ${trendIcon} ${trendText}
           </span>
@@ -1569,34 +1896,56 @@ function renderDoctorDashboard(container) {
     `;
   }
 
-  // Define doctor dashboard data
-  const kpis = [
-    { title: 'Patients Today', value: '13', subtext: 'OPD scheduled load', status: 'normal', trendText: '+2 vs yesterday', trendDirection: 'up', isInverse: false },
-    { title: 'Consultations Pending', value: '11', subtext: 'Waiting in lobby', status: 'warning', trendText: '-1 vs last hour', trendDirection: 'down', isInverse: true },
-    { title: 'Critical Patients', value: '3', subtext: 'NEWS ≥ 5 or ICU status', status: 'critical', trendText: '+1 in CCU', trendDirection: 'up', isInverse: true },
-    { title: 'Lab Results to Review', value: `${window.state.criticalBannerItems.filter(b => b.type === 'lab').length + 2}`, subtext: 'Unread LIS alerts', status: 'warning', trendText: '+2 unread', trendDirection: 'up', isInverse: true },
-    { title: 'Discharges Pending', value: '2', subtext: 'Awaiting doctor summary', status: 'normal', trendText: 'Steady queue', trendDirection: 'neutral', isInverse: false },
-    { title: 'Follow-up Consults', value: '3', subtext: 'Booked today', status: 'normal', trendText: '+1 scheduled', trendDirection: 'up', isInverse: false },
-    { title: 'Consent Forms Pending', value: '2', subtext: 'Pre-op unsigned', status: 'warning', trendText: '+1 urgent', trendDirection: 'up', isInverse: true },
-    { title: 'Referrals Inbox', value: '1', subtext: 'Inbound unread', status: 'normal', trendText: '+1 new', trendDirection: 'up', isInverse: true }
+  // Active tabs
+  if (window.activeDoctorWorklistTab === undefined) window.activeDoctorWorklistTab = 'opd';
+  if (window.activeDoctorTasksTab === undefined) window.activeDoctorTasksTab = 'alerts';
+
+  window.selectDoctorWorklistTab = function(tabName) {
+    window.activeDoctorWorklistTab = tabName;
+    const viewport = document.getElementById('dashboard-persona-viewport');
+    if (viewport) renderDoctorDashboard(viewport);
+  };
+
+  window.selectDoctorTasksTab = function(tabName) {
+    window.activeDoctorTasksTab = tabName;
+    const viewport = document.getElementById('dashboard-persona-viewport');
+    if (viewport) renderDoctorDashboard(viewport);
+  };
+
+  // Define doctor dashboard data (6 core metrics corresponding to clinical worklists)
+  const otListData = [
+    { name: 'Amit Sharma', proc: 'Laparoscopic Appendectomy', ot: 'OT-3', time: '02:00 PM', cssd: 'Y', anaesthesia: 'Y' },
+    { name: 'Ramesh Chandra', proc: 'Coronary Angiography', ot: 'Cath Lab 1', time: '04:30 PM', cssd: 'Y', anaesthesia: 'N' }
+  ];
+
+  const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10);
+  const todaysAppts = (window.state.appointments || []).filter(a => a.date === systemToday);
+  const waitingCount = todaysAppts.filter(a => a.status === 'Arrived' || a.status === 'Checked In' || a.status === 'Waiting').length;
+  
+  const otCount = otListData.length;
+  const referralCount = (window.state.referralRequests || []).length || 2;
+
+  const simplifiedKpis = [
+    { title: 'OPD Queue Load', value: `${waitingCount} / ${todaysAppts.length || 13}`, subtext: 'Pending consultations today', status: 'warning', trendText: '-1 vs last hour', trendDirection: 'down', isInverse: true, kpiKey: 'patients_today' },
+    { title: 'Critical Patients', value: '3', subtext: 'Inpatients NEWS2 ≥ 5 or ICU', status: 'critical', trendText: '+1 in CCU', trendDirection: 'up', isInverse: true, kpiKey: 'patients_critical' },
+    { title: 'OT Schedule Today', value: `${otCount}`, subtext: 'Scheduled procedures', status: 'normal', trendText: '2 cleared for surgery', trendDirection: 'neutral', isInverse: false, kpiKey: 'ot_today' },
+    { title: 'Lab Reviews Pending', value: `${window.state.criticalBannerItems.filter(b => b.type === 'lab').length + 2}`, subtext: 'Unread LIS lab alerts', status: 'warning', trendText: '+2 unread', trendDirection: 'up', isInverse: true, kpiKey: 'lab_reviews_pending' },
+    { title: 'Sign-offs Pending', value: '4', subtext: 'Discharges & co-signs', status: 'normal', trendText: 'Awaiting co-signature', trendDirection: 'neutral', isInverse: false, kpiKey: 'discharges_today' },
+    { title: 'Pending Referrals', value: `${referralCount}`, subtext: 'Incoming/outgoing referrals', status: 'normal', trendText: 'Dr. Ramesh Kumar', trendDirection: 'neutral', isInverse: false, kpiKey: 'referrals_today' }
   ];
 
   const opdQueueData = (() => {
-    const todayAppts = (window.state.appointments || []).filter(a =>
-      a.date === '2026-06-29' || a.date === '2026-06-17'
-    );
-    const liveQueue = todayAppts.map(a => ({
+    const liveQueue = todaysAppts.map(a => ({
       name: a.patientName,
       uhid: a.uhid,
       waitTime: a.waitTime || Math.floor(Math.random() * 60 + 5),
       visitType: a.visitType || a.type || 'OPD',
       time: a.time,
-      status: a.status === 'Checked-in' || a.status === 'Arrived' ? 'Checked-in' :
+      status: a.status === 'Checked-in' || a.status === 'Checked In' || a.status === 'Arrived' || a.status === 'Waiting' ? 'Checked-in' :
               a.status === 'In-Consultation' || a.status === 'In Consultation' ? 'In-Consultation' :
               a.status === 'Completed' ? 'Completed' :
               a.status === 'No-show' || a.status === 'No Show' ? 'No-show' : 'Scheduled'
     }));
-    // Fallback static queue if no live appointments seeded yet
     if (liveQueue.length === 0) {
       return [
         { name: 'Sunita Sharma', uhid: 'SH-2026-04817', waitTime: 42, visitType: 'Follow-up', time: '10:15 AM', status: 'Checked-in' },
@@ -1610,11 +1959,6 @@ function renderDoctorDashboard(container) {
     return liveQueue;
   })();
   opdQueueData.sort((a, b) => b.waitTime - a.waitTime);
-
-  const otListData = [
-    { name: 'Amit Sharma', proc: 'Laparoscopic Appendectomy', ot: 'OT-3', time: '02:00 PM', cssd: 'Y', anaesthesia: 'Y' },
-    { name: 'Ramesh Chandra', proc: 'Coronary Angiography', ot: 'Cath Lab 1', time: '04:30 PM', cssd: 'Y', anaesthesia: 'N' }
-  ];
 
   const ipdQueueData = (() => {
     const activeIPD = (window.state.patients || []).filter(p =>
@@ -1645,174 +1989,359 @@ function renderDoctorDashboard(container) {
     { name: 'KL Bose', test: 'Chest X-Ray Portable', ordered: '15:10', tat: '2 hours', status: 'Sample Collected' }
   ];
 
+  // Render Left Panel Active worklist tab contents
+  let worklistContentHtml = '';
+  if (window.activeDoctorWorklistTab === 'opd') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: center;">Wait Time</th>
+            <th style="padding: 10px 12px; text-align: center;">Visit Type</th>
+            <th style="padding: 10px 12px; text-align: center;">Appt Time</th>
+            <th style="padding: 10px 12px; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${opdQueueData.map(appt => {
+            const isActive = appt.uhid === activePatient.uhid;
+            const statusColors = {
+              'Scheduled': 'color: var(--text-muted);',
+              'Checked-in': 'color: var(--color-warning); font-weight: 600;',
+              'In-Consultation': 'color: var(--primary); font-weight: 700;',
+              'Completed': 'color: var(--color-success); font-weight: 600;',
+              'No-show': 'color: var(--color-danger); font-weight: 500;'
+            };
+            return `
+              <tr class="table-row-clickable ${isActive ? 'table-row-active' : ''}" onclick="window.selectDoctorDashboardPatient('${appt.uhid}')" style="border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                <td style="padding: 10px 12px;">
+                  <div style="font-weight: 600; color: var(--text-primary);">${appt.name}</div>
+                  <div class="admin-mono" style="font-size: 0.68rem; color: var(--text-muted);">${appt.uhid}</div>
+                </td>
+                <td class="admin-mono" style="padding: 10px 12px; text-align: center; font-weight: bold; color: ${appt.waitTime > 30 ? 'var(--color-danger)' : 'var(--text-secondary)'};">${appt.waitTime}m</td>
+                <td style="padding: 10px 12px; text-align: center; font-size: 0.72rem;">${appt.visitType}</td>
+                <td class="admin-mono" style="padding: 10px 12px; text-align: center;">${appt.time}</td>
+                <td style="padding: 10px 12px; text-align: right;">
+                  ${appt.status === 'Checked-in' || appt.status === 'In-Consultation' ? `
+                    <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 700; border-radius: 6px;" onclick="event.stopPropagation(); router.navigate('emr?uhid=${appt.uhid}')">🩺 Consult</button>
+                  ` : `
+                    <span style="font-size:0.72rem; ${statusColors[appt.status]}">${appt.status}</span>
+                  `}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (window.activeDoctorWorklistTab === 'ipd') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: center;">Ward / Bed</th>
+            <th style="padding: 10px 12px; text-align: center;">LOS</th>
+            <th style="padding: 10px 12px; text-align: center;">NEWS2</th>
+            <th style="padding: 10px 12px; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ipdQueueData.map(pat => {
+            const isActive = pat.uhid === activePatient.uhid;
+            const newsBadgeColor = pat.news < 3 ? 'background-color: var(--color-success); color: white;' : pat.news < 5 ? 'background-color: var(--color-warning); color: #78350f;' : 'background-color: var(--color-danger); color: white;';
+            return `
+              <tr class="table-row-clickable ${isActive ? 'table-row-active' : ''}" onclick="window.selectDoctorDashboardPatient('${pat.uhid}')" style="border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                <td style="padding: 10px 12px;">
+                  <div style="font-weight: 600; color: var(--text-primary);">${pat.name}</div>
+                  <div class="admin-mono" style="font-size: 0.68rem; color: var(--text-muted);">${pat.uhid}</div>
+                </td>
+                <td class="admin-mono" style="padding: 10px 12px; text-align: center; font-size:0.72rem; font-weight: 600;">${pat.bed}</td>
+                <td class="admin-mono" style="padding: 10px 12px; text-align: center;">${pat.los}d</td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span class="admin-mono" style="padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.72rem; ${newsBadgeColor}">${pat.news}</span>
+                </td>
+                <td style="padding: 10px 12px; text-align: right;">
+                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 700; border-radius: 6px;" onclick="event.stopPropagation(); router.navigate('patients?uhid=${pat.uhid}')">🔍 Profile</button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (window.activeDoctorWorklistTab === 'ot') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: left;">Procedure</th>
+            <th style="padding: 10px 12px; text-align: center;">OT Room</th>
+            <th style="padding: 10px 12px; text-align: center;">Time</th>
+            <th style="padding: 10px 12px; text-align: center;">CSSD</th>
+            <th style="padding: 10px 12px; text-align: right;">Anaesthesia</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${otListData.map(ot => `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 10px 12px; font-weight: 600; color: var(--text-primary);">${ot.name}</td>
+              <td style="padding: 10px 12px; font-size: 0.72rem; font-weight: 500;">${ot.proc}</td>
+              <td class="admin-mono" style="padding: 10px 12px; text-align: center; font-weight: bold; color: var(--primary);">${ot.ot}</td>
+              <td class="admin-mono" style="padding: 10px 12px; text-align: center;">${ot.time}</td>
+              <td style="padding: 10px 12px; text-align: center;">
+                <span class="badge" style="background-color: ${ot.cssd === 'Y' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color: ${ot.cssd === 'Y' ? 'var(--color-success)' : 'var(--color-danger)'}; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">${ot.cssd === 'Y' ? 'Ready' : 'Pending'}</span>
+              </td>
+              <td style="padding: 10px 12px; text-align: right;">
+                <span class="badge" style="background-color: ${ot.anaesthesia === 'Y' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color: ${ot.anaesthesia === 'Y' ? 'var(--color-success)' : 'var(--color-danger)'}; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">${ot.anaesthesia === 'Y' ? 'Cleared' : 'Pending'}</span>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (window.activeDoctorWorklistTab === 'diagnostics') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: left;">Test / Study</th>
+            <th style="padding: 10px 12px; text-align: center;">Ordered Time</th>
+            <th style="padding: 10px 12px; text-align: center;">Expected TAT</th>
+            <th style="padding: 10px 12px; text-align: right;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pendingOrdersData.map(order => `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 10px 12px; font-weight: 600; color: var(--text-primary);">${order.name}</td>
+              <td style="padding: 10px 12px; font-size: 0.72rem; font-weight: 500;">${order.test}</td>
+              <td class="admin-mono" style="padding: 10px 12px; text-align: center;">${order.ordered}</td>
+              <td style="padding: 10px 12px; text-align: center; color: var(--text-secondary); font-size: 0.72rem;">${order.tat}</td>
+              <td style="padding: 10px 12px; text-align: right;">
+                ${order.status === 'Delayed' ? `
+                  <span class="badge" style="background-color: var(--color-danger-bg); color: var(--color-danger); padding: 2px 6px; font-size: 0.65rem; font-weight: bold; border: 1px solid var(--color-danger); border-radius: 4px;">Delayed</span>
+                ` : `
+                  <span class="badge" style="background-color: var(--bg-surface-elevated); color: var(--text-secondary); padding: 2px 6px; font-size: 0.65rem; font-weight: 600; border-radius: 4px;">${order.status}</span>
+                `}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (window.activeDoctorWorklistTab === 'discharge') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: center;">Ward</th>
+            <th style="padding: 10px 12px; text-align: center;">Date Ordered</th>
+            <th style="padding: 10px 12px; text-align: center;">Pending</th>
+            <th style="padding: 10px 12px; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-color); background-color: #fef2f2;">
+            <td style="padding: 10px 12px; font-weight: 600; color: #991b1b;">
+              Vijay Pipil
+              <div class="admin-mono" style="font-size:0.68rem; color: #b91c1c;">UHID20000012</div>
+            </td>
+            <td style="padding: 10px 12px; text-align: center; color: #7f1d1d; font-weight: 600;">PRIVATE</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center; color: #7f1d1d;">2026-06-25</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center; font-weight: bold; color: var(--color-danger);">2d</td>
+            <td style="padding: 10px 12px; text-align: right;">
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 700; background-color: var(--color-danger); border-color: var(--color-danger); border-radius: 6px; color: white;" onclick="alert('Opening discharge summary draft for Vijay Pipil...')">Write D/C</button>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--text-primary);">
+              Sarah Jones
+              <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000021</div>
+            </td>
+            <td style="padding: 10px 12px; text-align: center;">GENERAL</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center;">2026-06-27</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center; font-weight: 600; color: var(--text-secondary);">4h</td>
+            <td style="padding: 10px 12px; text-align: right;">
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem; font-weight: 700; border-radius: 6px;" onclick="alert('Opening discharge summary draft for Sarah Jones...')">Write D/C</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  } else if (window.activeDoctorWorklistTab === 'referrals') {
+    worklistContentHtml = `
+      <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
+            <th style="padding: 10px 12px; text-align: left;">Patient</th>
+            <th style="padding: 10px 12px; text-align: left;">Referred To / Follow-up</th>
+            <th style="padding: 10px 12px; text-align: center;">Target Date</th>
+            <th style="padding: 10px 12px; text-align: right;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--text-primary);">
+              Amit Sharma
+              <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000003</div>
+            </td>
+            <td style="padding: 10px 12px; font-size: 0.72rem; font-weight: 500;">Cardiology clearance</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center;">2026-06-27</td>
+            <td style="padding: 10px 12px; text-align: right;">
+              <span class="badge" style="background-color: var(--color-success-bg); color: var(--color-success); padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px;">Seen</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px 12px; font-weight: 600; color: var(--text-primary);">
+              Sourav Desai
+              <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000002</div>
+            </td>
+            <td style="padding: 10px 12px; font-size: 0.72rem; font-weight: 500;">Nephrology consultation</td>
+            <td class="admin-mono" style="padding: 10px 12px; text-align: center;">2026-06-28</td>
+            <td style="padding: 10px 12px; text-align: right;">
+              <span class="badge" style="background-color: var(--color-warning-bg); color: var(--color-warning); padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px;">Pending</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  // Render Right Panel Tasks / Sign-offs tab contents
+  let tasksContentHtml = '';
+  if (window.activeDoctorTasksTab === 'alerts') {
+    tasksContentHtml = `
+      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 2px;">
+        ${window.state.doctorAlerts.map(alert => {
+          let bg = '';
+          let border = '';
+          let textCol = '';
+          let badgeIcon = '';
+          
+          if (alert.severity === 'red') {
+            bg = '#fff5f5'; border = '#ef4444'; textCol = '#991b1b'; badgeIcon = '⚠️';
+          } else if (alert.severity === 'orange') {
+            bg = '#fff7ed'; border = '#f97316'; textCol = '#c2410c'; badgeIcon = '🚫';
+          } else if (alert.severity === 'amber') {
+            bg = '#fffdf5'; border = '#f59e0b'; textCol = '#78350f'; badgeIcon = '💊';
+          } else if (alert.severity === 'purple') {
+            bg = '#faf5ff'; border = '#a855f7'; textCol = '#6b21a8'; badgeIcon = '📥';
+          } else {
+            bg = '#eff6ff'; border = '#3b82f6'; textCol = '#1e3a8a'; badgeIcon = '🔬';
+          }
+
+          return `
+            <div class="alert-row-dr" style="background-color: ${bg}; border-left: 4px solid ${border}; color: ${textCol}; padding: 10px 12px; border-radius: 8px; display: flex; gap: 8px; align-items: start; font-size: 0.78rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); margin-bottom: 2px;">
+              <span style="font-size: 1rem; line-height: 1;">${badgeIcon}</span>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; line-height: 1.3;">${alert.text}</div>
+                <div style="font-size: 0.68rem; opacity: 0.8; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+                  <span class="admin-mono">${alert.time}</span>
+                  <button onclick="window.acknowledgeDoctorAlert('${alert.id}', event)" style="background: none; border: none; text-decoration: underline; color: inherit; font-size: 0.7rem; font-weight: bold; cursor: pointer; padding: 0;">Acknowledge</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        ${window.state.doctorAlerts.length === 0 ? `
+          <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 30px; font-style: italic; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--border-color);">No active clinical alerts.</div>
+        ` : ''}
+      </div>
+    `;
+  } else if (window.activeDoctorTasksTab === 'signoffs') {
+    tasksContentHtml = `
+      <div style="display: flex; flex-direction: column; gap: 16px; max-height: 480px; overflow-y: auto; padding-right: 2px;">
+        
+        <!-- Discharge Queue Block -->
+        <div>
+          <h4 style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 6px 0;">Discharge Summaries</h4>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 8px 12px; background: #fff5f5; border: 1px solid #fee2e2; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: #991b1b; font-size: 0.78rem;">Vijay Pipil</div>
+                <div class="admin-mono" style="font-size: 0.65rem; color: #b91c1c;">UHID20000012 · PVT · <span style="font-weight: 700; color: var(--color-danger);">2d pending</span></div>
+              </div>
+              <button class="btn" style="background: var(--color-danger); border-color: var(--color-danger); color: white; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; height: 22px; border-radius: 4px;" onclick="alert('Opening discharge summary draft for Vijay Pipil...')">Write</button>
+            </div>
+            <div style="padding: 8px 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem;">Sarah Jones</div>
+                <div class="admin-mono" style="font-size: 0.65rem; color: var(--text-muted);">UHID20000021 · GEN · 4h pending</div>
+              </div>
+              <button class="btn btn-primary" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 700; height: 22px; border-radius: 4px;" onclick="alert('Opening discharge summary draft for Sarah Jones...')">Write</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Co-Sign Queue Block -->
+        <div>
+          <h4 style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 6px 0;">Prescription Sign-offs</h4>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 8px 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem;">Ramesh Chandra</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px;">Inj. Fentanyl 50 mcg (Dr. Neha)</div>
+              </div>
+              <button class="btn btn-primary" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 700; height: 22px; border-radius: 4px;" onclick="alert('Co-signed Fentanyl prescription for Ramesh Chandra')">Co-Sign</button>
+            </div>
+            <div style="padding: 8px 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem;">Amit Sharma</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px;">Tab. Pantoprazole 40 mg (Dr. Ajay)</div>
+              </div>
+              <button class="btn btn-primary" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 700; height: 22px; border-radius: 4px;" onclick="alert('Co-signed Pantoprazole prescription for Amit Sharma')">Co-Sign</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Referral & Follow-up Block -->
+        <div>
+          <h4 style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 6px 0;">Referrals & Follow-ups</h4>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 8px 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem;">Amit Sharma</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Cardiology clearance · 2026-06-27</div>
+              </div>
+              <span class="badge" style="background-color: var(--color-success-bg); color: var(--color-success); padding: 2px 8px; font-size: 0.65rem; font-weight: bold; border-radius: 4px;">Seen</span>
+            </div>
+            <div style="padding: 8px 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem;">Sourav Desai</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Nephrology consultation · 2026-06-28</div>
+              </div>
+              <span class="badge" style="background-color: var(--color-warning-bg); color: var(--color-warning); padding: 2px 8px; font-size: 0.65rem; font-weight: bold; border-radius: 4px;">Pending</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
   container.innerHTML = `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-      
-      :root {
-        --sidebar-width: 240px !important;
-        --header-height: 52px !important;
-      }
-      
-      .admin-mono {
-        font-family: 'JetBrains Mono', 'Courier New', Courier, monospace !important;
-      }
-      
-      .admin-kpi-scroll-row {
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        margin-bottom: 16px;
-        scrollbar-width: thin;
-      }
-      
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-      
-      .doctor-critical-banner {
-        position: sticky;
-        top: -1.5rem;
-        margin: -1.5rem -1.5rem 16px -1.5rem;
-        z-index: 99;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .doctor-critical-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: #fee2e2;
-        border-bottom: 1px solid #fca5a5;
-        padding: 10px 24px;
-        color: #991b1b;
-        font-size: 0.8rem;
-        font-weight: 600;
-        box-shadow: var(--shadow-sm);
-      }
-      
-      .doctor-kpi-card {
-        flex: 0 0 calc(12.5% - 11px);
-        min-width: 170px;
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 14px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: var(--shadow-sm);
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-left: 4px solid var(--border-color);
-      }
-      
-      .doctor-kpi-card.status-normal {
-        border-left-color: var(--color-success);
-      }
-      
-      .doctor-kpi-card.status-warning {
-        border-left-color: var(--color-warning);
-      }
-      
-      .doctor-kpi-card.status-critical {
-        border-left-color: var(--color-danger);
-      }
-      
-      .doctor-kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-      }
-      
-      .doctor-card {
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 16px !important;
-        box-shadow: var(--shadow-sm);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .duty-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 10px 16px;
-        margin-bottom: 16px;
-        box-shadow: var(--shadow-sm);
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      
-      .toggle-btn {
-        padding: 6px 12px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        border: 1px solid var(--border-color);
-        background-color: #ffffff;
-        color: var(--text-secondary);
-        cursor: pointer;
-        outline: none;
-        transition: all 0.2s ease;
-      }
-      
-      .toggle-btn.active {
-        background-color: var(--primary);
-        color: #ffffff;
-        border-color: var(--primary);
-      }
-      
-      .toggle-group {
-        display: flex;
-        border-radius: 6px;
-        overflow: hidden;
-      }
-      
-      .alert-row-dr {
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-        padding: 8px 10px;
-        border-radius: 6px;
-        font-size: 0.78rem;
-        border-left: 4px solid var(--border-color);
-        line-height: 1.4;
-      }
-      
-      .table-row-clickable {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-      }
-      
-      .table-row-clickable:hover {
-        background-color: var(--bg-surface-elevated);
-      }
-      
-      .table-row-active {
-        background-color: var(--primary-glow) !important;
-        border-left: 3px solid var(--primary);
-      }
-      
-      @media (max-width: 960px) {
-        .doctor-three-col {
-          grid-template-columns: 1fr !important;
-        }
-        .doctor-bottom-row {
-          grid-template-columns: 1fr !important;
-        }
-        .admin-kpi-scroll-row {
-          padding-bottom: 12px;
-        }
-      }
-    </style>
+    <!-- SECTION 3: ON-CALL / DUTY STATUS BAR -->
+    <div class="duty-bar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; background: white;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="toggle-group">
+          <button class="toggle-btn ${window.state.doctorDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('On Duty')">On Duty</button>
+          <button class="toggle-btn ${window.state.doctorDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('Off Duty')">Off Duty</button>
+          <button class="toggle-btn ${window.state.doctorDutyStatus === 'On Call' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('On Call')">On Call</button>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+          Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">08:00 AM - 04:00 PM</strong>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Active Medico-Legal Cases (MLC):</span>
+        <span class="admin-mono" style="background-color: var(--color-danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">2 Cases</span>
+      </div>
+    </div>
 
     <!-- SECTION 1: CRITICAL BANNER -->
     ${window.state.criticalBannerItems.length > 0 ? `
@@ -1842,396 +2371,43 @@ function renderDoctorDashboard(container) {
       </div>
     </div>
 
-    <!-- SECTION 2: KPI STAT CARDS ROW -->
+    <!-- SECTION 2: KPI STAT CARDS ROW (SIMPLIFIED) -->
     <div class="admin-kpi-scroll-row">
-      ${kpis.map(k => renderDocKPICard(k)).join('')}
+      ${simplifiedKpis.map(k => renderDocKPICard(k)).join('')}
     </div>
 
-    <!-- SECTION 3: ON-CALL / DUTY STATUS BAR -->
-    <div class="duty-bar">
-      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div class="toggle-group">
-          <button class="toggle-btn ${window.state.doctorDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('On Duty')">On Duty</button>
-          <button class="toggle-btn ${window.state.doctorDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('Off Duty')">Off Duty</button>
-          <button class="toggle-btn ${window.state.doctorDutyStatus === 'On Call' ? 'active' : ''}" onclick="window.setDoctorDutyStatus('On Call')">On Call</button>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-secondary);">
-          Specialty: <strong style="color: var(--text-primary);">${doctorObj.spec}</strong>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-secondary);">
-          Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">08:00 AM - 04:00 PM</strong>
-        </div>
-      </div>
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Active Medico-Legal Cases (MLC):</span>
-        <span class="admin-mono" style="background-color: var(--color-danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">2 Cases</span>
-      </div>
-    </div>
-
-    <!-- SECTION 4: THREE-COLUMN MAIN AREA -->
-    <div class="doctor-three-col" style="display: grid; grid-template-columns: 3.5fr 3.5fr 3fr; gap: 16px; margin-bottom: 16px;">
+    <!-- SECTION 4: TWO-COLUMN MAIN AREA (SIMPLIFIED & TABBED) -->
+    <div class="dr-dashboard-container" style="display: grid; grid-template-columns: 2.1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start;">
       
-      <!-- LEFT COLUMN (35%) -->
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        
-        <!-- a) OPD Appointment Queue -->
-        <div class="doctor-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-            <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">OPD Appointment Queue</h3>
-            <a href="#appointments" style="font-size: 0.75rem; font-weight: 600;">View All →</a>
+      <!-- LEFT COLUMN: ACTIVE WORKLISTS -->
+      <div class="doctor-card" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; gap: 4px;">
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'opd' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('opd')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'opd' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'opd' ? 'var(--primary)' : 'var(--text-secondary)'};">📋 OPD Queue</button>
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'ipd' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('ipd')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'ipd' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'ipd' ? 'var(--primary)' : 'var(--text-secondary)'};">🏥 IPD Ward</button>
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'ot' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('ot')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'ot' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'ot' ? 'var(--primary)' : 'var(--text-secondary)'};">📅 OT Schedule</button>
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'diagnostics' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('diagnostics')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'diagnostics' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'diagnostics' ? 'var(--primary)' : 'var(--text-secondary)'};">🧪 Pending Labs</button>
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'discharge' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('discharge')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'discharge' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'discharge' ? 'var(--primary)' : 'var(--text-secondary)'};">🚪 Discharge Queue</button>
+            <button class="dr-tab-btn ${window.activeDoctorWorklistTab === 'referrals' ? 'active' : ''}" onclick="window.selectDoctorWorklistTab('referrals')" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorWorklistTab === 'referrals' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorWorklistTab === 'referrals' ? 'var(--primary)' : 'var(--text-secondary)'};">🔄 Referrals</button>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-                  <th style="padding: 6px 8px; text-align: left;">Patient</th>
-                  <th style="padding: 6px 8px; text-align: center;">Wait Time</th>
-                  <th style="padding: 6px 8px; text-align: center;">Visit</th>
-                  <th style="padding: 6px 8px; text-align: center;">Time</th>
-                  <th style="padding: 6px 8px; text-align: right;">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${opdQueueData.slice(0, 8).map(appt => {
-                  const isActive = appt.uhid === activePatient.uhid;
-                  const statusColors = {
-                    'Scheduled': 'color: var(--text-muted);',
-                    'Checked-in': 'color: var(--color-warning); font-weight: 600;',
-                    'In-Consultation': 'color: var(--primary); font-weight: 700;',
-                    'Completed': 'color: var(--color-success); font-weight: 600;',
-                    'No-show': 'color: var(--color-danger); font-weight: 500;'
-                  };
-                  return `
-                    <tr class="table-row-clickable ${isActive ? 'table-row-active' : ''}" onclick="window.selectDoctorDashboardPatient('${appt.uhid}')" style="border-bottom: 1px solid var(--border-color);">
-                      <td style="padding: 6px 8px;">
-                        <div style="font-weight: 600; color: var(--text-primary);">${appt.name}</div>
-                        <div class="admin-mono" style="font-size: 0.68rem; color: var(--text-muted);">${appt.uhid}</div>
-                      </td>
-                      <td class="admin-mono" style="padding: 6px 8px; text-align: center; font-weight: bold; color: ${appt.waitTime > 30 ? 'var(--color-danger)' : 'var(--text-secondary)'};">${appt.waitTime}m</td>
-                      <td style="padding: 6px 8px; text-align: center; font-size: 0.72rem;">${appt.visitType}</td>
-                      <td class="admin-mono" style="padding: 6px 8px; text-align: center;">${appt.time}</td>
-                      <td style="padding: 6px 8px; text-align: right;">
-                        ${appt.status === 'Checked-in' || appt.status === 'In-Consultation' ? `
-                          <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px;" onclick="event.stopPropagation(); router.navigate('emr?uhid=${appt.uhid}')">Consult</button>
-                        ` : `
-                          <span style="font-size:0.72rem; ${statusColors[appt.status]}">${appt.status}</span>
-                        `}
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
+          ${window.activeDoctorWorklistTab === 'opd' ? `<a href="#appointments" style="font-size: 0.75rem; font-weight: 600; color: var(--primary);">View Directory →</a>` : ''}
         </div>
-
-        <!-- b) Today's OT / Procedure List -->
-        ${otListData.length > 0 ? `
-          <div class="doctor-card">
-            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-              <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">Today's OT & Procedures</h3>
-            </div>
-            <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-                  <th style="padding: 6px 8px; text-align: left;">Patient</th>
-                  <th style="padding: 6px 8px; text-align: left;">Procedure</th>
-                  <th style="padding: 6px 8px; text-align: center;">OT No.</th>
-                  <th style="padding: 6px 8px; text-align: center;">Time</th>
-                  <th style="padding: 6px 8px; text-align: center;">CSSD</th>
-                  <th style="padding: 6px 8px; text-align: right;">Anaes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${otListData.map(ot => `
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">${ot.name}</td>
-                    <td style="padding: 6px 8px; font-size: 0.72rem;">${ot.proc}</td>
-                    <td class="admin-mono" style="padding: 6px 8px; text-align: center; font-weight: bold;">${ot.ot}</td>
-                    <td class="admin-mono" style="padding: 6px 8px; text-align: center;">${ot.time}</td>
-                    <td style="padding: 6px 8px; text-align: center;">
-                      <span class="badge" style="background-color: ${ot.cssd === 'Y' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color: ${ot.cssd === 'Y' ? 'var(--color-success)' : 'var(--color-danger)'}; padding: 1px 4px; font-size: 0.65rem; font-weight: bold;">${ot.cssd}</span>
-                    </td>
-                    <td style="padding: 6px 8px; text-align: right;">
-                      <span class="badge" style="background-color: ${ot.anaesthesia === 'Y' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color: ${ot.anaesthesia === 'Y' ? 'var(--color-success)' : 'var(--color-danger)'}; padding: 1px 4px; font-size: 0.65rem; font-weight: bold;">${ot.anaesthesia}</span>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : ''}
-
+        <div style="overflow-x: auto;">
+          ${worklistContentHtml}
+        </div>
       </div>
 
-      <!-- MIDDLE COLUMN (35%) -->
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        
-        <!-- a) IPD Patients -->
-        <div class="doctor-card">
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-            <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">IPD Admitted Patients</h3>
-          </div>
-          <div style="overflow-x: auto;">
-            <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-                  <th style="padding: 6px 8px; text-align: left;">Patient</th>
-                  <th style="padding: 6px 8px; text-align: center;">Ward/Bed</th>
-                  <th style="padding: 6px 8px; text-align: center;">LOS</th>
-                  <th style="padding: 6px 8px; text-align: center;">NEWS2</th>
-                  <th style="padding: 6px 8px; text-align: right;">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${ipdQueueData.map(pat => {
-                  const isActive = pat.uhid === activePatient.uhid;
-                  const newsBadgeColor = pat.news < 3 ? 'background-color: var(--color-success); color: white;' : pat.news < 5 ? 'background-color: var(--color-warning); color: #78350f;' : 'background-color: var(--color-danger); color: white; animation: pulse 2s infinite;';
-                  return `
-                    <tr class="table-row-clickable ${isActive ? 'table-row-active' : ''}" onclick="window.selectDoctorDashboardPatient('${pat.uhid}')" style="border-bottom: 1px solid var(--border-color);">
-                      <td style="padding: 6px 8px;">
-                        <div style="font-weight: 600; color: var(--text-primary);">${pat.name}</div>
-                        <div class="admin-mono" style="font-size: 0.68rem; color: var(--text-muted);">${pat.uhid}</div>
-                      </td>
-                      <td class="admin-mono" style="padding: 6px 8px; text-align: center; font-size:0.72rem; font-weight: 600;">${pat.bed}</td>
-                      <td class="admin-mono" style="padding: 6px 8px; text-align: center;">${pat.los}d</td>
-                      <td style="padding: 6px 8px; text-align: center;">
-                        <span class="admin-mono" style="padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.72rem; ${newsBadgeColor}">${pat.news}</span>
-                      </td>
-                      <td style="padding: 6px 8px; text-align: right;">
-                        <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px;" onclick="event.stopPropagation(); router.navigate('patients?uhid=${pat.uhid}')">See Patient</button>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
+      <!-- RIGHT COLUMN: ACTIONABLE TASKS & ALERTS -->
+      <div class="doctor-card" style="padding: 16px; border: 1px solid var(--border-color); background: white;">
+        <div style="display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">
+          <button class="dr-tab-btn ${window.activeDoctorTasksTab === 'alerts' ? 'active' : ''}" onclick="window.selectDoctorTasksTab('alerts')" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorTasksTab === 'alerts' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorTasksTab === 'alerts' ? 'var(--color-danger, #ef4444)' : 'var(--text-secondary)'};">🚨 Clinical Alerts (${window.state.doctorAlerts.length})</button>
+          <button class="dr-tab-btn ${window.activeDoctorTasksTab === 'signoffs' ? 'active' : ''}" onclick="window.selectDoctorTasksTab('signoffs')" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 700; border: none; background: ${window.activeDoctorTasksTab === 'signoffs' ? 'var(--bg-surface-elevated, #f1f5f9)' : 'transparent'}; border-radius: 6px; cursor: pointer; color: ${window.activeDoctorTasksTab === 'signoffs' ? 'var(--primary)' : 'var(--text-secondary)'};">📋 Pending Sign-offs</button>
         </div>
-
-        <!-- b) Pending Orders -->
-        <div class="doctor-card">
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-            <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">Pending Diagnostic Orders</h3>
-          </div>
-          <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-                <th style="padding: 6px 8px; text-align: left;">Patient</th>
-                <th style="padding: 6px 8px; text-align: left;">Test/Study</th>
-                <th style="padding: 6px 8px; text-align: center;">Ordered</th>
-                <th style="padding: 6px 8px; text-align: center;">TAT</th>
-                <th style="padding: 6px 8px; text-align: right;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pendingOrdersData.map(order => `
-                <tr style="border-bottom: 1px solid var(--border-color);">
-                  <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">${order.name}</td>
-                  <td style="padding: 6px 8px; font-size: 0.72rem;">${order.test}</td>
-                  <td class="admin-mono" style="padding: 6px 8px; text-align: center;">${order.ordered}</td>
-                  <td style="padding: 6px 8px; text-align: center; color: var(--text-secondary); font-size: 0.72rem;">${order.tat}</td>
-                  <td style="padding: 6px 8px; text-align: right;">
-                    ${order.status === 'Delayed' ? `
-                      <span class="badge" style="background-color: var(--color-danger-bg); color: var(--color-danger); padding: 1px 4px; font-size: 0.65rem; font-weight: bold; border: 1px solid var(--color-danger);">Delayed</span>
-                    ` : `
-                      <span class="badge" style="background-color: var(--bg-surface-elevated); color: var(--text-secondary); padding: 1px 4px; font-size: 0.65rem; font-weight: 600;">${order.status}</span>
-                    `}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+        <div>
+          ${tasksContentHtml}
         </div>
-
       </div>
 
-      <!-- RIGHT COLUMN (30%) -->
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        
-        <!-- a) Alerts & Reminders -->
-        <div class="doctor-card" style="border: 1px solid #fca5a5; background: #fffcfc;">
-          <div style="border-bottom: 1px solid #fca5a5; padding-bottom: 6px; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 1.05rem;">🚨</span>
-            <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: #991b1b;">Alerts & Reminders</h3>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 2px;">
-            ${window.state.doctorAlerts.map(alert => {
-              let bg = '';
-              let border = '';
-              let textCol = '';
-              let badgeIcon = '';
-              
-              if (alert.severity === 'red') {
-                bg = '#fff5f5'; border = '#ef4444'; textCol = '#991b1b'; badgeIcon = '⚠️';
-              } else if (alert.severity === 'orange') {
-                bg = '#fff7ed'; border = '#f97316'; textCol = '#c2410c'; badgeIcon = '🚫';
-              } else if (alert.severity === 'amber') {
-                bg = '#fffdf5'; border = '#f59e0b'; textCol = '#78350f'; badgeIcon = '💊';
-              } else if (alert.severity === 'purple') {
-                bg = '#faf5ff'; border = '#a855f7'; textCol = '#6b21a8'; badgeIcon = '📥';
-              } else {
-                bg = '#eff6ff'; border = '#3b82f6'; textCol = '#1e3a8a'; badgeIcon = '🔬';
-              }
-
-              return `
-                <div class="alert-row-dr" style="background-color: ${bg}; border-left-color: ${border}; color: ${textCol};">
-                  <span style="font-size: 1rem; line-height: 1;">${badgeIcon}</span>
-                  <div style="flex: 1;">
-                    <div style="font-weight: 500;">${alert.text}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.8; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;">
-                      <span class="admin-mono">${alert.time}</span>
-                      <button onclick="window.acknowledgeDoctorAlert('${alert.id}', event)" style="background: none; border: none; text-decoration: underline; color: inherit; font-size: 0.68rem; font-weight: bold; cursor: pointer; padding: 0;">Acknowledge</button>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-            ${window.state.doctorAlerts.length === 0 ? `
-              <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 12px; font-style: italic;">No active clinical alerts.</div>
-            ` : ''}
-          </div>
-        </div>
-
-
-
-      </div>
-
-    </div>
-
-    <!-- SECTION 5: BOTTOM ROW (3 equal cards) -->
-    <div class="doctor-bottom-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-      
-      <!-- a) Discharge Summary Queue -->
-      <div class="doctor-card">
-        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-          <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">Discharge Summary Queue</h3>
-        </div>
-        <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-              <th style="padding: 6px 8px; text-align: left;">Patient</th>
-              <th style="padding: 6px 8px; text-align: center;">Ward</th>
-              <th style="padding: 6px 8px; text-align: center;">Date Ordered</th>
-              <th style="padding: 6px 8px; text-align: center;">Pending</th>
-              <th style="padding: 6px 8px; text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom: 1px solid var(--border-color); background-color: #fef2f2;"> <!-- Red highlight because pending > 24 hours -->
-              <td style="padding: 6px 8px; font-weight: 600; color: #991b1b;">
-                Vijay Pipil
-                <div class="admin-mono" style="font-size:0.68rem; color: #b91c1c;">UHID20000012</div>
-              </td>
-              <td style="padding: 6px 8px; text-align: center; color: #7f1d1d;">PRIVATE</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center; color: #7f1d1d;">2026-06-25</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center; font-weight: bold; color: var(--color-danger);">2d</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px; background-color: var(--color-danger); border-color: var(--color-danger);" onclick="alert('Opening discharge summary draft for Vijay Pipil...')">Write D/C</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">
-                Sarah Jones
-                <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000021</div>
-              </td>
-              <td style="padding: 6px 8px; text-align: center;">GENERAL</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center;">2026-06-27</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center; font-weight: 600; color: var(--text-secondary);">4h</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px;" onclick="alert('Opening discharge summary draft for Sarah Jones...')">Write D/C</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- b) Prescription / Rx Sign-off Queue -->
-      <div class="doctor-card">
-        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-          <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">Prescription Sign-off Queue</h3>
-        </div>
-        <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-              <th style="padding: 6px 8px; text-align: left;">Patient</th>
-              <th style="padding: 6px 8px; text-align: left;">Drug/Dose</th>
-              <th style="padding: 6px 8px; text-align: center;">Written By</th>
-              <th style="padding: 6px 8px; text-align: center;">Time</th>
-              <th style="padding: 6px 8px; text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">
-                Ramesh Chandra
-                <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000001</div>
-              </td>
-              <td style="padding: 6px 8px; font-size: 0.72rem;">Inj. Fentanyl 50 mcg IV</td>
-              <td style="padding: 6px 8px; text-align: center; font-size: 0.72rem;">Dr. Neha (Res)</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center;">15:40</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px;" onclick="alert('Co-signed Fentanyl prescription for Ramesh Chandra')">Co-Sign</button>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">
-                Amit Sharma
-                <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000003</div>
-              </td>
-              <td style="padding: 6px 8px; font-size: 0.72rem;">Tab. Pantoprazole 40 mg</td>
-              <td style="padding: 6px 8px; text-align: center; font-size: 0.72rem;">Dr. Ajay (Int)</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center;">15:50</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <button class="btn btn-primary" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; height: 22px;" onclick="alert('Co-signed Pantoprazole prescription for Amit Sharma')">Co-Sign</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- c) Follow-up & Referral Tracker -->
-      <div class="doctor-card">
-        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 2px;">
-          <h3 style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; margin: 0; color: var(--text-primary);">Follow-up & Referral Tracker</h3>
-        </div>
-        <table class="custom-table" style="font-size: 0.78rem; width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-color);">
-              <th style="padding: 6px 8px; text-align: left;">Patient</th>
-              <th style="padding: 6px 8px; text-align: left;">Referred To / Follow-up</th>
-              <th style="padding: 6px 8px; text-align: center;">Target Date</th>
-              <th style="padding: 6px 8px; text-align: right;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">
-                Amit Sharma
-                <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000003</div>
-              </td>
-              <td style="padding: 6px 8px; font-size: 0.72rem;">Cardiology clearance</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center;">2026-06-27</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <span class="badge" style="background-color: var(--color-success-bg); color: var(--color-success); padding: 1px 6px; font-size: 0.7rem; font-weight: bold;">Seen</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 8px; font-weight: 600; color: var(--text-primary);">
-                Sourav Desai
-                <div class="admin-mono" style="font-size:0.68rem; color: var(--text-muted);">UHID20000002</div>
-              </td>
-              <td style="padding: 6px 8px; font-size: 0.72rem;">Nephrology consultation</td>
-              <td class="admin-mono" style="padding: 6px 8px; text-align: center;">2026-06-28</td>
-              <td style="padding: 6px 8px; text-align: right;">
-                <span class="badge" style="background-color: var(--color-warning-bg); color: var(--color-warning); padding: 1px 6px; font-size: 0.7rem; font-weight: bold;">Pending</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-        </table>
-      </div>
     </div>
   `;
 }
@@ -2496,16 +2672,16 @@ function renderNurseDashboard(container) {
   };
 
   // Event handlers for MAR / Orders / Handover
-  window.administerNurseMed = function(id) {
+  window.administerNurseMed = async function(id) {
     const med = window.state.nurseMeds.find(m => m.id === id);
     if (med) {
-      const patientDob = prompt(`Confirm patient identity.\nPlease type the Date of Birth (YYYY-MM-DD) for patient "${med.name}":\n(Hint: any date to verify)`);
+      const patientDob = await customPrompt(`Confirm patient identity.\nPlease type the Date of Birth (YYYY-MM-DD) for patient "${med.name}":\n(Hint: any date to verify)`);
       if (!patientDob) return;
-      const drugConfirm = confirm(`Administering drug:\n- Drug: ${med.drug}\n- Dose: ${med.dose}\n- Route: ${med.route}\nConfirm dosage and patient name match exactly?`);
+      const drugConfirm = await customConfirm(`Administering drug:\n- Drug: ${med.drug}\n- Dose: ${med.dose}\n- Route: ${med.route}\nConfirm dosage and patient name match exactly?`);
       if (drugConfirm) {
         let site = '';
         if (med.route.toLowerCase().includes('iv') || med.route.toLowerCase().includes('subcutaneous')) {
-          site = prompt(`Enter injection/infusion site location:\n(e.g., Left forearm, Right thigh)`);
+          site = await customPrompt(`Enter injection/infusion site location:\n(e.g., Left forearm, Right thigh)`);
         }
         med.status = 'Administered';
         // Add notes in MAR audit
@@ -2527,10 +2703,10 @@ function renderNurseDashboard(container) {
     }
   };
 
-  window.holdRefuseNurseMed = function(id, action) {
+  window.holdRefuseNurseMed = async function(id, action) {
     const med = window.state.nurseMeds.find(m => m.id === id);
     if (med) {
-      const reason = prompt(`Enter reason for ${action === 'Hold' ? 'holding' : 'refusing'} medication:\n(e.g., Patient sleeping, Nausea, Refused by bedside relative)`);
+      const reason = await customPrompt(`Enter reason for ${action === 'Hold' ? 'holding' : 'refusing'} medication:\n(e.g., Patient sleeping, Nausea, Refused by bedside relative)`);
       if (reason) {
         med.status = action === 'Hold' ? 'Held' : 'Refused';
         const pat = window.state.nurseActivePatients.find(p => p.uhid === med.patientUhid);
@@ -2729,7 +2905,7 @@ function renderNurseDashboard(container) {
     }
   };
 
-  window.submitHandover = function() {
+  window.submitHandover = async function() {
     // Check if notes are filled for all patients
     let allFilled = true;
     window.state.nurseActivePatients.forEach(p => {
@@ -2744,7 +2920,7 @@ function renderNurseDashboard(container) {
       return;
     }
 
-    const confirmSubmit = confirm('Are you sure you want to submit the shift handover? This will lock the current shift details and notify incoming staff.');
+    const confirmSubmit = await customConfirm('Are you sure you want to submit the shift handover? This will lock the current shift details and notify incoming staff.');
     if (confirmSubmit) {
       alert('Shift Handover Submitted successfully!\n- Outgoing Shift locked.\n- Incoming Nurse notified.\n- Handover logged under auditor.');
       window.state.showHandoverPanel = false;
@@ -2790,244 +2966,21 @@ function renderNurseDashboard(container) {
   const shiftTimeRemaining = '07h 46m remaining';
 
   container.innerHTML = `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-      
-      :root {
-        --sidebar-width: 240px !important;
-        --header-height: 52px !important;
-      }
-      
-      .admin-mono {
-        font-family: 'JetBrains Mono', 'Courier New', Courier, monospace !important;
-      }
-      
-      .admin-kpi-scroll-row {
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        margin-bottom: 16px;
-        scrollbar-width: thin;
-      }
-      
-      .nurse-status-bar {
-        position: sticky;
-        top: -1.5rem;
-        margin: -1.5rem -1.5rem 16px -1.5rem;
-        z-index: 80;
-        background-color: #ffffff;
-        border-bottom: 1px solid var(--border-color);
-        padding: 12px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-        box-shadow: var(--shadow-sm);
-      }
-      
-      .nurse-kpi-card {
-        flex: 0 0 calc(12.5% - 11px);
-        min-width: 170px;
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 14px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: var(--shadow-sm);
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-left: 4px solid var(--border-color);
-      }
-      
-      .nurse-kpi-card.status-normal {
-        border-left-color: var(--color-success);
-      }
-      
-      .nurse-kpi-card.status-warning {
-        border-left-color: var(--color-warning);
-      }
-      
-      .nurse-kpi-card.status-critical {
-        border-left-color: var(--color-danger);
-      }
-      
-      .nurse-card {
-        background-color: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 16px !important;
-        box-shadow: var(--shadow-sm);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .nurse-bed-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-      }
-      
-      .nurse-bed-row:hover {
-        background-color: var(--bg-surface-elevated);
-      }
-      
-      .nurse-bed-row.active-row {
-        background-color: var(--primary-glow) !important;
-        border-left: 3px solid var(--primary);
-      }
-      
-      .badge-risk {
-        padding: 1px 6px;
-        border-radius: 4px;
-        font-size: 0.65rem;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-      
-      .risk-high { background-color: var(--color-danger-bg); color: var(--color-danger); }
-      .risk-medium { background-color: var(--color-warning-bg); color: var(--color-warning); }
-      .risk-low { background-color: var(--color-success-bg); color: var(--color-success); }
-      
-      /* Sliding Detail Drawer style */
-      .nurse-detail-drawer {
-        position: fixed;
-        top: 0;
-        right: 0;
-        height: 100vh;
-        width: 680px;
-        max-width: 95vw;
-        background-color: #ffffff;
-        box-shadow: -10px 0 30px rgba(0,0,0,0.15);
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: ${activePatient ? 'translateX(0)' : 'translateX(100%)'};
-      }
-      
-      .drawer-header {
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border-color);
-        background: linear-gradient(135deg, #1B3A5C, #2563EB);
-        color: #ffffff;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .drawer-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 24px;
-      }
-      
-      .drawer-tabs {
-        display: flex;
-        gap: 2px;
-        border-bottom: 1px solid var(--border-color);
-        background-color: var(--bg-base);
-        padding: 4px 12px 0 12px;
-      }
-      
-      .drawer-tab {
-        padding: 8px 12px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        cursor: pointer;
-        color: var(--text-secondary);
-        border: 1px solid transparent;
-        border-bottom: none;
-        border-radius: 4px 4px 0 0;
-      }
-      
-      .drawer-tab.active {
-        background-color: #ffffff;
-        color: var(--primary);
-        border-color: var(--border-color);
-        margin-bottom: -1px;
-      }
-      
-      .alert-box-nr {
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-        padding: 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        border-left: 4px solid var(--border-color);
-        line-height: 1.4;
-      }
-      
-      .fluid-bar {
-        height: 12px;
-        background-color: var(--border-color);
-        border-radius: 6px;
-        overflow: hidden;
-        display: flex;
-        margin-top: 8px;
-      }
-      
-      .handover-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15,23,42,0.6);
-        z-index: 2000;
-        display: ${window.state.showHandoverPanel ? 'flex' : 'none'};
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-      
-      .handover-modal {
-        background: #ffffff;
-        border-radius: var(--radius-md);
-        width: 850px;
-        max-width: 95vw;
-        max-height: 90vh;
-        box-shadow: var(--shadow-lg);
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      @media (max-width: 1024px) {
-        .nurse-three-col {
-          grid-template-columns: 1fr !important;
-        }
-        .nurse-bottom-row {
-          grid-template-columns: 1fr !important;
-        }
-        .nurse-kpi-card {
-          min-width: 150px;
-        }
-      }
-    </style>
-
-    <!-- SECTION 1: SHIFT STATUS BAR -->
-    <div class="nurse-status-bar">
+    <!-- SECTION 1.5: DUTY STATUS BAR (MOVED TO TOP) -->
+    <div class="duty-bar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; background: white;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div>
-          <strong style="font-size: 0.88rem; color: var(--text-primary);">Sister Mercy, RN</strong>
-          <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 4px;">Senior Staff Nurse · CCU & Gen-Ward</span>
+        <div class="toggle-group">
+          <button class="toggle-btn ${window.state.nurseDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('nurse', 'On Duty')">On Duty</button>
+          <button class="toggle-btn ${window.state.nurseDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('nurse', 'Off Duty')">Off Duty</button>
         </div>
-        <div style="font-size: 0.78rem; background-color: var(--bg-surface-elevated); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
-          Shift: <strong>Evening (04:00 PM - 12:00 AM)</strong>
+        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+          Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">04:00 PM - 12:00 AM</strong>
         </div>
-        <div class="admin-mono" style="font-size: 0.78rem; color: var(--color-warning); font-weight: bold; display: flex; align-items: center; gap: 4px;">
-          ⏳ ${shiftTimeRemaining}
-        </div>
-        <span class="admin-mono" style="background-color: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;">
-          Handover Due Soon
-        </span>
       </div>
-      
+      <!-- Right side Handover CTA & Patient Load -->
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 0.78rem; color: var(--text-secondary);">Patient Load: <strong>4 Assigned Inpatients</strong></span>
-        <button class="btn btn-primary" onclick="window.toggleHandoverPanel(true)" style="font-size: 0.78rem; font-weight: 700; height: 32px; background-color: var(--color-warning); border-color: var(--color-warning); color: #fff;">Start Handover</button>
+        <button class="btn btn-primary btn-sm" onclick="window.initiateHandover('nurse')" style="font-size: 0.75rem; font-weight: 700; height: 28px; background-color: var(--color-warning); border-color: var(--color-warning); color: #fff;">Start Handover</button>
       </div>
     </div>
 
@@ -3039,20 +2992,35 @@ function renderNurseDashboard(container) {
 
     <!-- SECTION 2: KPI STAT CARDS ROW -->
     <div class="admin-kpi-scroll-row">
-      ${kpis.map(k => `
-        <div class="nurse-kpi-card status-${k.status}">
-          <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${k.title}</span>
-          <div style="margin-top: 6px; margin-bottom: 6px;">
-            <span class="admin-mono" style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${k.value}</span>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">${k.subtext}</div>
+      ${kpis.map(k => {
+        const kpiKeyMap = {
+          'Patients in Ward': 'admissions_today',
+          'Vitals Due Now': 'patients_critical',
+          'Medication Round Due': 'medication_due',
+          'Pending Doctor Orders': 'lab_reviews_pending',
+          'Critical NEWS Alerts': 'patients_critical',
+          'Discharges Pending': 'discharges_today',
+          'Procedures Due': 'tests_ordered_today',
+          'Samples Pending': 'tests_ordered_today'
+        };
+        const kpiKey = kpiKeyMap[k.title] || 'admissions_today';
+        return `
+          <div class="admin-kpi-card status-${k.status}" onclick="window.router.navigate('dashboard?kpi=${kpiKey}')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+              <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${k.title}</span>
+            </div>
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+              <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${k.value}</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${k.subtext}</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              <span style="color: ${k.status === 'normal' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
+                ${k.trendText.includes('▲') || k.trendText.includes('▼') ? '' : (k.status === 'normal' ? '▲ ' : '▼ ')}${k.trendText}
+              </span>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 4px; margin-top: 4px;">
-            <span style="color: ${k.status === 'normal' ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight: 600;">
-              ${k.trendText}
-            </span>
-          </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
 
     <!-- SECTION 3: THREE-COLUMN MAIN AREA -->
@@ -3359,7 +3327,7 @@ function renderNurseDashboard(container) {
     </div>
 
     <!-- SECTION 4: PATIENT DETAIL DRAWER PANEL (Slides in from right) -->
-    <div class="nurse-detail-drawer" id="nurse-patient-drawer">
+    <div class="nurse-detail-drawer ${activePatient ? 'active' : ''}" id="nurse-patient-drawer">
       ${activePatient ? `
         <div class="drawer-header">
           <div>
@@ -3695,7 +3663,7 @@ function renderNurseDashboard(container) {
                   <p>Last Care Checked: <strong>${activePatient.devices.catheter.lastCare}</strong></p>
                   <p>Last Recorded Output: <strong>${activePatient.devices.catheter.output} mL</strong></p>
                   <div style="display: flex; gap: 8px; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
-                    <button class="btn btn-secondary" onclick="const vol=prompt('Enter urinary output volume (mL):'); if(vol){ activePatient.devices.catheter.output=parseInt(vol); alert('Output logged.'); window.closeNurseDrawer(); }" style="padding: 4px 8px; font-size: 0.7rem;">Record Output</button>
+                    <button class="btn btn-secondary" onclick="window._nurseRecordUrinaryOutput('${activePatient.uhid}')" style="padding: 4px 8px; font-size: 0.7rem;">Record Output</button>
                     <button class="btn btn-secondary" onclick="activePatient.devices.catheter = null; alert('Catheter removed.'); window.closeNurseDrawer();" style="padding: 4px 8px; font-size: 0.7rem; color: var(--color-danger); border-color: var(--color-danger);">Remove Catheter</button>
                   </div>
                 ` : '<div style="color: var(--text-muted); font-style: italic;">No active catheters or drains.</div>'}
@@ -3834,7 +3802,7 @@ function renderNurseDashboard(container) {
     </div>
 
     <!-- SECTION 6: SHIFT HANDOVER PANEL (Modal overlay) -->
-    <div class="handover-overlay" id="handover-modal-overlay">
+    <div class="handover-overlay ${window.state.showHandoverPanel ? 'active' : ''}" id="handover-modal-overlay">
       <div class="handover-modal">
         <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 14px 20px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
           <h2 style="margin: 0; font-size: 1.1rem; font-weight: 800;">📋 Shift Handover & End-of-Shift Sign-Off</h2>
@@ -3904,6 +3872,21 @@ function renderBillingDashboard(container) {
   const outstandingStr = billingPendingCount > 0 ? `₹${(billingPendingCount * 1500).toLocaleString('en-IN')}` : '₹0';
 
   container.innerHTML = `
+    <!-- SECTION: DUTY STATUS BAR -->
+    <div class="duty-bar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; background: white;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="toggle-group">
+          <button class="toggle-btn ${window.state.billingDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('billing', 'On Duty')">On Duty</button>
+          <button class="toggle-btn ${window.state.billingDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('billing', 'Off Duty')">Off Duty</button>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+          Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">09:00 AM - 05:00 PM</strong>
+        </div>
+      </div>
+      <!-- Right side Handover CTA -->
+      <button class="btn btn-primary btn-sm" onclick="window.initiateHandover('billing')" style="font-size: 0.75rem; font-weight: 700; height: 28px; background-color: var(--color-warning); border-color: var(--color-warning); color: #fff;">Start Handover</button>
+    </div>
+
     <!-- KPI Cards -->
     <!-- ── Revenue Strip + Quick Actions ── -->
     ${window.renderRevenueStrip ? window.renderRevenueStrip() : ''}
@@ -4341,7 +4324,7 @@ function renderKPIWorkspace(container, kpiKey, persona) {
           <td><strong style="color: var(--color-warning);">${o.status}</strong></td>
           <td style="text-align: right;">
             <button class="btn btn-success btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'Approved'; alert('Laboratory Report verified & released to EMR patient chart.'); router.navigate('dashboard?kpi=lab_reviews_pending');">Approve & Release</button>
-            <button class="btn btn-secondary btn-sm" onclick="const com = prompt('Enter clinician review query:'); if(com) { alert('Query sent to Lab technician: ' + com); }">Query</button>
+            <button class="btn btn-secondary btn-sm" onclick="window._clinicianQueryLabReport('${o.id}')">Query</button>
           </td>
         </tr>
       `).join('');
@@ -4489,7 +4472,7 @@ function renderKPIWorkspace(container, kpiKey, persona) {
         <th style="text-align: right;">Specimen Processing</th>
       </tr>
     `;
-    window.renderWorkspaceRows = function(data) {
+    window.renderWorkspaceRows = async function(data) {
       return data.map(o => `
         <tr>
           <td><code>SPEC-${o.id}</code></td>
@@ -4498,8 +4481,8 @@ function renderKPIWorkspace(container, kpiKey, persona) {
           <td>${o.date}</td>
           <td><strong style="color:var(--color-warning);">${o.status}</strong></td>
           <td style="text-align: right; display:flex; gap:0.25rem; justify-content:flex-end;">
-            <button class="btn btn-primary btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'Sample Collected'; alert('Sample collected for ${o.patientName}.'); router.navigate('dashboard?kpi=tests_ordered_today');">Collect Sample</button>
-            <button class="btn btn-secondary btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'In Progress'; alert('Analyzer run started.'); router.navigate('dashboard?kpi=tests_ordered_today');">Process Run</button>
+            <button class="btn btn-primary btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'Sample Collected'; await customAlert('Sample collected for ${o.patientName}.'); router.navigate('dashboard?kpi=tests_ordered_today');">Collect Sample</button>
+            <button class="btn btn-secondary btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'In Progress'; await customAlert('Analyzer run started.'); router.navigate('dashboard?kpi=tests_ordered_today');">Process Run</button>
             <button class="btn btn-secondary btn-sm" onclick="state.orders.find(ord => ord.id === '${o.id}').status = 'Result Entered'; alert('Results entered in LIS.'); router.navigate('dashboard?kpi=tests_ordered_today');">Enter Result</button>
           </td>
         </tr>
@@ -5006,140 +4989,7 @@ function renderExecutiveDashboard(container, activeRole) {
 
     // ── CSS ───────────────────────────────────────────────────────────────
     const css = `
-      <style>
-        .ed-wrap { font-family:'Inter',system-ui,sans-serif; color:#0f172a; min-width:1280px; display:flex; flex-direction:column; gap:16px; background:#f8fafc; padding-bottom:32px; }
-        .ed-wrap *, .ed-wrap *::before, .ed-wrap *::after { box-sizing:border-box; }
-        .ed-wrap .mono { font-family:'JetBrains Mono','Courier New',monospace; }
-
-        /* Branch bar */
-        .ed-branch-bar { position:sticky; top:0; z-index:50; background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
-        .ed-branch-pills { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .ed-branch-label { font-size:0.75rem; color:#94a3b8; font-weight:600; margin-right:4px; }
-        .ed-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px; font-size:0.76rem; font-weight:700; cursor:pointer; border:1.5px solid #cbd5e1; background:#fff; color:#475569; transition:all .15s; user-select:none; }
-        .ed-pill:hover { border-color:#64748b; color:#0f172a; }
-        .ed-pill.active { background:#0f172a; color:#fff; border-color:#0f172a; }
-        .ed-branch-meta { font-size:0.74rem; color:#64748b; text-align:right; line-height:1.6; }
-        .ed-branch-meta b { color:#0f172a; font-weight:700; }
-
-        /* Dots */
-        .ed-dot { display:inline-block; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-        .ed-dot-red    { background:#ef4444; }
-        .ed-dot-amber  { background:#f59e0b; }
-        .ed-dot-green  { background:#10b981; }
-        .ed-dot-pill { width:7px; height:7px; }
-
-        /* Cards */
-        .ed-card { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px; }
-        .ed-card-red    { border-left:3px solid #ef4444; }
-        .ed-card-amber  { border-left:3px solid #f59e0b; }
-        .ed-card-green  { border-left:3px solid #10b981; }
-        .ed-section-title { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:#475569; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
-        .ed-section-link  { font-size:0.72rem; font-weight:700; color:#2563eb; text-transform:none; letter-spacing:0; cursor:pointer; }
-        .ed-section-link:hover { text-decoration:underline; }
-
-        /* Alerts */
-        .ed-alert-row { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 10px; border-radius:6px; font-size:0.79rem; gap:12px; }
-        .ed-alert-row+.ed-alert-row { border-top:1px solid #f1f5f9; }
-        .ed-alert-red    { background:#fff5f5; }
-        .ed-alert-amber  { background:#fffbeb; }
-        .ed-alert-yellow { background:#fefce8; }
-        .ed-alert-body { display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0; }
-        .ed-alert-text { flex:1; min-width:0; line-height:1.5; }
-        .ed-elapsed { font-size:0.68rem; color:#94a3b8; font-family:'JetBrains Mono',monospace; white-space:nowrap; margin-top:2px; }
-        .ed-act-btn { padding:3px 10px; border-radius:4px; font-size:0.72rem; font-weight:700; border:none; cursor:pointer; white-space:nowrap; flex-shrink:0; }
-        .ed-act-red    { background:#fee2e2; color:#991b1b; }
-        .ed-act-amber  { background:#fef3c7; color:#92400e; }
-        .ed-act-yellow { background:#fef9c3; color:#713f12; }
-        .ed-clear-bar  { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 16px; font-size:0.8rem; color:#166534; font-weight:600; }
-
-        /* Two-col layout */
-        .ed-two-col { display:grid; grid-template-columns:60% 40%; gap:16px; }
-
-        /* KPI cards */
-        .ed-kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
-        .ed-kpi-fin  { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
-        .ed-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; cursor:pointer; transition:box-shadow .15s; position:relative; overflow:hidden; }
-        .ed-kpi:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
-        .ed-kpi.border-red   { border-left:3px solid #ef4444; }
-        .ed-kpi.border-amber { border-left:3px solid #f59e0b; }
-        .ed-kpi.border-green { border-left:3px solid #10b981; }
-        .ed-kpi-name { font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.4px; }
-        .ed-kpi-val  { font-size:1.55rem; font-weight:800; color:#0f172a; font-family:'JetBrains Mono',monospace; margin:4px 0 2px; line-height:1; }
-        .ed-kpi-sub  { font-size:0.68rem; color:#64748b; line-height:1.4; }
-        .ed-kpi-delta { font-size:0.68rem; font-weight:700; margin-top:3px; }
-        .ed-kpi-status { position:absolute; top:10px; right:10px; }
-        .ed-kpi-branch { font-size:0.63rem; color:#94a3b8; margin-top:3px; font-family:'JetBrains Mono',monospace; }
-
-        /* Dept status */
-        .ed-dept-list { display:flex; flex-direction:column; gap:0; }
-        .ed-dept-row  { padding:10px 12px; border-bottom:1px solid #f1f5f9; display:flex; flex-direction:column; gap:2px; cursor:pointer; transition:background .1s; }
-        .ed-dept-row:last-child { border-bottom:none; }
-        .ed-dept-row:hover { background:#f8fafc; }
-        .ed-dept-header { display:flex; justify-content:space-between; align-items:center; }
-        .ed-dept-name { font-size:0.79rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px; }
-        .ed-dept-link { font-size:0.68rem; color:#2563eb; font-weight:700; }
-        .ed-dept-meta { font-size:0.73rem; color:#475569; }
-        .ed-dept-alert-line { font-size:0.7rem; color:#b45309; font-weight:600; }
-        .ed-resource-strip { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-top:10px; display:flex; flex-direction:column; gap:5px; font-size:0.74rem; color:#475569; }
-        .ed-resource-line { display:flex; align-items:center; gap:6px; }
-
-        /* Bed table */
-        .ed-bed-table { width:100%; border-collapse:collapse; font-size:0.76rem; }
-        .ed-bed-table th { background:#f8fafc; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#64748b; padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:right; }
-        .ed-bed-table th:first-child { text-align:left; }
-        .ed-bed-table td { padding:7px 10px; border-bottom:1px solid #f1f5f9; text-align:right; font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#374151; }
-        .ed-bed-table td:first-child { text-align:left; font-family:'Inter',sans-serif; font-weight:600; color:#0f172a; }
-        .ed-bed-table tr:last-child td { border-bottom:none; background:#f8fafc; font-weight:700; }
-        .ed-bed-table tr:hover td { background:#f8fafc; }
-        .ed-bed-occ-red    { color:#dc2626; font-weight:800; }
-        .ed-bed-occ-amber  { color:#d97706; font-weight:700; }
-        .ed-bed-occ-green  { color:#059669; }
-
-        /* Approvals */
-        .ed-app-table { width:100%; border-collapse:collapse; font-size:0.76rem; }
-        .ed-app-table th { background:#f8fafc; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#64748b; padding:7px 10px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
-        .ed-app-table td { padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#374151; vertical-align:middle; }
-        .ed-app-table tr:hover td { background:#f8fafc; }
-        .atype-badge { display:inline-block; padding:2px 7px; border-radius:3px; font-size:0.64rem; font-weight:800; letter-spacing:.3px; white-space:nowrap; }
-        .atype-red    { background:#fee2e2; color:#991b1b; }
-        .atype-blue   { background:#dbeafe; color:#1e40af; }
-        .atype-orange { background:#ffedd5; color:#c2410c; }
-        .atype-purple { background:#ede9fe; color:#5b21b6; }
-        .atype-amber  { background:#fef3c7; color:#92400e; }
-        .ed-app-actions { display:flex; gap:5px; }
-        .btn-act { padding:3px 9px; border-radius:4px; font-size:0.7rem; font-weight:700; border:1px solid; cursor:pointer; white-space:nowrap; }
-        .btn-details  { border-color:#cbd5e1; background:#fff; color:#475569; }
-        .btn-approve  { border-color:#10b981; background:#f0fdf4; color:#065f46; }
-        .btn-reject   { border-color:#ef4444; background:#fff5f5; color:#991b1b; }
-        .btn-delegate { border-color:#a78bfa; background:#f5f3ff; color:#5b21b6; }
-        .btn-act:hover { opacity:.8; }
-        .ed-app-amount { font-family:'JetBrains Mono',monospace; font-weight:700; }
-        .ed-app-since  { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:#94a3b8; }
-        .ed-no-approvals { padding:16px; text-align:center; color:#94a3b8; font-size:0.8rem; }
-
-        /* Charts */
-        .ed-charts-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-        .ed-chart-card { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px; }
-        .ed-chart-title { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:#475569; margin-bottom:10px; }
-        .ed-chart-svg-wrap { overflow:visible; }
-        .ed-chart-legend { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
-        .ed-legend-item { display:flex; align-items:center; gap:4px; font-size:0.68rem; color:#64748b; }
-        .ed-legend-dot  { width:8px; height:8px; border-radius:2px; }
-        .ed-period-toggle { display:flex; gap:6px; margin-bottom:14px; }
-        .ed-toggle-btn { padding:4px 12px; border-radius:4px; font-size:0.72rem; font-weight:700; cursor:pointer; border:1px solid #cbd5e1; background:#fff; color:#64748b; }
-        .ed-toggle-btn.active { background:#0f172a; color:#fff; border-color:#0f172a; }
-
-        /* Confirm modal */
-        .ed-modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
-        .ed-modal { background:#fff; border-radius:10px; padding:24px; width:380px; box-shadow:0 20px 60px rgba(0,0,0,.2); }
-        .ed-modal h3 { margin:0 0 8px; font-size:1rem; color:#0f172a; }
-        .ed-modal p  { margin:0 0 16px; font-size:0.82rem; color:#475569; line-height:1.5; }
-        .ed-modal-actions { display:flex; gap:8px; justify-content:flex-end; }
-        .btn-modal-cancel  { padding:6px 16px; border-radius:5px; border:1px solid #cbd5e1; background:#fff; font-weight:700; font-size:0.8rem; cursor:pointer; }
-        .btn-modal-confirm { padding:6px 16px; border-radius:5px; border:none; font-weight:700; font-size:0.8rem; cursor:pointer; }
-        .btn-modal-approve { background:#10b981; color:#fff; }
-        .btn-modal-reject  { background:#ef4444; color:#fff; }
-      </style>`;
+      `;
 
     // ── Branch selector ────────────────────────────────────────────────────
     const now = new Date();
@@ -5599,10 +5449,10 @@ function renderExecutiveDashboard(container, activeRole) {
       }
     };
 
-    window.raiseClaimQuery = function(claimId) {
+    window.raiseClaimQuery = async function(claimId) {
       const claim = state.claims.find(c => c.id === claimId);
       if (claim) {
-        const queryText = prompt(`Enter Query / Clarification request for Claim ${claimId}:`, "Please upload detailed OT notes and implant sticker.");
+        const queryText = await customPrompt(`Enter Query / Clarification request for Claim ${claimId}:`, "Please upload detailed OT notes and implant sticker.");
         if (queryText && queryText.trim()) {
           claim.status = 'Query Raised';
           claim.queryText = queryText;
@@ -5611,6 +5461,28 @@ function renderExecutiveDashboard(container, activeRole) {
       }
     };
   }
+
+
+  window._nurseRecordUrinaryOutput = function(uhid) {
+    const activePatient = (window.state.nurseActivePatients || []).find(p => p.uhid === uhid);
+    if (!activePatient) return;
+    customPrompt('Enter urinary output volume (mL):').then(vol => {
+      if (vol) {
+        activePatient.devices.catheter.output = parseInt(vol);
+        customAlert('Output logged.').then(() => {
+          window.closeNurseDrawer();
+        });
+      }
+    });
+  };
+
+  window._clinicianQueryLabReport = function(orderId) {
+    customPrompt('Enter clinician review query:').then(com => {
+      if (com) {
+        customAlert('Query sent to Lab technician: ' + com);
+      }
+    });
+  };
 
   render();
 }

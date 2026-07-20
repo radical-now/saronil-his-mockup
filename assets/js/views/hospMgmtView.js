@@ -97,7 +97,7 @@ window.views = window.views || {};
       { name: "Sunita Devi", dept: "ICU", dates: "30-Jun-2026 to 05-Jul-2026", days: 6, type: "Earned", reason: "Medical recovery" }
     ];
 
-    window.state.mgmtCredentials = window.state.mgmtCredentials || [
+    window.state.mgmtCredentials = window.state.mgmtCredentials || JSON.parse(localStorage.getItem('saronil_mgmtCredentials')) || [
       { id: "EMP-00481", name: "Dr. Ramesh Kumar", designation: "Cardiologist", type: "MCI/NMC Registration", regNo: "NMC-884021", expiry: "12-Jul-2026", days: 14, status: "Expiring soon (14 days)" },
       { id: "EMP-00921", name: "Staff Nurse Priya", designation: "Critical Care Nurse", type: "INC Registration", regNo: "INC-990214", expiry: "28-Jun-2026", days: 0, status: "Expired" },
       { id: "EMP-01024", name: "Pharmacist Rajesh", designation: "Store Incharge", type: "Pharmacy Council Lic", regNo: "PCI-112028", expiry: "22-Jul-2026", days: 24, status: "Expiring soon (24 days)" }
@@ -151,100 +151,195 @@ window.views = window.views || {};
       { date: "26-Jun-2026", yellow: 14.2, red: 16.5, blue: 5.0, black: 22.0, total: 57.7, collected: "Yes", collector: "Maridi Waste Inc" }
     ];
 
-    if (!window.state.staffList || window.state.staffList.length === 0) {
+    if (!window.state.staffList || window.state.staffList.length === 0 || !window.state.staffList.some(s => s.id.startsWith('KIT')) || !window.state.staffList.some(s => s.id === 'DOC_AMIT')) {
       const storedStaff = localStorage.getItem('saronil_staffList');
-      if (storedStaff) {
+      if (storedStaff && JSON.parse(storedStaff).some(s => s.id.startsWith('KIT')) && JSON.parse(storedStaff).some(s => s.id === 'DOC_AMIT')) {
         window.state.staffList = JSON.parse(storedStaff);
       } else {
         window.state.staffList = [];
         const depts = [
-        "Cardiology", "Orthopedics", "General Medicine", "Pediatrics", "General Surgery",
-        "Gynecology & Obs", "Emergency Medicine", "Neurology", "Oncology", "Dermatology", "Daycare"
-      ];
-      
-      // Seed Doctors
-      (window.state.doctors || []).forEach((d, idx) => {
-        const branchOptions = ['Bengaluru HSR (Main)', 'Whitefield Clinic', 'Electronic City Hub'];
-        const branches = idx % 3 === 0 ? [branchOptions[0], branchOptions[1]] : [branchOptions[idx % 3]];
-        const opdDays = idx % 2 === 0 ? ['Mon', 'Wed', 'Fri'] : ['Tue', 'Thu', 'Sat'];
-        const statusToday = idx % 5 === 0 ? 'On Leave' : (idx % 3 === 0 ? 'OPD' : (idx % 4 === 0 ? 'Off Duty' : 'On Duty'));
-        const credStatus = idx === 3 ? 'Expired' : (idx === 7 ? 'Expiring soon' : 'Valid');
-        const regExpiry = idx === 3 ? window._HIS_DATE(-2) : (idx === 7 ? window._HIS_DATE(15) : window._HIS_DATE(365));
+          "Cardiology", "Orthopedics", "General Medicine", "Pediatrics", "General Surgery",
+          "Gynecology & Obs", "Emergency Medicine", "Neurology", "Oncology", "Dermatology", "Daycare"
+        ];
         
-        window.state.staffList.push({
-          id: d.id || `DOC${idx + 1}`,
-          name: d.name,
-          type: 'Doctor',
-          designation: idx % 4 === 0 ? 'Senior Consultant' : (idx % 3 === 0 ? 'Senior Resident' : 'Consultant'),
-          department: d.spec || depts[idx % depts.length],
-          registrationNo: `SMC-${10000 + idx}`,
-          regValidTill: regExpiry,
-          specialisation: d.spec || depts[idx % depts.length],
-          branches: branches,
-          statusToday: statusToday,
-          status: statusToday === 'On Leave' ? 'On Leave' : 'Active',
-          credentialStatus: credStatus,
-          phone: d.phone || `+91 98450 ${11000 + idx}`,
-          email: `${d.name.toLowerCase().replace(/[^a-z]/g, '')}@saronil.com`,
-          dob: '1980-05-15',
-          sex: idx % 2 === 0 ? 'Male' : 'Female',
-          address: 'HSR Layout, Bengaluru',
-          emergencyName: 'Emergency Contact',
-          emergencyPhone: '+91 99000 12345',
-          bloodGroup: 'B+',
-          opdDays: opdDays,
-          opdTiming: '09:00 AM - 01:00 PM',
-          otPrivileges: idx % 3 === 0,
-          joiningDate: '2022-01-10',
-          reportingTo: 'Medical Superintendent',
-          credentials: [
-            { name: 'Medical Council Registration', uploaded: true, expiryDate: regExpiry, status: credStatus },
-            { name: 'ACLS Certification', uploaded: true, expiryDate: window._HIS_DATE(180), status: 'Valid' },
-            { name: 'Health Fitness Certificate', uploaded: true, expiryDate: window._HIS_DATE(200), status: 'Valid' }
-          ]
+        // Seed Doctors
+        const allDocs = [{ id: 'DOC_AMIT', name: 'Dr. Amit Verma', spec: 'General Medicine', phone: '+91 98450 11000' }, ...(window.state.doctors || [])];
+        allDocs.forEach((d, idx) => {
+          const branchOptions = ['Bengaluru HSR (Main)', 'Whitefield Clinic', 'Electronic City Hub'];
+          const branches = idx % 3 === 0 ? [branchOptions[0], branchOptions[1]] : [branchOptions[idx % 3]];
+          const opdDays = idx % 2 === 0 ? ['Mon', 'Wed', 'Fri'] : ['Tue', 'Thu', 'Sat'];
+          const statusToday = idx % 5 === 0 ? 'On Leave' : (idx % 3 === 0 ? 'OPD' : (idx % 4 === 0 ? 'Off Duty' : 'On Duty'));
+          const credStatus = d.id === 'DOC04' ? 'Expired' : (idx === 7 ? 'Expiring soon' : 'Valid');
+          const regExpiry = d.id === 'DOC04' ? window._HIS_DATE(-2) : (idx === 7 ? window._HIS_DATE(15) : window._HIS_DATE(365));
+          
+          window.state.staffList.push({
+            id: d.id || `DOC${idx + 1}`,
+            name: d.name,
+            type: 'Doctor',
+            designation: idx % 4 === 0 ? 'Senior Consultant' : (idx % 3 === 0 ? 'Senior Resident' : 'Consultant'),
+            department: d.spec || depts[idx % depts.length],
+            registrationNo: `SMC-${10000 + idx}`,
+            regValidTill: regExpiry,
+            specialisation: d.spec || depts[idx % depts.length],
+            branches: branches,
+            statusToday: statusToday,
+            status: statusToday === 'On Leave' ? 'On Leave' : 'Active',
+            credentialStatus: credStatus,
+            phone: d.phone || `+91 98450 ${11000 + idx}`,
+            email: `${d.name.toLowerCase().replace(/[^a-z]/g, '')}@saronil.com`,
+            dob: '1980-05-15',
+            sex: idx % 2 === 0 ? 'Male' : 'Female',
+            address: 'HSR Layout, Bengaluru',
+            emergencyName: 'Emergency Contact',
+            emergencyPhone: '+91 99000 12345',
+            bloodGroup: 'B+',
+            opdDays: opdDays,
+            opdTiming: '09:00 AM - 01:00 PM',
+            otPrivileges: idx % 3 === 0 || idx === 4 || d.id === 'DOC04',
+            joiningDate: '2022-01-10',
+            reportingTo: 'Medical Superintendent',
+            employmentType: idx % 4 === 0 ? 'Visiting Consultant' : 'Permanent',
+            employmentStatus: 'Active',
+            statusHistory: [
+              { date: '2022-01-10', status: 'Active', reason: 'Initial onboarding recruitment completed.', user: 'HR Admin' }
+            ],
+            leaveBalances: { Sick: 12, Casual: 10, Earned: 18 },
+            leaveRequests: [
+              { id: 'LV-DOC-01', type: 'Casual Leave', fromDate: window._HIS_DATE(3), toDate: window._HIS_DATE(5), days: 3, status: 'Pending Endorsement', reason: 'Attending medical conference' }
+            ],
+            trainingLogs: [
+              { name: 'Basic Life Support (BLS)', completedDate: '2025-05-10', expiryDate: window._HIS_DATE(300), status: 'Valid' },
+              { name: 'Advanced Cardiac Life Support (ACLS)', completedDate: '2025-06-15', expiryDate: window._HIS_DATE(340), status: 'Valid' },
+              { name: 'Fire Safety Training', completedDate: '2026-01-15', expiryDate: window._HIS_DATE(180), status: 'Valid' },
+              { name: 'Biomedical Waste (BMW) Management', completedDate: '2026-02-20', expiryDate: window._HIS_DATE(220), status: 'Valid' }
+            ],
+            cmeCredits: { earned: 18, required: 30 },
+            incidents: 0,
+            disciplinaryHistory: [],
+            policeVerification: 'Verified',
+            backgroundStatus: 'Completed',
+            salary: `₹${(150000 + idx * 5000).toLocaleString('en-IN')} / month`,
+            credentials: [
+              { name: 'Medical/Nursing Registration certificate', uploaded: true, expiryDate: regExpiry, status: credStatus },
+              { name: 'ACLS Certification', uploaded: true, expiryDate: window._HIS_DATE(180), status: 'Valid' },
+              { name: 'Health Fitness Certificate', uploaded: true, expiryDate: window._HIS_DATE(200), status: 'Valid' }
+            ]
+          });
         });
-      });
 
-      // Seed Nurses
-      (window.state.nurses || []).forEach((n, idx) => {
-        const credStatus = idx === 1 ? 'Expired' : (idx === 5 ? 'Expiring soon' : 'Valid');
-        const regExpiry = idx === 1 ? window._HIS_DATE(-5) : (idx === 5 ? window._HIS_DATE(20) : window._HIS_DATE(500));
-        const statusToday = idx === 2 ? 'On Leave' : (idx % 2 === 0 ? 'Morning' : 'Night');
-        
-        window.state.staffList.push({
-          id: n.id || `NUR${idx + 1}`,
-          name: n.name,
-          type: 'Nurse',
-          designation: idx % 5 === 0 ? 'Nursing Supervisor' : (idx % 3 === 0 ? 'Senior Nurse' : 'Staff Nurse'),
-          department: n.dept || 'General Wards',
-          ward: n.dept || 'General Ward (Male)',
-          registrationNo: `INC-${20000 + idx}`,
-          regValidTill: regExpiry,
-          branch: 'Bengaluru HSR (Main)',
-          statusToday: statusToday,
-          status: statusToday === 'On Leave' ? 'On Leave' : 'Active',
-          credentialStatus: credStatus,
-          phone: n.phone || `+91 98450 ${22000 + idx}`,
-          email: `${n.name.toLowerCase().replace(/[^a-z]/g, '')}@saronil.com`,
-          dob: '1992-08-20',
-          sex: 'Female',
-          address: 'Electronic City, Bengaluru',
-          emergencyName: 'Emergency Contact',
-          emergencyPhone: '+91 99000 54321',
-          bloodGroup: 'O+',
-          joiningDate: '2023-04-15',
-          reportingTo: 'Nursing Supervisor Mary',
-          credentials: [
-            { name: 'Nursing Council Registration', uploaded: true, expiryDate: regExpiry, status: credStatus },
-            { name: 'BLS Certification', uploaded: true, expiryDate: window._HIS_DATE(100), status: 'Valid' },
-            { name: 'Health Fitness Certificate', uploaded: true, expiryDate: window._HIS_DATE(120), status: 'Valid' }
-          ]
+        // Seed Nurses
+        (window.state.nurses || []).forEach((n, idx) => {
+          const credStatus = idx === 1 ? 'Expired' : (idx === 5 ? 'Expiring soon' : 'Valid');
+          const regExpiry = idx === 1 ? window._HIS_DATE(-5) : (idx === 5 ? window._HIS_DATE(20) : window._HIS_DATE(500));
+          const statusToday = idx === 2 ? 'On Leave' : (idx % 2 === 0 ? 'Morning' : 'Night');
+          
+          window.state.staffList.push({
+            id: n.id || `NUR${idx + 1}`,
+            name: n.name,
+            type: 'Nurse',
+            designation: idx % 5 === 0 ? 'Nursing Supervisor' : (idx % 3 === 0 ? 'Senior Nurse' : 'Staff Nurse'),
+            department: n.dept || 'General Wards',
+            ward: n.dept || 'General Ward (Male)',
+            registrationNo: `INC-${20000 + idx}`,
+            regValidTill: regExpiry,
+            branch: 'Bengaluru HSR (Main)',
+            statusToday: statusToday,
+            status: statusToday === 'On Leave' ? 'On Leave' : 'Active',
+            credentialStatus: credStatus,
+            phone: n.phone || `+91 98450 ${22000 + idx}`,
+            email: `${n.name.toLowerCase().replace(/[^a-z]/g, '')}@saronil.com`,
+            dob: '1992-08-20',
+            sex: 'Female',
+            address: 'Electronic City, Bengaluru',
+            emergencyName: 'Emergency Contact',
+            emergencyPhone: '+91 99000 54321',
+            bloodGroup: 'O+',
+            joiningDate: '2023-04-15',
+            reportingTo: 'Nursing Supervisor Mary',
+            employmentType: 'Permanent',
+            employmentStatus: 'Active',
+            statusHistory: [
+              { date: '2023-04-15', status: 'Active', reason: 'Joined staff nursing roster.', user: 'HR Admin' }
+            ],
+            leaveBalances: { Sick: 10, Casual: 8, Earned: 14 },
+            leaveRequests: [],
+            trainingLogs: [
+              { name: 'Basic Life Support (BLS)', completedDate: '2025-04-15', expiryDate: window._HIS_DATE(200), status: 'Valid' },
+              { name: 'Infection Control Protocol', completedDate: '2025-08-10', expiryDate: window._HIS_DATE(230), status: 'Valid' },
+              { name: 'Biomedical Waste (BMW) Management', completedDate: '2026-03-01', expiryDate: window._HIS_DATE(260), status: 'Valid' }
+            ],
+            incidents: 0,
+            disciplinaryHistory: [],
+            policeVerification: 'Verified',
+            backgroundStatus: 'Completed',
+            salary: `₹${(65000 + idx * 2000).toLocaleString('en-IN')} / month`,
+            credentials: [
+              { name: 'Nursing Council Registration', uploaded: true, expiryDate: regExpiry, status: credStatus },
+              { name: 'BLS Certification', uploaded: true, expiryDate: window._HIS_DATE(100), status: 'Valid' },
+              { name: 'Health Fitness Certificate', uploaded: true, expiryDate: window._HIS_DATE(120), status: 'Valid' }
+            ]
+          });
         });
-      });
-      localStorage.setItem('saronil_staffList', JSON.stringify(window.state.staffList));
+
+        // Seed Kitchen/Dietary Staff
+        const kitchenStaff = [
+          { id: 'KIT01', name: 'Chef Ravi', designation: 'Head Chef', healthCertExpiry: window._HIS_DATE(-10), status: 'Expired', salary: '₹55,000 / month', incidents: 1, disciplinary: [{ date: '2026-06-15', incidentRef: 'INC-2026-0091', action: 'Verbal Warning for shift delay', loggedBy: 'HR Admin' }] },
+          { id: 'KIT02', name: 'Meena S.', designation: 'Pantry Storekeeper', healthCertExpiry: window._HIS_DATE(180), status: 'Valid', salary: '₹35,000 / month', incidents: 0, disciplinary: [] },
+          { id: 'KIT03', name: 'Sunita K.', designation: 'Assistant Cook', healthCertExpiry: window._HIS_DATE(220), status: 'Valid', salary: '₹30,000 / month', incidents: 0, disciplinary: [] },
+          { id: 'KIT04', name: 'Ananya R.', designation: 'Diet Kitchen Coordinator', healthCertExpiry: window._HIS_DATE(120), status: 'Valid', salary: '₹42,000 / month', incidents: 0, disciplinary: [] },
+          { id: 'KIT05', name: 'Ajay S.', designation: 'Kitchen Helper', healthCertExpiry: window._HIS_DATE(250), status: 'Valid', salary: '₹22,000 / month', incidents: 0, disciplinary: [] }
+        ];
+
+        kitchenStaff.forEach(ks => {
+          window.state.staffList.push({
+            id: ks.id,
+            name: ks.name,
+            type: 'Staff',
+            designation: ks.designation,
+            department: 'Dietary & Kitchen',
+            registrationNo: 'N/A',
+            regValidTill: ks.healthCertExpiry,
+            branch: 'Bengaluru HSR (Main)',
+            statusToday: 'On Duty',
+            status: 'Active',
+            credentialStatus: ks.status,
+            phone: '+91 98450 4400' + ks.id.slice(-1),
+            email: `${ks.name.toLowerCase().replace(/[^a-z]/g, '')}@saronil.com`,
+            dob: '1988-04-12',
+            sex: ks.name.includes('Chef') || ks.name.includes('Ajay') ? 'Male' : 'Female',
+            address: 'HSR Layout Sect-3, Bengaluru',
+            emergencyName: 'Emergency Contact',
+            emergencyPhone: '+91 99000 98765',
+            bloodGroup: 'A+',
+            joiningDate: '2024-02-01',
+            reportingTo: 'Diet Kitchen Coordinator',
+            employmentType: 'Permanent',
+            employmentStatus: 'Active',
+            statusHistory: [
+              { date: '2024-02-01', status: 'Active', reason: 'Joined kitchen dietary operations.', user: 'HR Admin' }
+            ],
+            leaveBalances: { Sick: 10, Casual: 10, Earned: 12 },
+            leaveRequests: [],
+            trainingLogs: [
+              { name: 'Food Safety & HACCP Guidelines', completedDate: '2025-06-01', expiryDate: window._HIS_DATE(240), status: 'Valid' },
+              { name: 'Fire Safety Training', completedDate: '2026-01-15', expiryDate: window._HIS_DATE(180), status: 'Valid' }
+            ],
+            incidents: ks.incidents,
+            disciplinaryHistory: ks.disciplinary,
+            policeVerification: 'Verified',
+            backgroundStatus: 'Completed',
+            salary: ks.salary,
+            credentials: [
+              { name: 'Food Handler Medical Fitness Certificate', uploaded: true, expiryDate: ks.healthCertExpiry, status: ks.status }
+            ]
+          });
+        });
+
+        localStorage.setItem('saronil_staffList', JSON.stringify(window.state.staffList));
       }
     }
   }
+  window.initHospMgmtState = initHospMgmtState;
 
   window.views.hospMgmt = function(container, subAnchor, params) {
     initHospMgmtState();
@@ -259,98 +354,7 @@ window.views = window.views || {};
     const activeRole = getActiveRole();
 
     container.innerHTML = `
-      <style>
-        .mgmt-wrapper {
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-          min-height: 0;
-          overflow: hidden;
-          background: #f8fafc;
-        }
-        
-        .mgmt-main-viewport {
-          display: flex;
-          flex-direction: column;
-          overflow-y: auto;
-          flex: 1;
-          min-height: 0;
-          width: 100%;
-        }
-        .mgmt-topbar {
-          height: 48px;
-          background: #ffffff;
-          border-bottom: 1px solid #cbd5e1;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 1rem;
-          flex-shrink: 0;
-        }
-        
-        .mgmt-workspace-container {
-          padding: 1.1rem;
-          flex-grow: 1;
-        }
-        
-        .mgmt-kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 0.75rem;
-          margin-bottom: 1.1rem;
-        }
-        @media(max-width: 768px) {
-          .mgmt-kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-        .mgmt-kpi-card {
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          border-radius: 8px;
-          padding: 0.75rem 1rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          min-height: 80px;
-        }
-        .mgmt-kpi-val {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 1.45rem;
-          font-weight: 800;
-          color: #0f172a;
-          margin-top: 4px;
-        }
-        
-        .mgmt-action-card {
-          border-left: 4px solid #ef4444 !important;
-          background: #fffafb;
-          border: 1px solid #cbd5e1;
-          border-radius: 8px;
-          padding: 0.85rem;
-          margin-bottom: 1rem;
-        }
-        
-        .custom-tbl th {
-          font-family: 'Inter', sans-serif;
-          font-weight: 700;
-          text-transform: uppercase;
-          font-size: 0.65rem;
-          letter-spacing: 0.05em;
-          color: #64748b;
-          background: #f8fafc;
-          border-bottom: 1px solid #cbd5e1;
-          padding: 8px;
-          text-align: left;
-        }
-        .custom-tbl td {
-          padding: 8px;
-          border-bottom: 1px solid #f1f5f9;
-          font-size: 0.78rem;
-          vertical-align: middle;
-        }
-      </style>
+      
 
       <div class="mgmt-wrapper">
         <!-- Main Viewport Area (Full Width) -->
@@ -730,8 +734,8 @@ window.views = window.views || {};
       </div>
     `;
 
-    window.triggerHrCover = function(name) {
-      const cover = prompt(`Enter free text cover arrangement note for ${name}:`);
+    window.triggerHrCover = async function(name) {
+      const cover = await customPrompt(`Enter free text cover arrangement note for ${name}:`);
       if (cover) {
         alert(`Roster cover arrangement logged: "${cover}". SMS notification dispatched.`);
       }
@@ -744,8 +748,8 @@ window.views = window.views || {};
       window.switchHospMgmtRole('HR Manager');
     };
 
-    window.rejectLeaveRequest = function(name) {
-      const reason = prompt("Enter mandatory rejection reason:");
+    window.rejectLeaveRequest = async function(name) {
+      const reason = await customPrompt("Enter mandatory rejection reason:");
       if (!reason) {
         alert("Rejection reason is mandatory.");
         return;
@@ -924,8 +928,8 @@ window.views = window.views || {};
       </div>
     `;
 
-    window.markPmDone = function(name) {
-      const obs = prompt("Enter PM observations:");
+    window.markPmDone = async function(name) {
+      const obs = await customPrompt("Enter PM observations:");
       if (obs !== null) {
         const state = window.state || {};
         const pItem = state.mgmtPmSchedules.find(p=>p.equipment === name);
@@ -1263,28 +1267,7 @@ window.views = window.views || {};
     });
 
     panel.innerHTML = `
-      <style>
-        .roster-grid-layout { display: grid; grid-template-columns: 1fr 280px; gap: 14px; min-width: 1000px; }
-        .roster-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .roster-nav { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.82rem; }
-        .roster-btn { border: 1px solid #cbd5e1; background: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.76rem; }
-        .roster-btn:hover { background: #f8fafc; }
-        .roster-filter-row { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-        .shift-block { padding: 4px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; text-align: center; color: #ffffff; cursor: pointer; min-height: 38px; display: flex; flex-direction: column; justify-content: center; position: relative; }
-        .shift-block:hover { transform: scale(1.02); transition: transform 0.1s; }
-        .shift-m { background: #2563eb; border: 1px solid #1d4ed8; } /* Morning */
-        .shift-e { background: #f59e0b; border: 1px solid #d97706; } /* Evening */
-        .shift-n { background: #7c3aed; border: 1px solid #6d28d9; } /* Night */
-        .shift-fd { background: #10b981; border: 1px solid #059669; } /* Full day */
-        .shift-off { background: #f1f5f9; border: 1px dashed #cbd5e1; color: #64748b; }
-        .shift-leave { background: repeating-linear-gradient(45deg, #fee2e2, #fee2e2 10px, #fca5a5 10px, #fca5a5 20px); border: 1px solid #ef4444; color: #991b1b; }
-        .shift-oncall { background: #14b8a6; border: 1px solid #0d9488; }
-        .shift-lock { position: absolute; top: 2px; right: 2px; font-size: 0.65rem; }
-        .gap-sidebar { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 160px); }
-        .gap-card { background: #fff5f5; border: 1px solid #fee2e2; border-left: 4px solid #ef4444; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.74rem; text-align: left; }
-        .gap-card strong { color: #991b1b; display: block; margin-bottom: 2px; }
-        .popover-form { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; width: 220px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); position: absolute; z-index: 9999; }
-      </style>
+      
       
       <div class="roster-header-bar">
         <div style="display:flex; align-items:center; gap:12px;">
@@ -1490,8 +1473,12 @@ window.views = window.views || {};
     const credentials = state.mgmtCredentials || [];
 
     panel.innerHTML = `
-      <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:#64748b; margin:0;">Staff Credentials Tracker</h4>
+        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+          <input type="text" id="credential-search-input" placeholder="Search staff or reg no..." oninput="window._filterCredentials(this.value)" style="font-size:0.75rem; border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; height:28px; width:200px; outline:none;">
+          <button onclick="window._credAddModal()" class="btn btn-primary btn-sm" style="font-size:0.75rem; font-weight:700; height:28px; padding:0 12px; background:var(--primary); color:#fff; border:none; border-radius:6px; cursor:pointer;">+ Add Credential</button>
+        </div>
       </div>
 
       <div class="card" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
@@ -1504,28 +1491,36 @@ window.views = window.views || {};
               <th>License/Credential Type</th>
               <th>Reg No</th>
               <th>Expiry Date</th>
-              <th style="text-align:right;">Status</th>
+              <th>Status</th>
+              <th style="text-align:right;">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="credentials-table-body">
             ${credentials.map(c => `
-              <tr style="${c.days <= 0 ? 'background:#fff5f5;' : ''}">
+              <tr style="${c.days <= 0 ? 'background:#fff5f5;' : ''}" data-search-text="${(c.id + ' ' + c.name + ' ' + c.regNo + ' ' + c.type).toLowerCase()}">
                 <td style="font-family:'JetBrains Mono',monospace;">${c.id}</td>
                 <td style="font-weight:700;">${c.name}</td>
                 <td>${c.designation}</td>
                 <td>${c.type}</td>
                 <td style="font-family:'JetBrains Mono',monospace;">${c.regNo}</td>
                 <td style="font-family:'JetBrains Mono',monospace; color:${c.days<=0?'#ef4444':'#f59e0b'}; font-weight:700;">${c.expiry}</td>
-                <td style="text-align:right;">
+                <td>
                   <span class="badge ${c.days<=0?'b-re':(c.days<=30?'b-am':'b-gr')}" style="font-size:0.65rem; padding:1px 6px;">
                     ${c.status}
                   </span>
+                </td>
+                <td style="text-align:right; white-space:nowrap;">
+                  <button class="btn btn-secondary btn-xs" onclick="window._credRenewModal('${c.id}')" style="font-size:10px; font-weight:700; padding:2px 6px; border:1px solid #cbd5e1; background:white; border-radius:4px; margin-right:4px; cursor:pointer;">Renew</button>
+                  <button class="btn btn-danger btn-xs" onclick="window._credDelete('${c.id}')" style="font-size:10px; font-weight:700; padding:2px 6px; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
                 </td>
               </tr>
             `).join('')}
           </tbody>
         </table>
       </div>
+
+      <!-- Mount point for Credential Modals -->
+      <div id="credential-modal-mount"></div>
     `;
   }
 
@@ -1537,11 +1532,7 @@ window.views = window.views || {};
     const incidents = state.mgmtIncidents || [];
 
     panel.innerHTML = `
-      <style>
-        .severity-sentinel { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-weight:700; }
-        .severity-serious { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
-        .severity-minor { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-      </style>
+      
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:#64748b; margin:0;">Clinical Incidents Workspace</h4>
@@ -1799,10 +1790,7 @@ window.views = window.views || {};
     const bmwLogs = state.mgmtBmwLogs || [];
 
     panel.innerHTML = `
-      <style>
-        .util-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:1rem; }
-        .util-card { padding:10px; border:1px solid #cbd5e1; border-radius:8px; text-align:center; background:#ffffff; }
-      </style>
+      
 
       <div>
         <h4 style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:10px;">Utilities Status Dashboard</h4>
@@ -1968,32 +1956,7 @@ window.views = window.views || {};
     const nurseCount = (window.state.staffList || []).filter(s => s.type === 'Nurse').length;
     
     panel.innerHTML = `
-      <style>
-        .staff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .staff-title { font-size: 0.95rem; font-weight: 700; color: #1e293b; text-transform: uppercase; margin: 0; }
-        .tab-strip { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px; padding-bottom: 1px; }
-        .tab-item { padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 6px; }
-        .tab-item.active { color: #2563eb; border-bottom-color: #2563eb; }
-        .tab-badge { background: #f1f5f9; color: #475569; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
-        .tab-item.active .tab-badge { background: #dbeafe; color: #1e40af; }
-        .filter-bar { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .filter-group { display: flex; flex-direction: column; }
-        .filter-label { font-size: 0.65rem; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        .filter-input { font-size: 0.78rem; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; background: #ffffff; }
-        .form-input { font-size: 0.78rem; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; background: #ffffff; color: #1e293b; font-family: 'Inter', sans-serif; transition: all 0.2s ease; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); }
-        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.05); }
-        .form-input:disabled { background: #f8fafc; color: #475569; border-color: #e2e8f0; box-shadow: none; cursor: not-allowed; }
-        .staff-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .staff-table th { padding: 10px; background: #f8fafc; font-size: 0.68rem; font-weight: 700; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-        .staff-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.78rem; color: #334155; vertical-align: middle; }
-        .staff-table tr:hover { background: #f8fafc; cursor: pointer; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .avatar-thumb { width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; color: #475569; text-transform: uppercase; }
-        .badge-cred { font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-        .cred-valid { background: #d1fae5; color: #065f46; }
-        .cred-expiring { background: #fef3c7; color: #92400e; }
-        .cred-expired { background: #fee2e2; color: #991b1b; }
-      </style>
+      
       
       <div class="staff-header">
         <h3 class="staff-title">Clinical Staff Master Register</h3>
@@ -2064,6 +2027,7 @@ window.views = window.views || {};
               <th>Employee ID</th>
               <th>Dept / Ward</th>
               <th>Registration No.</th>
+              <th>Contact No.</th>
               <th>Branch(es)</th>
               <th>Today's Status</th>
               <th>Credentials</th>
@@ -2098,6 +2062,7 @@ window.views = window.views || {};
                   <td style="font-family:monospace; font-weight:700;">${s.id}</td>
                   <td><span class="badge bg-secondary" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">${s.type === 'Doctor' ? s.department : s.ward}</span></td>
                   <td><code>${s.registrationNo}</code></td>
+                  <td><span style="font-size:0.78rem; font-weight:600; color:#334155;">${s.phone || '—'}</span></td>
                   <td><small>${branchText}</small></td>
                   <td>
                     <span class="status-dot" style="background:${dotColor};"></span>
@@ -2106,10 +2071,12 @@ window.views = window.views || {};
                   <td>
                     <span class="badge-cred ${credBadgeClass}">${s.credentialStatus}</span>
                   </td>
-                  <td style="text-align: right;" onclick="event.stopPropagation();">
-                    <button class="btn btn-secondary btn-sm" onclick="window.viewStaffProfile('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer;">View</button>
-                    ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="window.editStaffProfile('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer; color:#2563eb;">Edit</button>` : ''}
-                    <button class="btn btn-secondary btn-sm" onclick="window.showRosterForStaff('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer; color:#7c3aed;">Roster</button>
+                  <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation();">
+                    <div style="display: inline-flex; gap: 4px; justify-content: flex-end;">
+                      <button class="btn btn-secondary btn-sm" onclick="window.viewStaffProfile('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer;">View</button>
+                      ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="window.editStaffProfile('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer; color:#2563eb;">Edit</button>` : ''}
+                      <button class="btn btn-secondary btn-sm" onclick="window.showRosterForStaff('${s.id}')" style="padding:2px 6px; font-size:0.72rem; border:1px solid #cbd5e1; background:#ffffff; cursor:pointer; color:#7c3aed;">Roster</button>
+                    </div>
                   </td>
                 </tr>
               `;
@@ -2714,9 +2681,13 @@ window.views = window.views || {};
   };
 
   window.viewStaffProfile = function(staffId) {
-    const staff = (window.state.staffList || []).find(s => s.id === staffId);
-    if (!staff) return;
-    renderStaffDrawer(staff, 'View');
+    if (typeof window.openStaffProfile === 'function') {
+      window.openStaffProfile(staffId);
+    } else {
+      const staff = (window.state.staffList || []).find(s => s.id === staffId);
+      if (!staff) return;
+      renderStaffDrawer(staff, 'View');
+    }
   };
 
   window.editStaffProfile = function(staffId) {
@@ -3214,7 +3185,7 @@ window.views = window.views || {};
     else { startInput.value = ''; endInput.value = ''; }
   };
 
-  window.saveAllDailyShifts = function(staffId, dateStr) {
+  window.saveAllDailyShifts = async function(staffId, dateStr) {
     const activeDateInput = document.getElementById('roster-modal-date');
     const targetDate = activeDateInput ? activeDateInput.value : dateStr;
     
@@ -3239,7 +3210,7 @@ window.views = window.views || {};
 
     const staff = (window.state.staffList || []).find(s => s.id === staffId);
     if (staff && staff.statusToday === 'On Leave' && targetDate === window._HIS_DATE(0) && hasActiveShift) {
-      const override = confirm("Leave Conflict Detected: Staff is currently on approved leave. Overwrite this approved leave request and force assign shift?");
+      const override = await customConfirm("Leave Conflict Detected: Staff is currently on approved leave. Overwrite this approved leave request and force assign shift?");
       if (!override) return;
     }
 
@@ -3943,6 +3914,245 @@ window.views = window.views || {};
       var panel = document.getElementById('mgmt-workspace-panel');
       if (panel) renderIncidentsTab(panel);
     });
+  };
+
+  // Staff Credentials Tracker Workflow Handlers
+  window._filterCredentials = function(val) {
+    const q = val.toLowerCase().trim();
+    const tbody = document.getElementById('credentials-table-body');
+    if (!tbody) return;
+    const rows = tbody.getElementsByTagName('tr');
+    for (let r of rows) {
+      const txt = r.getAttribute('data-search-text') || '';
+      if (txt.includes(q)) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    }
+  };
+
+  window._credAddModal = function() {
+    const mount = document.getElementById('credential-modal-mount');
+    if (!mount) return;
+    
+    mount.innerHTML = `
+      <div id="cred-modal-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); display:flex; justify-content:center; align-items:center; z-index:99999;">
+        <div class="card" style="width:450px; padding:24px; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #cbd5e1; text-align:left; font-family:inherit;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:14px; font-weight:800; color:#1e293b;">Add Staff Credential</h3>
+            <button onclick="document.getElementById('cred-modal-overlay').remove()" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Emp ID *</label>
+              <input type="text" id="cred-add-empid" placeholder="e.g. EMP-01025" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Staff Name *</label>
+              <input type="text" id="cred-add-name" placeholder="e.g. Dr. Amit Patel" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Designation *</label>
+              <input type="text" id="cred-add-desig" placeholder="e.g. Pediatrician" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">License/Credential Type *</label>
+              <input type="text" id="cred-add-type" placeholder="e.g. MCI/NMC Registration" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Reg No *</label>
+              <input type="text" id="cred-add-regno" placeholder="e.g. NMC-991234" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Expiry Date *</label>
+              <input type="date" id="cred-add-expiry" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+          </div>
+          
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px; border-top:1px solid #e2e8f0; padding-top:12px;">
+            <button onclick="document.getElementById('cred-modal-overlay').remove()" class="btn btn-secondary btn-sm" style="border:1px solid #cbd5e1; background:white; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Cancel</button>
+            <button onclick="window._credSaveAdd()" class="btn btn-primary btn-sm" style="background:var(--primary); color:white; border:none; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Add Credential</button>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  window._credSaveAdd = function() {
+    const empId = document.getElementById('cred-add-empid').value.trim();
+    const name = document.getElementById('cred-add-name').value.trim();
+    const desig = document.getElementById('cred-add-desig').value.trim();
+    const type = document.getElementById('cred-add-type').value.trim();
+    const regNo = document.getElementById('cred-add-regno').value.trim();
+    const expiryVal = document.getElementById('cred-add-expiry').value;
+    
+    if (!empId || !name || !desig || !type || !regNo || !expiryVal) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    
+    const expDate = new Date(expiryVal);
+    const day = String(expDate.getDate()).padStart(2, '0');
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = monthNames[expDate.getMonth()];
+    const year = expDate.getFullYear();
+    const formattedExpiry = `${day}-${month}-${year}`;
+    
+    const today = new Date(window._HIS_TODAY || new Date().toISOString().slice(0, 10));
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let status = "Active";
+    if (diffDays <= 0) {
+      status = "Expired";
+    } else if (diffDays <= 30) {
+      status = `Expiring soon (${diffDays} days)`;
+    }
+    
+    const newCred = {
+      id: empId,
+      name: name,
+      designation: desig,
+      type: type,
+      regNo: regNo,
+      expiry: formattedExpiry,
+      days: diffDays <= 0 ? 0 : diffDays,
+      status: status
+    };
+    
+    window.state.mgmtCredentials.push(newCred);
+    localStorage.setItem('saronil_mgmtCredentials', JSON.stringify(window.state.mgmtCredentials));
+    
+    document.getElementById('cred-modal-overlay').remove();
+    
+    const panel = document.getElementById('mgmt-workspace-panel');
+    if (panel) renderCredentialTrackerTab(panel);
+    
+    if (window.showToast) {
+      window.showToast("Staff credential added successfully!");
+    } else {
+      alert("Staff credential added successfully!");
+    }
+  };
+
+  window._credRenewModal = function(id) {
+    const mount = document.getElementById('credential-modal-mount');
+    if (!mount) return;
+    
+    const cred = window.state.mgmtCredentials.find(c => c.id === id);
+    if (!cred) return;
+    
+    let defaultDateVal = "";
+    const parts = cred.expiry.split('-');
+    if (parts.length === 3) {
+      const day = parts[0];
+      const months = { Jan:"01", Feb:"02", Mar:"03", Apr:"04", May:"05", Jun:"06", Jul:"07", Aug:"08", Sep:"09", Oct:"10", Nov:"11", Dec:"12" };
+      const month = months[parts[1]];
+      const year = parts[2];
+      if (month) defaultDateVal = `${year}-${month}-${day}`;
+    }
+    
+    mount.innerHTML = `
+      <div id="cred-modal-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); display:flex; justify-content:center; align-items:center; z-index:99999;">
+        <div class="card" style="width:450px; padding:24px; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #cbd5e1; text-align:left; font-family:inherit;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:14px; font-weight:800; color:#1e293b;">Renew Staff Credential</h3>
+            <button onclick="document.getElementById('cred-modal-overlay').remove()" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Staff Name</label>
+              <div style="font-weight:700; color:#1e293b; font-size:13px; padding:6px 0;">${cred.name}</div>
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">License/Credential Type</label>
+              <div style="color:#64748b; font-size:12px;">${cred.type}</div>
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">Registration Number *</label>
+              <input type="text" id="cred-renew-regno" value="${cred.regNo}" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+            <div>
+              <label style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">New Expiry Date *</label>
+              <input type="date" id="cred-renew-expiry" value="${defaultDateVal}" style="width:100%; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; outline:none;">
+            </div>
+          </div>
+          
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px; border-top:1px solid #e2e8f0; padding-top:12px;">
+            <button onclick="document.getElementById('cred-modal-overlay').remove()" class="btn btn-secondary btn-sm" style="border:1px solid #cbd5e1; background:white; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Cancel</button>
+            <button onclick="window._credSaveRenew('${cred.id}')" class="btn btn-primary btn-sm" style="background:var(--primary); color:white; border:none; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Renew Credential</button>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  window._credSaveRenew = function(id) {
+    const cred = window.state.mgmtCredentials.find(c => c.id === id);
+    if (!cred) return;
+    
+    const regNo = document.getElementById('cred-renew-regno').value.trim();
+    const expiryVal = document.getElementById('cred-renew-expiry').value;
+    
+    if (!regNo || !expiryVal) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    
+    const expDate = new Date(expiryVal);
+    const day = String(expDate.getDate()).padStart(2, '0');
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = monthNames[expDate.getMonth()];
+    const year = expDate.getFullYear();
+    const formattedExpiry = `${day}-${month}-${year}`;
+    
+    const today = new Date(window._HIS_TODAY || new Date().toISOString().slice(0, 10));
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let status = "Active";
+    if (diffDays <= 0) {
+      status = "Expired";
+    } else if (diffDays <= 30) {
+      status = `Expiring soon (${diffDays} days)`;
+    }
+    
+    cred.regNo = regNo;
+    cred.expiry = formattedExpiry;
+    cred.days = diffDays <= 0 ? 0 : diffDays;
+    cred.status = status;
+    
+    localStorage.setItem('saronil_mgmtCredentials', JSON.stringify(window.state.mgmtCredentials));
+    
+    document.getElementById('cred-modal-overlay').remove();
+    
+    const panel = document.getElementById('mgmt-workspace-panel');
+    if (panel) renderCredentialTrackerTab(panel);
+    
+    if (window.showToast) {
+      window.showToast("Credential renewed successfully!");
+    } else {
+      alert("Credential renewed successfully!");
+    }
+  };
+
+  window._credDelete = function(id) {
+    if (!confirm("Are you sure you want to delete this staff credential?")) return;
+    
+    window.state.mgmtCredentials = window.state.mgmtCredentials.filter(c => c.id !== id);
+    localStorage.setItem('saronil_mgmtCredentials', JSON.stringify(window.state.mgmtCredentials));
+    
+    const panel = document.getElementById('mgmt-workspace-panel');
+    if (panel) renderCredentialTrackerTab(panel);
+    
+    if (window.showToast) {
+      window.showToast("Credential deleted successfully!");
+    } else {
+      alert("Credential deleted successfully!");
+    }
   };
 
 })();

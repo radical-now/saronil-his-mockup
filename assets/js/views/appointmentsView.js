@@ -3,6 +3,9 @@
    ========================================================================== */
 
 window.views.appointments = function(container, subAnchor, params) {
+  if (typeof window.syncOpdQueueWithAppointments === 'function') {
+    window.syncOpdQueueWithAppointments();
+  }
   const systemToday = window._HIS_TODAY || new Date().toISOString().slice(0, 10); // Dynamic real-world date
   
   // Seed more variety in appointments if only basic ones exist
@@ -39,6 +42,10 @@ window.views.appointments = function(container, subAnchor, params) {
     if (appt.status === 'Confirmed') appt.status = 'Booked';
     if (appt.status === 'Checked In') appt.status = 'Arrived';
     if (!appt.createdBy) appt.createdBy = "Sarah Jones";
+    if (!appt.spec && appt.deptName) appt.spec = appt.deptName;
+    if (!appt.spec) appt.spec = 'General Medicine';
+    if (!appt.type && appt.visitType) appt.type = appt.visitType;
+    if (!appt.type) appt.type = 'Consultation';
   });
 
   // State of Active Filters
@@ -67,182 +74,7 @@ window.views.appointments = function(container, subAnchor, params) {
 
     // Main UI Shell - Matched EXACTLY to Patient Registration landing page design system
   container.innerHTML = `
-    <style>
-      .reg-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 0.75rem;
-      }
-      @media (max-width: 1400px) {
-        .stats-grid { grid-template-columns: repeat(4, 1fr); }
-      }
-      @media (max-width: 900px) {
-        .stats-grid { grid-template-columns: repeat(3, 1fr); }
-      }
-      @media (max-width: 600px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      }
-      @media (max-width: 400px) {
-        .stats-grid { grid-template-columns: repeat(1, 1fr); }
-      }
-      
-      .kpi-card {
-        position: relative;
-        background-color: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        box-shadow: var(--shadow-sm);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        cursor: pointer;
-        overflow: hidden;
-        min-height: 140px;
-      }
-      .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
-      }
-      .kpi-card.status-normal {
-        border-left: 4px solid var(--color-success);
-      }
-      .kpi-card.status-warning {
-        border-left: 4px solid var(--color-warning);
-      }
-      .kpi-card.status-critical {
-        border-left: 4px solid var(--color-danger);
-      }
-      .kpi-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        width: 100%;
-      }
-      .kpi-title {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--text-muted);
-      }
-      .kpi-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-      }
-      .kpi-body {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-      }
-      .kpi-value {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: var(--text-primary);
-        line-height: 1.1;
-      }
-      .kpi-subtext {
-        font-size: 0.72rem;
-        color: var(--text-muted);
-      }
-
-      /* Card styling */
-      .card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 1rem;
-        box-shadow: var(--shadow-sm);
-      }
-      .card-hdr {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        background: #ffffff;
-      }
-      .card-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--text-primary);
-      }
-      .card-subtitle {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        margin-top: 0.15rem;
-      }
-
-      /* Custom Table classes matching Registration landing page */
-      .custom-table-container {
-        overflow-x: auto;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-color);
-      }
-      .custom-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-      }
-      .custom-table th {
-        padding: 0.85rem 1rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--text-secondary);
-        background-color: var(--bg-surface-elevated);
-        border-bottom: 1px solid var(--border-color);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-      .custom-table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
-        font-size: 0.85rem;
-        color: var(--text-primary);
-      }
-      .custom-table tbody tr:hover td {
-        background: rgba(248, 250, 252, 0.7);
-      }
-      .mono {
-        font-family: 'JetBrains Mono', monospace;
-      }
-
-      /* Badges matching global style */
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        font-size: 10px;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid;
-        white-space: nowrap;
-      }
-      .b-gr { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-      .b-bl { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-      .b-am { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-      .b-re { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-      .b-pu { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
-      .b-cy { background: #cffafe; color: #164e63; border-color: #67e8f9; }
-      .b-sl { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
-      .b-or { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
-      .b-pk { background: #fce7f3; color: #9d174d; border-color: #fbcfe8; }
-    </style>
+    
 
     <div class="reg-container">
       
@@ -654,8 +486,11 @@ window.views.appointments = function(container, subAnchor, params) {
     // 1. Compute filters
     const query = globalSearchInput.value.toLowerCase().trim();
     
-    // Filter appointments
-    let appointmentsList = state.appointments;
+    const isIPDActive = window.isActiveIPD || ((uhid) => {
+      const p = window.state && window.state.patients && window.state.patients.find(x => x.uhid === uhid);
+      return p && p.type === 'IPD' && (p.status === 'Admitted' || p.status === 'Critical' || p.status === 'Under Observation');
+    });
+    let appointmentsList = state.appointments.filter(a => !isIPDActive(a.uhid));
 
     // Filter by date range
     if (activeFilters.dateMode === 'today') {
@@ -716,7 +551,7 @@ window.views.appointments = function(container, subAnchor, params) {
 
     // 2. Calculate dynamic KPI counters for the selected date context
     // KPIs are calculated based on the *selected date range* (independent of status, doctor, type filters)
-    let kpiAppts = state.appointments;
+    let kpiAppts = state.appointments.filter(a => !isIPDActive(a.uhid));
     if (activeFilters.dateMode === 'today') {
       kpiAppts = kpiAppts.filter(a => a.date === systemToday);
     } else if (activeFilters.dateMode === 'tomorrow') {
@@ -734,7 +569,7 @@ window.views.appointments = function(container, subAnchor, params) {
       });
     }
 
-    const todayCount = state.appointments.filter(a => a.date === systemToday).length;
+    const todayCount = state.appointments.filter(a => a.date === systemToday && !isIPDActive(a.uhid)).length;
     kpiTotalEl.textContent = kpiAppts.length;
     kpiTodayEl.textContent = todayCount;
     kpiCheckedInEl.textContent = kpiAppts.filter(a => a.status === 'Arrived' || a.status === 'Checked In').length;
@@ -1150,16 +985,29 @@ window.views.appointments = function(container, subAnchor, params) {
         return;
       }
 
-      list.innerHTML = matches.map(p => `
-        <div class="px-4 py-2 hover:bg-slate-50 cursor-pointer text-xs transition flex flex-col gap-0.5 border-b border-slate-50"
-          onclick="window.selectModalPatient('${p.uhid}', '${p.name}', '${p.mobile}', '${p.age}', '${p.gender}')">
-          <div class="flex items-center justify-between font-semibold text-slate-800">
-            <span>${p.name}</span>
-            <span class="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 px-1 rounded font-mono">${p.uhid}</span>
-          </div>
-          <div class="text-[10px] text-slate-500">📱 ${p.mobile} | Age: ${p.age} | ${p.gender}</div>
-        </div>
-      `).join('');
+      // Filter out already-admitted IPD patients from search
+      list.innerHTML = matches.map(p => {
+        const isIPDActive = window.isActiveIPD ? window.isActiveIPD(p.uhid) : (p.type === 'IPD' && (p.status === 'Admitted' || p.status === 'Critical' || p.status === 'Under Observation'));
+        if (isIPDActive) {
+          return `
+            <div class="px-4 py-2 text-xs bg-orange-50 border-b border-orange-100 cursor-not-allowed flex flex-col gap-0.5" title="This patient is currently admitted in IPD. OPD appointment cannot be booked.">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-500 line-through">${p.name}</span>
+                <span class="text-[10px] text-orange-700 bg-orange-100 border border-orange-200 px-1 py-0.5 rounded font-semibold">🏥 Active IPD</span>
+              </div>
+              <div class="text-[10px] text-slate-400">${p.uhid} · Cannot book OPD while admitted in IPD</div>
+            </div>`;
+        }
+        return `
+          <div class="px-4 py-2 hover:bg-slate-50 cursor-pointer text-xs transition flex flex-col gap-0.5 border-b border-slate-50"
+            onclick="window.selectModalPatient('${p.uhid}', '${p.name}', '${p.mobile}', '${p.age}', '${p.gender}')">
+            <div class="flex items-center justify-between font-semibold text-slate-800">
+              <span>${p.name}</span>
+              <span class="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 px-1 rounded font-mono">${p.uhid}</span>
+            </div>
+            <div class="text-[10px] text-slate-500">📱 ${p.mobile} | Age: ${p.age} | ${p.gender}</div>
+          </div>`;
+      }).join('');
       list.classList.remove('hidden');
     });
 
@@ -1182,25 +1030,11 @@ window.views.appointments = function(container, subAnchor, params) {
 
   // Toggle quick patient registration section in modal
   window.toggleQuickRegForm = () => {
-    const section = document.getElementById('quick-registration-section');
-    const selectUhid = document.getElementById('modal-pat-uhid');
-    const profileCard = document.getElementById('modal-pat-profile-card');
-    const input = document.getElementById('modal-pat-search');
-
-    if (!section) return;
-
-    if (section.classList.contains('hidden')) {
-      section.classList.remove('hidden');
-      selectUhid.value = 'NEW';
-      profileCard.classList.add('hidden');
-      input.value = 'Creating New Patient record...';
-      input.disabled = true;
-    } else {
-      section.classList.add('hidden');
-      selectUhid.value = '';
-      input.value = '';
-      input.disabled = false;
-    }
+    window.closeModal();
+    window.prShowToast("Redirecting to Centralized Registration...");
+    setTimeout(() => {
+      router.navigate('registration');
+    }, 400);
   };
 
   // ACTION 1: BOOK NEW APPOINTMENT MODAL
@@ -1230,7 +1064,7 @@ window.views.appointments = function(container, subAnchor, params) {
       <!-- Modal Header -->
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800">OPD Appointment Booking</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
       <!-- Modal Body -->
@@ -1369,7 +1203,7 @@ window.views.appointments = function(container, subAnchor, params) {
 
       <!-- Modal Footer -->
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-        <button onclick="closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Cancel</button>
+        <button onclick="window.closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Cancel</button>
         <button id="modal-submit-btn" class="btn-p">Confirm Booking</button>
       </div>
     `;
@@ -1440,6 +1274,14 @@ window.views.appointments = function(container, subAnchor, params) {
         return;
       }
 
+      // Block OPD appointment booking for active IPD patients
+      const isIPDActive = window.isActiveIPD ? window.isActiveIPD(finalPatient.uhid) : (finalPatient.type === 'IPD' && (finalPatient.status === 'Admitted' || finalPatient.status === 'Critical' || finalPatient.status === 'Under Observation'));
+      if (isIPDActive) {
+        const ipdInfo = state.patients.find(p => p.uhid === finalPatient.uhid);
+        alert(`⚠️ OPD Appointment Blocked\n\n${finalPatient.name} (${finalPatient.uhid}) is currently admitted as an Active IPD patient${ipdInfo ? ' in ' + (ipdInfo.ward || 'Ward') + (ipdInfo.bed ? ' — Bed ' + ipdInfo.bed : '') : ''}.\n\nOPD appointments cannot be booked for patients who are currently admitted in IPD. Please use the IPD consultation workflow for this patient.`);
+        return;
+      }
+
       // Final Conflict block check
       if (checkAppointmentConflict(docVal, dateVal, timeVal)) {
         alert(`Conflict: ${docVal} already has an appointment booked on ${dateVal} at ${timeVal}. Please choose another time.`);
@@ -1500,8 +1342,8 @@ window.views.appointments = function(container, subAnchor, params) {
     });
   };
 
-  btnBookAppointment.addEventListener('click', openBookingModal);
-  btnEmptyBook.addEventListener('click', openBookingModal);
+  btnBookAppointment.addEventListener('click', () => router.navigate('bookAppointment'));
+  btnEmptyBook.addEventListener('click', () => router.navigate('bookAppointment'));
 
   // ACTION 2: VIEW APPOINTMENT DETAILS
   window.viewApptDetails = (apptId) => {
@@ -1515,7 +1357,7 @@ window.views.appointments = function(container, subAnchor, params) {
     const modalHTML = `
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800">OPD Ticket - ${appt.id}</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
       <div class="px-5 py-5 overflow-y-auto flex-1 space-y-4">
@@ -1534,7 +1376,7 @@ window.views.appointments = function(container, subAnchor, params) {
         <div class="grid grid-cols-2 gap-4 text-xs">
           <div class="border border-slate-200 rounded-lg p-3 space-y-1">
             <h5 class="card-title-mono mb-2">Visit Schedule</h5>
-            <p><strong class="text-slate-600">Date:</strong> <span class="text-slate-900 font-semibold">${appt.date}</span></p>
+            <p><strong class="text-slate-600">Date:</strong> <span class="text-slate-900 font-semibold">${window.formatDateToDDMMYYYY(appt.date)}</span></p>
             <p><strong class="text-slate-600">Time:</strong> <span class="text-slate-900 font-mono font-semibold">${appt.time}</span></p>
             <p><strong class="text-slate-600">Type:</strong> <span class="text-slate-900">${appt.type}</span></p>
           </div>
@@ -1556,8 +1398,8 @@ window.views.appointments = function(container, subAnchor, params) {
       </div>
 
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-        ${appt.status !== 'Cancelled' ? `<button onclick="closeModal(); window.printAppointmentSlip('${appt.id}')" class="btn-g"><span>📄</span> Print Slip</button>` : ''}
-        <button onclick="closeModal()" class="btn-p">Close</button>
+        ${appt.status !== 'Cancelled' ? `<button onclick="window.closeModal(); window.printAppointmentSlip('${appt.id}')" class="btn-g"><span>📄</span> Print Slip</button>` : ''}
+        <button onclick="window.closeModal()" class="btn-p">Close</button>
       </div>
     `;
 
@@ -1572,7 +1414,7 @@ window.views.appointments = function(container, subAnchor, params) {
     const modalHTML = `
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800">Reschedule Ticket - ${appt.id}</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
       <div class="px-5 py-4 overflow-y-auto flex-1 text-sm space-y-4">
@@ -1667,7 +1509,7 @@ window.views.appointments = function(container, subAnchor, params) {
       </div>
 
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-        <button onclick="closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Cancel</button>
+        <button onclick="window.closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Cancel</button>
         <button id="modal-submit-btn" class="btn-p">Save Schedule</button>
       </div>
     `;
@@ -1747,7 +1589,7 @@ window.views.appointments = function(container, subAnchor, params) {
     const modalHTML = `
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800">Cancel OPD Appointment - ${appt.id}</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
       <div class="px-5 py-5 overflow-y-auto flex-1 text-sm space-y-4">
@@ -1773,7 +1615,7 @@ window.views.appointments = function(container, subAnchor, params) {
       </div>
 
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-        <button onclick="closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">No, Keep Booking</button>
+        <button onclick="window.closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">No, Keep Booking</button>
         <button id="modal-cancel-confirm-btn" class="btn-p" style="background: #e11d48;">Confirm Cancellation</button>
       </div>
     `;
@@ -1786,10 +1628,23 @@ window.views.appointments = function(container, subAnchor, params) {
 
       appt.status = 'Cancelled';
       appt.remarks = `Cancel Reason: ${reason}. Notes: ${remarks}`;
+      localStorage.setItem('saronil_appointments', JSON.stringify(state.appointments));
 
       const patient = state.patients.find(p => p.uhid === appt.uhid);
-      if (patient && appt.date === systemToday) {
-        patient.status = 'Registered';
+      if (patient) {
+        if (appt.date === systemToday) {
+          patient.status = 'Registered';
+        }
+        localStorage.setItem('saronil_patients', JSON.stringify(state.patients));
+      }
+
+      if (typeof window.logPatientTimeline === 'function') {
+        window.logPatientTimeline(appt.uhid, {
+          type: 'general',
+          icon: '🚫',
+          title: 'OPD Appointment Cancelled',
+          desc: `Cancelled appointment with ${appt.doctorName} for ${appt.date} at ${appt.time}. Reason: ${reason}.`
+        });
       }
 
       alert(`OPD Appointment ${appt.id} has been cancelled.`);
@@ -1802,10 +1657,42 @@ window.views.appointments = function(container, subAnchor, params) {
     const appt = state.appointments.find(a => a.id === apptId);
     if (appt) {
       appt.status = 'Arrived';
+      localStorage.setItem('saronil_appointments', JSON.stringify(state.appointments));
+      
       const patient = state.patients.find(p => p.uhid === appt.uhid);
       if (patient) {
         patient.status = 'Checked In';
+        localStorage.setItem('saronil_patients', JSON.stringify(state.patients));
       }
+
+      if (typeof window.logPatientTimeline === 'function') {
+        window.logPatientTimeline(appt.uhid, {
+          type: 'general',
+          icon: '🎯',
+          title: 'Patient Arrived (OPD Check-In)',
+          desc: `Checked in for appointment with ${appt.doctorName} (${appt.spec || appt.deptName || 'General Medicine'}) at ${appt.time}.`
+        });
+      }
+
+      // Keep opdQueue synchronized
+      window.state.opdQueue = window.state.opdQueue || [];
+      const existingQueue = window.state.opdQueue.find(q => q.uhid === appt.uhid);
+      if (!existingQueue) {
+        window.state.opdQueue.push({
+          token: 'OPD-TK-' + String(100 + window.state.opdQueue.length + 1),
+          patient: appt.patientName,
+          uhid: appt.uhid,
+          doctor: appt.doctorName,
+          speciality: appt.spec || appt.deptName || 'General Medicine',
+          status: 'Waiting',
+          time: appt.time || '10:00 AM',
+          waitTime: 0
+        });
+      } else {
+        existingQueue.status = 'Waiting';
+      }
+      localStorage.setItem('saronil_opdQueue', JSON.stringify(window.state.opdQueue));
+
       alert(`Patient ${appt.patientName} marked as Arrived. Token status updated.`);
       renderViewData();
     }
@@ -1825,7 +1712,7 @@ window.views.appointments = function(container, subAnchor, params) {
     const modalHTML = `
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800">Print OPD Token Slip</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button onclick="window.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
       <div class="px-5 py-6 overflow-y-auto flex-1 bg-slate-100 flex flex-col justify-center items-center">
@@ -1853,7 +1740,7 @@ window.views.appointments = function(container, subAnchor, params) {
             <p><strong>Consultant:</strong> ${appt.doctorName}</p>
             <p><strong>Specialty:</strong> ${appt.spec}</p>
             <p><strong>Clinic Room:</strong> Room ${roomNum}</p>
-            <p><strong>Date & Time:</strong> ${appt.date} | ${appt.time}</p>
+            <p><strong>Date & Time:</strong> ${window.formatDateToDDMMYYYY(appt.date)} | ${appt.time}</p>
             <p><strong>Visit Type:</strong> ${appt.type}</p>
           </div>
 
@@ -1873,7 +1760,7 @@ window.views.appointments = function(container, subAnchor, params) {
       </div>
 
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-        <button onclick="closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Close</button>
+        <button onclick="window.closeModal()" class="btn-g" style="padding: 5px 12px; font-size: 11px;">Close</button>
         <button id="modal-print-trigger-btn" class="btn-p">
           <span>🖨️</span> Send to Printer
         </button>
@@ -1922,7 +1809,7 @@ window.views.appointments = function(container, subAnchor, params) {
                 <p><strong>Consultant:</strong> ${appt.doctorName}</p>
                 <p><strong>Specialty:</strong> ${appt.spec}</p>
                 <p><strong>Room:</strong> Room ${roomNum}</p>
-                <p><strong>Date & Time:</strong> ${appt.date} | ${appt.time}</p>
+                <p><strong>Date & Time:</strong> ${window.formatDateToDDMMYYYY(appt.date)} | ${appt.time}</p>
                 <p><strong>Visit Type:</strong> ${appt.type}</p>
               </div>
               <div class="barcode font-bold">||||||||||||||||||||||||||||</div>
@@ -1975,10 +1862,12 @@ window.views.appointments = function(container, subAnchor, params) {
   bindFilters();
   renderViewData();
 
-  // If uhid parameter was passed, immediately open the Book Appointment modal pre-filled
-  if (params.uhid) {
+  // If uhid parameter was passed or book flag is true, immediately open the Book Appointment modal
+  if (params.uhid || params.book === 'true') {
     // Clear url query params so modal won't re-trigger on subsequent rendering cycles
-    window.location.hash = 'appointments';
-    openBookingModal();
+    history.replaceState(null, '', '#appointments');
+    const targetUrl = params.uhid ? `bookAppointment?uhid=${params.uhid}` : 'bookAppointment';
+    router.navigate(targetUrl);
+    return;
   }
 };

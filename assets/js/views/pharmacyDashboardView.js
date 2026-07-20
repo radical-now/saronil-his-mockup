@@ -79,35 +79,7 @@
     const activeCounter = localStorage.getItem('saronil_active_pharmacy_counter') || 'IPD Pharmacy';
 
     const styles = `
-      <style>
-        .pharmacy-alert-banner {
-          font-size: 0.75rem;
-          padding: 8px 16px;
-          border-left: 4px solid;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 8px;
-        }
-        .pharmacy-alert-red { background-color: #FEF2F2; border-left-color: #EF4444; color: #991B1B; border: 1px solid #FEE2E2; }
-        .pharmacy-alert-orange { background-color: #FFFAF0; border-left-color: #F59E0B; color: #92400E; border: 1px solid #FEF3C7; }
-        .pharmacy-alert-amber { background-color: #FFFBEB; border-left-color: #D97706; color: #92400E; border: 1px solid #FEF3C7; }
-        
-        .pharmacy-tab-btn {
-          font-size: 0.75rem;
-          padding: 6px 12px;
-          border-bottom: 2px solid transparent;
-          color: var(--text-muted);
-          cursor: pointer;
-        }
-        .pharmacy-tab-btn.active {
-          border-bottom-color: var(--primary);
-          color: var(--primary);
-          font-weight: 700;
-        }
-      </style>
+      
     `;
 
     container.innerHTML = styles + `
@@ -116,6 +88,21 @@
         <!-- SECTION 1 — CRITICAL ALERT BANNERS -->
         <div id="pharmacy-critical-banners-container" style="margin-bottom: 16px;">
           <!-- Dynamically filled alerts -->
+        </div>
+
+        <!-- SECTION 2.5: DUTY STATUS BAR (MOVED TO TOP) -->
+        <div class="duty-bar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; background: white;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div class="toggle-group">
+              <button class="toggle-btn ${window.state.pharmacyDutyStatus === 'On Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('pharmacy', 'On Duty')">On Duty</button>
+              <button class="toggle-btn ${window.state.pharmacyDutyStatus === 'Off Duty' ? 'active' : ''}" onclick="window.setPersonaDutyStatus('pharmacy', 'Off Duty')">Off Duty</button>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary);">
+              Shift Time: <strong class="admin-mono" style="color: var(--text-primary);">08:00 AM - 04:00 PM</strong>
+            </div>
+          </div>
+          <!-- Right side Handover CTA -->
+          <button class="btn btn-primary btn-sm" onclick="window.initiateHandover('pharmacy')" style="font-size: 0.75rem; font-weight: 700; height: 28px; background-color: var(--color-warning); border-color: var(--color-warning); color: #fff;">Start Handover</button>
         </div>
 
         <!-- SECTION 2 — ROLE + COUNTER BAR -->
@@ -150,7 +137,7 @@
         </div>
 
         <!-- SECTION 3 — KPI STAT CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6" id="pharmacy-kpi-grid">
+        <div class="admin-kpi-scroll-row" id="pharmacy-kpi-grid">
           <!-- Filtered dynamically by role and counter context -->
         </div>
 
@@ -486,8 +473,8 @@
     container.innerHTML = html;
   };
 
-  window.resolveNarcoticDiscrepancy = function(id) {
-    const reason = window.prompt("NDPS ACT 1985 REQUIREMENT: Enter explanation/justification signed by Pharmacist-In-Charge for discrepancy:", "");
+  window.resolveNarcoticDiscrepancy = async function(id) {
+    const reason = await customPrompt("NDPS ACT 1985 REQUIREMENT: Enter explanation/justification signed by Pharmacist-In-Charge for discrepancy:", "");
     if (reason) {
       window.state.narcoticDiscrepancies.forEach(d => {
         if (d.id === id) d.status = 'Resolved';
@@ -517,10 +504,10 @@
     const role = localStorage.getItem('saronil_active_pharmacy_role') || 'Pharmacist (In-charge)';
     const counter = localStorage.getItem('saronil_active_pharmacy_counter') || 'IPD Pharmacy';
     
-    let html = '';
+    let stats = [];
 
     if (role === 'Pharmacy Manager') {
-      const stats = [
+      stats = [
         { label: "Total Inventory Value", val: "₹18.4 Lakhs", sub: "FIFO/FEFO valuation" },
         { label: "Low Stock Items", val: "14 items", sub: "Reorder required" },
         { label: "Expiring ≤30 days", val: "8 batches", sub: "Quarantine and clear" },
@@ -530,17 +517,8 @@
         { label: "Ward Indents Pending", val: `${window.state.wardIndents.length}`, sub: "Fill queues" },
         { label: "Disposal Pending", val: "4 batches", sub: "CPCB BMW Form IX" }
       ];
-      html = stats.map(s => `
-        <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-          <div>
-            <div class="text-xs text-slate-500 font-medium">${s.label}</div>
-            <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">${s.val}</div>
-          </div>
-          <div class="text-[10px] text-slate-400 font-medium mt-1">${s.sub}</div>
-        </div>
-      `).join('');
     } else if (counter === 'OPD/Retail Counter') {
-      const stats = [
+      stats = [
         { label: "Bills Generated Today", val: "114 bills", sub: "Outpatient retail" },
         { label: "Collection (Today)", val: "₹42,500.00", sub: "Cash/UPI splits" },
         { label: "Items Dispensed", val: "380 packs", sub: "OPD retail" },
@@ -550,18 +528,9 @@
         { label: "Low Stock Counter", val: "4 items", sub: "Central store refill" },
         { label: "Home Delivery Queue", val: "2 orders", sub: "Assigned dispatch" }
       ];
-      html = stats.map(s => `
-        <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-          <div>
-            <div class="text-xs text-slate-500 font-medium">${s.label}</div>
-            <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">${s.val}</div>
-          </div>
-          <div class="text-[10px] text-slate-400 font-medium mt-1">${s.sub}</div>
-        </div>
-      `).join('');
     } else {
       // IPD counter
-      const stats = [
+      stats = [
         { label: "Rx Received Today", val: `${window.state.prescriptionsQueue.length}`, sub: "Ward admissions orders" },
         { label: "Pending Dispense", val: `${window.state.prescriptionsQueue.filter(p => p.status === 'Pending').length}`, sub: "Amber if >5" },
         { label: "Medicines Dispensed", val: "248 items", sub: "Ward indents filled" },
@@ -571,18 +540,41 @@
         { label: "Schedule X Dispenses", val: "2 cases", sub: "NDPS reconciliation" },
         { label: "Ward Indents Pending", val: `${window.state.wardIndents.length}`, sub: "Fill queues" }
       ];
-      html = stats.map(s => `
-        <div class="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between" style="min-height: 105px;">
-          <div>
-            <div class="text-xs text-slate-500 font-medium">${s.label}</div>
-            <div class="text-xl font-bold tracking-tight text-slate-900 mt-1">${s.val}</div>
-          </div>
-          <div class="text-[10px] text-slate-400 font-medium mt-1">${s.sub}</div>
-        </div>
-      `).join('');
     }
 
-    grid.innerHTML = html;
+    const renderCard = (s) => {
+      let status = 'normal';
+      let trend = '▲ Active';
+      let trendColor = 'var(--color-success)';
+      const lblLower = s.label.toLowerCase();
+      if (lblLower.includes('low') || lblLower.includes('expiring') || lblLower.includes('unverified') || lblLower.includes('disposal')) {
+        status = 'critical';
+        trend = '▼ Alert';
+        trendColor = 'var(--color-danger)';
+      } else if (lblLower.includes('pending') || lblLower.includes('returns')) {
+        status = 'warning';
+        trend = '▲ Review Due';
+        trendColor = 'var(--color-warning)';
+      }
+      return `
+        <div class="admin-kpi-card status-${status}" style="cursor: default;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+            <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">${s.label}</span>
+          </div>
+          <div style="margin-top: 8px; margin-bottom: 8px;">
+            <span class="admin-mono" style="font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">${s.val}</span>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${s.sub}</div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 0.72rem; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+            <span style="color: ${trendColor}; font-weight: 600; display: flex; align-items: center; gap: 2px;">
+              ${trend}
+            </span>
+          </div>
+        </div>
+      `;
+    };
+
+    grid.innerHTML = stats.map(renderCard).join('');
   };
 
   // RENDER: SECTION 4 — QUICK ACTIONS
@@ -835,6 +827,7 @@
           title: 'Prescription Dispensed',
           desc: `${rx.itemsCount || 1} item(s) dispensed by Pharmacy (${rx.rxNo}). Charges posted to billing.`
         });
+        localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
       }
     }
 
@@ -1160,8 +1153,8 @@
     }).join('');
   };
 
-  window.overrideSafetyAlert = function(text) {
-    const comment = window.prompt(`Override comment required for alert:\n"${text}"\nEnter clinician authorization / pharmacist justification:`);
+  window.overrideSafetyAlert = async function(text) {
+    const comment = await customPrompt(`Override comment required for alert:\n"${text}"\nEnter clinician authorization / pharmacist justification:`);
     if (comment) {
       alert("Safety override logged in Quality Control register.");
     }

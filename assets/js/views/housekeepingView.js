@@ -2138,7 +2138,7 @@
   };
 
   // Click Bed interactions
-  window._hkClickBed = function(bedId, status, wardKey) {
+  window._hkClickBed = async function(bedId, status, wardKey) {
     if (status === 'Dirty') {
       var tasks = window.state.housekeepingTasks || [];
       var activeT = tasks.find(t => t.bedId === bedId && t.status !== 'Verified' && t.status !== 'Closed' && t.status !== 'Cancelled');
@@ -2153,7 +2153,7 @@
         window.router.navigate(`housekeepingOperations?tab=raise&t=${Date.now()}`);
       }
     } else if (status === 'Available' || status === 'Ready') {
-      var action = confirm(`Bed ${bedId} is vacant and ready. Mark as Out of Service (Blocked) for maintenance?`);
+      var action = await customConfirm(`Bed ${bedId} is vacant and ready. Mark as Out of Service (Blocked) for maintenance?`);
       if (action) {
         window.state.bedsStatus[bedId].status = 'Blocked';
         window.state.bedsStatus[bedId].notes = 'Blocked for maintenance';
@@ -2161,7 +2161,7 @@
         window.router.navigate(`housekeepingOperations?tab=beds&t=${Date.now()}`);
       }
     } else if (status === 'Blocked') {
-      var action = confirm(`Release block on bed ${bedId} and return to Available vacant pool?`);
+      var action = await customConfirm(`Release block on bed ${bedId} and return to Available vacant pool?`);
       if (action) {
         window.state.bedsStatus[bedId].status = 'Available';
         window.state.bedsStatus[bedId].notes = 'Released from maintenance';
@@ -3990,10 +3990,10 @@
     window.router.navigate(`bmw?tab=${_activeBmwSubTab}&t=${Date.now()}`);
   };
 
-  window._hkBmwRaiseManualNC = function() {
-    var desc = prompt("Enter description of non-compliance incident:");
+  window._hkBmwRaiseManualNC = async function() {
+    var desc = await customPrompt("Enter description of non-compliance incident:");
     if (!desc) return;
-    var dept = prompt("Enter department name:");
+    var dept = await customPrompt("Enter department name:");
     if (!dept) return;
 
     var ncList = window.state.bmwNonCompliances || [];
@@ -4548,7 +4548,7 @@
                   var isCondemned = x.status === 'Condemned';
 
                   var rowStyle = isCondemned ? 'background:#f1f5f9; color:#94a3b8; opacity:0.8;' : (isAtMax ? 'background:#fff5f5; border-left:3px solid #ef4444;' : (isNearMax ? 'background:#fffbeb;' : ''));
-                  var condemnBtn = (isAtMax && !isCondemned) ? `<button class="btn btn-danger btn-xs" style="padding:2px 6px;" onclick="if(confirm('Are you sure you want to condemn item ${x.code}?')){window._hkLndApproveCondemn('${x.code}');}">Condemn</button>` : '';
+                  var condemnBtn = (isAtMax && !isCondemned) ? `<button class="btn btn-danger btn-xs" style="padding:2px 6px;" onclick="window._hkLndCondemnPrompt('${x.code}')">Condemn</button>` : '';
                   var statusColor = x.status === 'Available' ? 'color:#10b981;' : (x.status === 'Dirty' ? 'color:#ef4444;' : (x.status === 'Condemned' ? 'color:#6b7280;' : ''));
 
                   return `
@@ -4889,7 +4889,7 @@
                       <td style="font-family:monospace; font-weight:700; color:${b.damagedCount > 0 ? '#b91c1c' : ''};">
                         <div style="display:flex; align-items:center; gap:6px;">
                           <span>${b.damagedCount}</span>
-                          <button class="btn btn-secondary btn-xs" style="padding:1px 4px; font-size:8.5px;" onclick="var c=prompt('Enter damaged piece count discovered:'); if(c !== null){window._hkLndLogDamage('${b.batchId}', c);}">+</button>
+                          <button class="btn btn-secondary btn-xs" style="padding:1px 4px; font-size:8.5px;" onclick="window._hkLndLogDamagePrompt('${b.batchId}')">+</button>
                         </div>
                       </td>
                       <td>
@@ -5247,7 +5247,7 @@
                     </td>
                     <td>
                       <div style="display:flex; gap:4px;">
-                        <button class="btn btn-danger btn-xs" style="padding:2px 8px; font-weight:700;" onclick="if(confirm('Approve condemnation and permanently remove item ${x.code} from active inventory?')){window._hkLndApproveCondemn('${x.code}');}">Approve</button>
+                        <button class="btn btn-danger btn-xs" style="padding:2px 8px; font-weight:700;" onclick="window._hkLndApproveCondemnPrompt('${x.code}')">Approve</button>
                         <button class="btn btn-secondary btn-xs" style="padding:2px 8px;" onclick="window._hkLndRejectCondemn('${x.code}')">Reject</button>
                       </div>
                     </td>
@@ -5296,7 +5296,7 @@
     // ────────────────────────────────────────────────────────────────────────
     // SCREEN 10 - VENDOR LAUNDRY
     // ────────────────────────────────────────────────────────────────────────
-    function renderLndVendor(vendors) {
+    async function renderLndVendor(vendors) {
       return `
         <div style="display:grid; grid-template-columns: 1fr 2.2fr; gap:20px;">
           <!-- VENDOR DISPATCH FORM -->
@@ -5342,7 +5342,7 @@
                 <label style="font-size:10px; font-weight:700;">Special Instructions</label>
                 <textarea id="vend-instructions" class="form-control" style="font-size:11px; height:40px;"></textarea>
               </div>
-              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Confirm sending selected quantities to laundry vendor?');">Dispatch to Vendor</button>
+              <button type="submit" class="btn btn-primary btn-sm" onclick="return await customConfirm('Confirm sending selected quantities to laundry vendor?');">Dispatch to Vendor</button>
             </form>
           </div>
 
@@ -5384,7 +5384,7 @@
                           ${isOver ? '<br><span style="font-size:9px; color:#b91c1c; font-weight:700;">Alert raised</span>' : ''}
                         </td>
                         <td>
-                          <button class="btn btn-success btn-xs" onclick="var c=prompt('Enter returned clean qty:'); var d=prompt('Enter damaged/stained qty:'); var m=prompt('Enter missing qty:'); if(c !== null){window._hkLndReceiveVendorReturn('${v.vReqId}', c, d, m);}">Log Return</button>
+                          <button class="btn btn-success btn-xs" onclick="window._hkLndReceiveVendorReturnPrompt('${v.vReqId}')">Log Return</button>
                         </td>
                       </tr>
                     `;
@@ -5961,7 +5961,7 @@
                           <div style="display:flex; gap:4px;">
                             <button class="btn btn-secondary btn-xs" style="padding:2px 6px;" onclick="alert('Tray Manifest:\\n${x.instruments.map(i => i.name + ' x' + i.count).join('\\n')}')">Manifest</button>
                             ${!isQuarantine ? `<button class="btn btn-warning btn-xs" style="padding:2px 6px;" onclick="window._hkCssdQuarantineTray('${x.trayId}')">Quarantine</button>` : ''}
-                            <button class="btn btn-danger btn-xs" style="padding:2px 6px;" onclick="if(confirm('Decommission and condemn this tray?')){window._hkCssdCondemnTray('${x.trayId}');}">Condemn</button>
+                            <button class="btn btn-danger btn-xs" style="padding:2px 6px;" onclick="window._hkCssdCondemnTrayPrompt('${x.trayId}')">Condemn</button>
                           </div>
                         `}
                       </td>
@@ -8315,4 +8315,53 @@
     _auditActionFilter = val;
     window.router.navigate(`housekeepingOperations?tab=${_activeOpsSubTab}&t=${Date.now()}`);
   };
+
+  window._hkLndCondemnPrompt = function(code) {
+    customConfirm('Are you sure you want to condemn item ' + code + '?').then(res => {
+      if (res) {
+        window._hkLndApproveCondemn(code);
+      }
+    });
+  };
+
+  window._hkLndApproveCondemnPrompt = function(code) {
+    customConfirm('Approve condemnation and permanently remove item ' + code + ' from active inventory?').then(res => {
+      if (res) {
+        window._hkLndApproveCondemn(code);
+      }
+    });
+  };
+
+  window._hkCssdCondemnTrayPrompt = function(trayId) {
+    customConfirm('Decommission and condemn this tray?').then(res => {
+      if (res) {
+        window._hkCssdCondemnTray(trayId);
+      }
+    });
+  };
+
+  window._hkLndLogDamagePrompt = function(batchId) {
+    customPrompt('Enter damaged piece count discovered:').then(c => {
+      if (c !== null && c !== '') {
+        window._hkLndLogDamage(batchId, c);
+      }
+    });
+  };
+
+  window._hkLndReceiveVendorReturnPrompt = function(vReqId) {
+    customPrompt('Enter returned clean qty:').then(c => {
+      if (c !== null && c !== '') {
+        customPrompt('Enter damaged/stained qty:').then(d => {
+          if (d !== null && d !== '') {
+            customPrompt('Enter missing qty:').then(m => {
+              if (m !== null && m !== '') {
+                window._hkLndReceiveVendorReturn(vReqId, c, d, m);
+              }
+            });
+          }
+        });
+      }
+    });
+  };
+
 })();

@@ -3,11 +3,9 @@
    ========================================================================== */
 
 // --------------------------------------------------------------------------
-// 1. CURATED BRAND SHORTLIST — prepended to the full formulary generated in
-//    medicationCatalog.js (loaded earlier). These are well-known brands kept
-//    at the top of the catalog for quick demo recall.
+// 1. DYNAMIC MEDICINE DATABASE SEEDING (EXACTLY 100 HIS MEDICINES)
 // --------------------------------------------------------------------------
-window.__curatedMeds = [
+window.medicationCatalog = [
   {
     "brandName": "Calpol 500",
     "genericName": "Paracetamol",
@@ -1307,26 +1305,60 @@ window.__curatedMeds = [
     "code": "RX-MED-100",
     "minStock": 100,
     "stock": 50
+  },
+  {
+    "brandName": "Febrex Plus",
+    "genericName": "Paracetamol + Chlorpheniramine + Phenylephrine",
+    "saltComposition": "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+    "strength": "Combination",
+    "dosageForm": "Tablet",
+    "route": "PO",
+    "price": 45,
+    "category": "General Medicine",
+    "code": "RX-MED-101",
+    "minStock": 100,
+    "stock": 0
+  },
+  {
+    "brandName": "Sinarest",
+    "genericName": "Paracetamol + Chlorpheniramine + Phenylephrine",
+    "saltComposition": "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+    "strength": "Combination",
+    "dosageForm": "Tablet",
+    "route": "PO",
+    "price": 50,
+    "category": "General Medicine",
+    "code": "RX-MED-102",
+    "minStock": 100,
+    "stock": 120
+  },
+  {
+    "brandName": "Cheston Cold",
+    "genericName": "Paracetamol + Cetirizine + Phenylephrine",
+    "saltComposition": "Paracetamol 325mg + Cetirizine Dihydrochloride 5mg + Phenylephrine Hydrochloride 5mg",
+    "strength": "Combination",
+    "dosageForm": "Tablet",
+    "route": "PO",
+    "price": 48,
+    "category": "General Medicine",
+    "code": "RX-MED-103",
+    "minStock": 100,
+    "stock": 150
+  },
+  {
+    "brandName": "Colgin Plus",
+    "genericName": "Paracetamol + Chlorpheniramine + Phenylephrine",
+    "saltComposition": "Paracetamol 325mg + Chlorpheniramine Maleate 2mg + Phenylephrine Hydrochloride 5mg",
+    "strength": "Combination",
+    "dosageForm": "Tablet",
+    "route": "PO",
+    "price": 40,
+    "category": "General Medicine",
+    "code": "RX-MED-104",
+    "minStock": 100,
+    "stock": 80
   }
 ];
-
-// Merge curated shortlist ahead of the full generated formulary. Fill the
-// extended fields (manufacturer / schedule / hsnCode / batch / expiry) that the
-// curated records predate, without clobbering any value already present.
-(function mergeCuratedIntoCatalog() {
-  var mfrs = ['GSK Pharmaceuticals', 'Abbott Healthcare', 'Cipla Ltd', 'Sun Pharmaceutical',
-              "Dr. Reddy's Laboratories", 'Mankind Pharma', 'Lupin Ltd', 'Alkem Laboratories'];
-  var enriched = window.__curatedMeds.map(function (m, i) {
-    return Object.assign({
-      manufacturer: mfrs[i % mfrs.length],
-      schedule: 'H',
-      hsnCode: '30049099',
-      batch: 'BAT-2026-' + String(2000 + i),
-      expiry: '2027-12-30'
-    }, m);
-  });
-  window.medicationCatalog = enriched.concat(window.medicationCatalog || []);
-})();
 
 // Seed to state.inventory.pharmacy for unified HIS search compatibility
 (function seedStateInventory() {
@@ -2062,12 +2094,24 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     } else {
       searchResults.innerHTML = matches.slice(0, 20).map(item => {
         const isOOS = item.stock === 0;
-        const statusText = isOOS 
-          ? `<div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem;">
-              <span style="color:#dc2626; font-weight:700;">Out of Stock</span>
-              <button class="btn btn-secondary btn-sm" style="padding:0.15rem 0.35rem; font-size:0.65rem; height:auto; border-radius: 4px;">See Alternative</button>
-            </div>`
-          : `<span style="color:#16a34a;">In Stock (${item.stock})</span>`;
+        let statusText = '';
+        if (isOOS) {
+          if (item.brandName.toLowerCase() === 'febrex plus') {
+            statusText = `
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem;">
+                <span style="color:#dc2626; font-weight:700;">Out of Stock</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); window.showAlternativesForFebrexWorkflow(event)" style="padding:0.15rem 0.35rem; font-size:0.65rem; height:auto; border-radius: 4px; background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">See Alternative</button>
+              </div>`;
+          } else {
+            statusText = `
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem;">
+                <span style="color:#dc2626; font-weight:700;">Out of Stock</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); window.showAlternativesForGenericWorkflow('${item.genericName.replace(/'/g, "\\'")}', '${item.brandName.replace(/'/g, "\\'")}', event)" style="padding:0.15rem 0.35rem; font-size:0.65rem; height:auto; border-radius: 4px;">See Alternative</button>
+              </div>`;
+          }
+        } else {
+          statusText = `<span style="color:#16a34a;">In Stock (${item.stock})</span>`;
+        }
         return `
           <div class="rx-search-item" onclick="window.selectDrugForBuilder('${item.code}')">
             <div>
@@ -2081,6 +2125,69 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     }
     searchResults.style.display = 'block';
   });
+
+  window.showAlternativesForFebrexWorkflow = function(e) {
+    if (e) e.stopPropagation();
+    const alts = window.state.inventory.pharmacy.filter(item => 
+      ["Sinarest", "Cheston Cold", "Colgin Plus"].includes(item.brandName)
+    );
+    const searchResults = document.getElementById('rx-search-results');
+    if (!searchResults) return;
+
+    searchResults.innerHTML = `
+      <div style="padding: 0.4rem 0.5rem; background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #bae6fd;">
+        Alternatives for Febrex Plus:
+      </div>
+      ${alts.map(item => `
+        <div class="rx-search-item" onclick="window.selectDrugForBuilder('${item.code}')">
+          <div>
+            <strong>${item.brandName}</strong> (${item.strength} • ${item.dosageForm})
+            <span style="display:block; font-size:0.68rem; color:var(--text-secondary);">${item.genericName}</span>
+          </div>
+          <div>
+            <span style="color:#16a34a;">In Stock (${item.stock})</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  };
+
+  window.showAlternativesForGenericWorkflow = function(genericName, brandName, e) {
+    if (e) e.stopPropagation();
+    const alts = window.state.inventory.pharmacy.filter(item => 
+      item.brandName.toLowerCase() !== brandName.toLowerCase() &&
+      item.genericName.toLowerCase() === genericName.toLowerCase() &&
+      item.stock > 0
+    );
+    const searchResults = document.getElementById('rx-search-results');
+    if (!searchResults) return;
+    
+    if (alts.length === 0) {
+      searchResults.innerHTML = `
+        <div style="padding: 0.4rem 0.5rem; background: #fee2e2; color: #991b1b; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #fca5a5;">
+          No in-stock alternatives found for ${brandName}.
+        </div>
+      `;
+      return;
+    }
+
+    searchResults.innerHTML = `
+      <div style="padding: 0.4rem 0.5rem; background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 700; border-bottom: 1px solid #bae6fd;">
+        Alternatives for ${brandName}:
+      </div>
+      ${alts.map(item => `
+        <div class="rx-search-item" onclick="window.selectDrugForBuilder('${item.code}')">
+          <div>
+            <strong>${item.brandName}</strong> (${item.strength} • ${item.dosageForm})
+            <span style="display:block; font-size:0.68rem; color:var(--text-secondary);">${item.genericName}</span>
+          </div>
+          <div>
+            <span style="color:#16a34a;">In Stock (${item.stock})</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  };
 
   searchInput.addEventListener('focus', () => {
     const q = searchInput.value.trim().toLowerCase();
@@ -2396,10 +2503,10 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     checkAlternateSuggestions();
   };
 
-  window.removeMedicationOrder = function(idx) {
+  window.removeMedicationOrder = async function(idx) {
     if (activeCart[idx]) {
       const item = activeCart[idx];
-      if (confirm(`Are you sure you want to remove the medication order for "${item.drug}"?`)) {
+      if (await customConfirm(`Are you sure you want to remove the medication order for "${item.drug}"?`)) {
         activeCart.splice(idx, 1);
         syncCartToPatient();
         renderActiveOrdersTable();
@@ -2408,7 +2515,7 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     }
   };
 
-  window.removePrescription = function(uhid, idx) {
+  window.removePrescription = async function(uhid, idx) {
     const pat = (window.state.patients || []).find(p => p.uhid === uhid);
     if (pat && pat.prescriptions) {
       const activePrescs = pat.prescriptions.filter(p => p.status !== 'Discontinued');
@@ -2416,7 +2523,7 @@ window.renderPrescriptionWorkflow = function(container, patient) {
       if (targetPresc) {
         const masterIdx = pat.prescriptions.indexOf(targetPresc);
         if (masterIdx > -1) {
-          if (confirm(`Are you sure you want to remove prescription for "${targetPresc.drug}"?`)) {
+          if (await customConfirm(`Are you sure you want to remove prescription for "${targetPresc.drug}"?`)) {
             pat.prescriptions.splice(masterIdx, 1);
             localStorage.setItem('saronil_patients', JSON.stringify(window.state.patients));
             alert("Prescription removed successfully.");
@@ -2433,7 +2540,7 @@ window.renderPrescriptionWorkflow = function(container, patient) {
   };
 
   // Save & Finalize handler
-  btnFinalize.addEventListener('click', () => {
+  btnFinalize.addEventListener('click', async () => {
     if (activeCart.length === 0) {
       alert("Medication orders list is empty. Cannot finalize.");
       return;
@@ -2465,14 +2572,14 @@ window.renderPrescriptionWorkflow = function(container, patient) {
     // Set status to Completed if they are an OPD patient in EMR
     if (patient.type === 'OPD' && (patient.status === 'Checked In' || patient.status === 'Registered')) {
       patient.status = 'Completed';
-      alert("Medication orders successfully saved and synchronized!");
+      await customAlert("Medication orders successfully saved and synchronized!");
       if (window.router) {
         window.router.navigate('emr');
       } else {
         window.history.back();
       }
     } else {
-      alert("Medication orders successfully saved and synchronized!");
+      await customAlert("Medication orders successfully saved and synchronized!");
       if (window.closeActionModal) {
         window.closeActionModal();
       }

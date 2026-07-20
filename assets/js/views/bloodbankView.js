@@ -55,161 +55,7 @@ function renderBloodBankModule(container) {
   const activeTab = localStorage.getItem('saronil_bb_tab') || b.activeTab;
 
   const styles = `
-    <style>
-      :root {
-        --bb-red: #dc2626;       --bb-red-light: #fee2e2;
-        --bb-blue: #0C3E91;      --bb-blue-light: #dbeafe;
-        --bb-green: #059669;     --bb-green-light: #d1fae5;
-        --bb-amber: #d97706;     --bb-amber-light: #fef3c7;
-        --bb-purple: #7c3aed;    --bb-purple-light: #ede9fe;
-        --bb-slate: #475569;     --bb-slate-light: #f1f5f9;
-      }
-      .bb-container {
-        font-family: 'Outfit', sans-serif;
-        color: var(--text-primary);
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-      .bb-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 1rem;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .bb-tab-bar {
-        display: flex;
-        gap: 4px;
-        background: var(--bg-surface-elevated);
-        border: 1px solid var(--border-color);
-        padding: 4px;
-        border-radius: 8px;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      .bb-tab-btn {
-        background: transparent;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .bb-tab-btn.active {
-        background: var(--bb-red);
-        color: white;
-      }
-      .alert-strip {
-        background: var(--bb-red-light);
-        border: 1px solid var(--bb-red);
-        border-radius: 8px;
-        padding: 12px 16px;
-        color: #991b1b;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        text-align: left;
-      }
-      .alert-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8rem;
-        font-weight: 600;
-        border-bottom: 1px dashed rgba(220, 38, 38, 0.2);
-        padding-bottom: 6px;
-      }
-      .alert-item:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-      }
-      .stock-matrix-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.82rem;
-        margin-top: 8px;
-      }
-      .stock-matrix-table th, .stock-matrix-table td {
-        border: 1px solid var(--border-color);
-        padding: 8px;
-        text-align: center;
-      }
-      .stock-cell {
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 0.1s ease;
-      }
-      .stock-cell:hover {
-        transform: scale(1.08);
-      }
-      .stock-cell.green { background: var(--bb-green-light); color: var(--bb-green); }
-      .stock-cell.amber { background: var(--bb-amber-light); color: var(--bb-amber); }
-      .stock-cell.red { background: var(--bb-red-light); color: var(--bb-red); }
-      
-      .status-badge {
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-        text-transform: uppercase;
-      }
-      .status-badge.available { background: var(--bb-green-light); color: var(--bb-green); }
-      .status-badge.reserved { background: var(--bb-blue-light); color: var(--bb-blue); }
-      .status-badge.crossmatch { background: var(--bb-amber-light); color: var(--bb-amber); }
-      .status-badge.issued { background: var(--bb-slate-light); color: var(--bb-slate); }
-      .status-badge.quarantine { background: var(--bb-red-light); color: var(--bb-red); }
-      .status-badge.expired { background: var(--bb-red-light); color: var(--bb-red); text-decoration: line-through; }
-      .status-badge.discarded { background: var(--bb-slate-light); color: var(--bb-slate); }
-      
-      .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 10px;
-      }
-      .stat-box {
-        background: var(--bg-surface);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 12px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .stat-box:hover {
-        box-shadow: var(--shadow-sm);
-        border-color: var(--bb-red);
-      }
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        text-align: left;
-      }
-      .form-group label {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: var(--text-muted);
-      }
-      .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      .form-grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-      }
-    </style>
+    
   `;
 
   // Define tabs and their role access
@@ -1028,8 +874,8 @@ function renderBBTestingTab(container) {
   `;
 }
 
-window.enterTTIResults = function(unitId) {
-  const result = prompt("Enter TTI Test Results for " + unitId + ":\n(Options: ALL CLEAR | HBsAg Reactive | HIV Reactive)", "ALL CLEAR");
+window.enterTTIResults = async function(unitId) {
+  const result = await customPrompt("Enter TTI Test Results for " + unitId + ":\n(Options: ALL CLEAR | HBsAg Reactive | HIV Reactive)", "ALL CLEAR");
   if (!result) return;
 
   const b = window.state.bloodbank;
@@ -1245,8 +1091,8 @@ window.directIssueUnit = function(unitId) {
   }
 };
 
-window.logTempBreach = function(unitName) {
-  const action = prompt("Enter mandatory Temperature Breach corrective action:");
+window.logTempBreach = async function(unitName) {
+  const action = await customPrompt("Enter mandatory Temperature Breach corrective action:");
   if (action) {
     const l = window.state.bloodbank.tempLogs.find(log => log.unit === unitName);
     if (l) {
@@ -1692,8 +1538,8 @@ window.saveCampRegistration = function() {
 };
 
 // Modals
-window.openEmergencyReleaseModal = function(reqId) {
-  if (confirm(`🚨 EMERGENCY RELEASE WARNING!\n\nAre you sure you want to release uncrossmatched O-Negative blood immediately?`)) {
+window.openEmergencyReleaseModal = async function(reqId) {
+  if (await customConfirm(`🚨 EMERGENCY RELEASE WARNING!\n\nAre you sure you want to release uncrossmatched O-Negative blood immediately?`)) {
     showBBToast("Emergency Release confirmation: O-Negative bag dispatched.");
   }
 };

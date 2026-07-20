@@ -1198,31 +1198,27 @@ window._HIS_PRETTY = function(daysAgo, timeStr) {
 // --------------------------------------------------------------------------
 function seedState() {
   const storedPatients = localStorage.getItem('saronil_patients');
-  
-  // Self-healing migration for new ward configuration
-  if (storedPatients && storedPatients.includes('GW(M)-409')) {
-    localStorage.removeItem('saronil_patients');
-    localStorage.removeItem('saronil_bedsStatus');
-    localStorage.removeItem('saronil_admissions');
-    localStorage.removeItem('saronil_daycare_admissions');
-    localStorage.removeItem('saronil_bedAuditLogs');
-    localStorage.removeItem('saronil_billing');
-    window.location.reload();
-    return;
-  }
+  let storedDoctors = localStorage.getItem('saronil_doctors');
+  let storedNurses = localStorage.getItem('saronil_nurses');
+  let storedStaff = localStorage.getItem('saronil_staff');
 
-  const storedDoctors = localStorage.getItem('saronil_doctors');
-  const storedNurses = localStorage.getItem('saronil_nurses');
-  const storedStaff = localStorage.getItem('saronil_staff');
-  
-  // Self-healing migration for new staff dataset (100 various staff members added)
-  if (storedDoctors && JSON.parse(storedDoctors).length < 30) {
+  // Migrate in place — never location.reload() here. A full reload returns the
+  // user to the StatiCrypt password gate on GitHub Pages / encrypted deploys.
+  // (An older check cleared storage whenever GW(M)-409 appeared, but that bed
+  // id is still used by the current seed, which caused an infinite password loop.)
+  try {
+    if (storedDoctors && JSON.parse(storedDoctors).length < 30) {
+      localStorage.removeItem('saronil_doctors');
+      localStorage.removeItem('saronil_nurses');
+      localStorage.removeItem('saronil_staff');
+      localStorage.removeItem('saronil_staffList');
+      storedDoctors = null;
+      storedNurses = null;
+      storedStaff = null;
+    }
+  } catch (e) {
     localStorage.removeItem('saronil_doctors');
-    localStorage.removeItem('saronil_nurses');
-    localStorage.removeItem('saronil_staff');
-    localStorage.removeItem('saronil_staffList');
-    window.location.reload();
-    return;
+    storedDoctors = null;
   }
   
   if (storedPatients && storedDoctors && storedNurses && storedStaff) {
